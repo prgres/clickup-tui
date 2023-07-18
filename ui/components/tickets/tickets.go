@@ -15,13 +15,16 @@ var docStyle = lipgloss.NewStyle().Margin(1, 2)
 
 const (
 	SPACE_SRE_LIST_COOL = "q5kna-61288"
+	SPACE_SRE           = "48458830"
 )
 
 type Model struct {
-	ctx     *context.UserContext
-	table   table.Model
-	columns []table.Column
-	tickets []clickup.Task
+	ctx               *context.UserContext
+	table             table.Model
+	columns           []table.Column
+	tickets           map[string][]clickup.Task
+	SelectedSpace     string
+	PrevSelectedSpace string
 }
 
 var baseStyle = lipgloss.NewStyle().
@@ -32,7 +35,7 @@ func InitialModel(ctx *context.UserContext) Model {
 	columns := []table.Column{
 		{Title: "Status", Width: 15},
 		{Title: "Name", Width: 90},
-		// {Title: "Assignees", Width: 20},
+		{Title: "Assignees", Width: 20},
 	}
 
 	t := table.New(
@@ -41,20 +44,23 @@ func InitialModel(ctx *context.UserContext) Model {
 	)
 
 	return Model{
-		ctx:     ctx,
-		table:   t,
-		columns: columns,
+		ctx:               ctx,
+		table:             t,
+		columns:           columns,
+		tickets:           map[string][]clickup.Task{},
+		SelectedSpace:     SPACE_SRE,
+		PrevSelectedSpace: SPACE_SRE,
 	}
 }
 
 func (m Model) syncItems() Model {
-	m.ctx.Logger.Info(fmt.Sprintf("sync items %d", len(m.tickets)))
-	items := make([]table.Row, len(m.tickets))
-	for i := range m.tickets {
+	m.ctx.Logger.Info(fmt.Sprintf("sync items %d", len(m.tickets[m.SelectedSpace])))
+	items := make([]table.Row, len(m.tickets[m.SelectedSpace]))
+	for i, ticket := range m.tickets[m.SelectedSpace] {
 		items[i] = table.Row{
-			m.tickets[i].Status.Status,
-			m.tickets[i].Name,
-			// strings.Join(m.tickets[i].Assignees, ","),
+			ticket.Status.Status,
+			ticket.Name,
+			ticket.GetAssignees(),
 		}
 	}
 
@@ -66,11 +72,18 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
-	switch msg := msg.(type) {
+	if m.SelectedSpace != m.PrevSelectedSpace {
+		m.ctx.Logger.Info("space changed")
+		m.PrevSelectedSpace = m.SelectedSpace
+		msg = m.Init()
+		m = m.syncItems()
+		cmds = append(cmds, cmd)
+	}
 
+	switch msg := msg.(type) {
 	case ticketsMsg:
 		m.ctx.Logger.Info("ticketsMsg")
-		m.tickets = msg
+		m.tickets[m.SelectedSpace] = msg
 		m = m.syncItems()
 		// _, cmd := m.list.Update(msg)
 		cmds = append(cmds, cmd)
@@ -91,11 +104,27 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Msg {
+	if m.tickets[m.SelectedSpace] != nil {
+		return ticketsMsg(m.tickets[m.SelectedSpace])
+	}
+
 	client := m.ctx.Clickup
 	m.ctx.Logger.Info("fetching tickets")
-
-	tasks, err := client.GetTasksFromView(SPACE_SRE_LIST_COOL)
+	m.ctx.Logger.Info("getting views from space " + m.SelectedSpace)
+	views, err := client.GetViewsFromSpace(m.SelectedSpace)
 	if err != nil {
+		m.ctx.Logger.Info("error")
+		m.ctx.Logger.Info(err)
+
+		return tea.Quit
+	}
+	// m.ctx.Logger.Info("views ", views)
+	m.ctx.Logger.Info("getting tasks from view " + views[0].Id + " " + views[0].Name)
+	tasks, err := client.GetTasksFromView(views[0].Id)
+	if err != nil {
+		m.ctx.Logger.Info("error")
+		m.ctx.Logger.Info(err)
+
 		return tea.Quit
 	}
 

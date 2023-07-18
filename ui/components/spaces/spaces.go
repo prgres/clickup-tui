@@ -17,10 +17,11 @@ const (
 )
 
 type Model struct {
-	ctx                *context.UserContext
-	list               list.Model
-	selectedSpaceIndex int
-	spaces             []clickup.Space
+	ctx           *context.UserContext
+	list          list.Model
+	SelectedSpace string
+	spaces        []clickup.Space
+	hidden        bool
 }
 
 type item struct {
@@ -34,10 +35,11 @@ func (i item) FilterValue() string { return i.title }
 
 func InitialModel(ctx *context.UserContext) Model {
 	return Model{
-		list:               list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0),
-		ctx:                ctx,
-		selectedSpaceIndex: 0,
-		spaces:             []clickup.Space{},
+		list:          list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0),
+		ctx:           ctx,
+		SelectedSpace: "",
+		spaces:        []clickup.Space{},
+		hidden:        true,
 	}
 }
 
@@ -70,17 +72,34 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.spaces = msg
 		m = m.syncItems()
 		cmds = append(cmds, cmd)
+
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
+
+	case tea.KeyMsg:
+		switch keypress := msg.String(); keypress {
+		case "enter":
+			m.SelectedSpace = m.list.SelectedItem().(item).desc
+			m.ctx.Logger.Info(fmt.Sprintf("selected space %s", m.SelectedSpace))
+			m.hidden = true
+			cmds = append(cmds, hideSpaceView())
+		}
 	}
 
 	m.list, cmd = m.list.Update(msg)
 
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
-
 }
+
+func hideSpaceView() tea.Cmd {
+	return func() tea.Msg {
+		return HideSpaceMsg(true)
+	}
+}
+
+type HideSpaceMsg bool
 
 func (m Model) View() string {
 	// if len(m.list.Items()) != len(m.spaces) {

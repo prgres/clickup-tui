@@ -2,7 +2,6 @@ package ui
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/components/spaces"
 	"github.com/prgrs/clickup/ui/components/tabs"
@@ -46,12 +45,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c", "q":
 			return m, tea.Quit
-		case "tab":
-			if m.state == sessionSpacesView {
-				m.state = sessionTasksView
-			} else {
-				m.state = sessionSpacesView
-			}
+		case "1":
+			m.state = sessionSpacesView
+		case "esc":
+			m.state = sessionTasksView
 		}
 
 		switch m.state {
@@ -60,20 +57,37 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case sessionTasksView:
 			m.tickets, cmd = m.tickets.Update(msg)
 		}
+		cmds = append(cmds, cmd)
+	case spaces.HideSpaceMsg:
+		m.ctx.Logger.Info("hide space")
+		m.state = sessionTasksView
+		m.tickets.SelectedSpace = m.spaces.SelectedSpace
+		m.ctx.Logger.Info(m.tickets.SelectedSpace, m.tickets.PrevSelectedSpace, m.spaces.SelectedSpace)
+
+		m.tickets, cmd = m.tickets.Update(msg)
+		cmds = append(cmds, cmd)
 	default:
 		m.spaces, cmd = m.spaces.Update(msg)
+		cmds = append(cmds, cmd)
 		m.tickets, cmd = m.tickets.Update(msg)
+		cmds = append(cmds, cmd)
 	}
 
 	return m, tea.Batch(cmds...)
 }
 
 func (m Model) View() string {
-	return lipgloss.JoinHorizontal(
-		lipgloss.Left,
-		m.spaces.View(),
-		m.tickets.View(),
-	)
+	if m.state == sessionSpacesView {
+		return m.spaces.View()
+	} else {
+		return m.tickets.View()
+	}
+
+	// return lipgloss.JoinHorizontal(
+	// 	lipgloss.Left,
+	// 	m.spaces.View(),
+	// 	m.tickets.View(),
+	// )
 }
 
 func (m Model) Init() tea.Cmd {

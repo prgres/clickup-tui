@@ -1,6 +1,9 @@
 package clickup
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type Space struct {
 	Id                string
@@ -20,6 +23,7 @@ type SpaceStatus struct {
 
 type RequestGetSpaces struct {
 	Spaces []Space `json:"spaces"`
+	Err           string        `json:"err"`
 }
 
 func (c *Client) GetSpaces(teamId string) ([]Space, error) {
@@ -31,6 +35,10 @@ func (c *Client) GetSpaces(teamId string) ([]Space, error) {
 	var objmap RequestGetSpaces
 	if err := json.Unmarshal(rawData, &objmap); err != nil {
 		return nil, err
+	}
+
+	if objmap.Err != "" {
+		return nil, fmt.Errorf(objmap.Err)
 	}
 	return objmap.Spaces, nil
 }

@@ -1,6 +1,9 @@
 package clickup
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type View struct {
 	Id          string          `json:"id"`
@@ -69,7 +72,20 @@ type ViewSettings struct {
 }
 
 type RequestGetViews struct {
-	Views []View `json:"views"`
+	Views         []View        `json:"views"`
+	Err           string        `json:"err"`
+	RequiredViews RequiredViews `json:"required_views"`
+}
+
+type RequiredViews struct {
+	List     View `json:"list"`
+	Board    View `json:"board"`
+	Box      View `json:"box"`
+	Calendar View `json:"calendar"`
+}
+
+func (r RequiredViews) GetViews() []View {
+	return []View{r.List, r.Board, r.Box, r.Calendar}
 }
 
 func (c *Client) GetViewsFromSpace(spaceId string) ([]View, error) {
@@ -77,10 +93,13 @@ func (c *Client) GetViewsFromSpace(spaceId string) ([]View, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	var objmap RequestGetViews
 	if err := json.Unmarshal(rawData, &objmap); err != nil {
 		return nil, err
 	}
-	return objmap.Views, nil
+	if objmap.Err != "" {
+		return nil, fmt.Errorf(objmap.Err)
+	}
+	return append(objmap.Views, objmap.RequiredViews.GetViews()...), nil
 }
-
