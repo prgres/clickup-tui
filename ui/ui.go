@@ -39,11 +39,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
-	cmds = append(cmds, cmd)
-
 	switch msg := msg.(type) {
 	case common.ErrMsg:
 		m.ctx.Logger.Fatal(msg.Error())
+
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c", "q":
@@ -61,17 +60,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.tickets, cmd = m.tickets.Update(msg)
 		}
 		cmds = append(cmds, cmd)
+
 	case spaces.HideSpaceMsg:
 		m.ctx.Logger.Info("hide space")
 		m.state = sessionTasksView
 		m.tickets.SelectedSpace = m.spaces.SelectedSpace
-		m.ctx.Logger.Info(m.tickets.SelectedSpace, m.tickets.PrevSelectedSpace, m.spaces.SelectedSpace)
+		m.ctx.Logger.Info(m.tickets.SelectedSpace,
+			m.spaces.SelectedSpace)
 
-		m.tickets, cmd = m.tickets.Update(msg)
+		m.tickets, cmd = m.tickets.Update(
+			tickets.SpaceChangedMsg(m.spaces.SelectedSpace))
 		cmds = append(cmds, cmd)
+
 	default:
 		m.spaces, cmd = m.spaces.Update(msg)
 		cmds = append(cmds, cmd)
+
 		m.tickets, cmd = m.tickets.Update(msg)
 		cmds = append(cmds, cmd)
 	}

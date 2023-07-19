@@ -2,7 +2,6 @@ package tickets
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
@@ -10,25 +9,29 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 )
 
-var docStyle = lipgloss.NewStyle().Margin(1, 2)
+type TasksListReloadedMsg []clickup.Task
 
-const (
-	SPACE_SRE_LIST_COOL = "q5kna-61288"
-	SPACE_SRE           = "48458830"
-)
-
-type Model struct {
-	ctx               *context.UserContext
-	table             table.Model
-	columns           []table.Column
-	tickets           map[string][]clickup.Task
-	SelectedSpace     string
-	PrevSelectedSpace string
+func TasksListReloadedCmd(tasks []clickup.Task) tea.Cmd {
+	return func() tea.Msg {
+		return TasksListReloadedMsg(tasks)
+	}
 }
 
-var baseStyle = lipgloss.NewStyle().
-	BorderStyle(lipgloss.NormalBorder()).
-	BorderForeground(lipgloss.Color("240"))
+type SpaceChangedMsg string
+
+func SpaceChangedCmd(space string) tea.Cmd {
+	return func() tea.Msg {
+		return SpaceChangedMsg(space)
+	}
+}
+
+type Model struct {
+	ctx           *context.UserContext
+	table         table.Model
+	columns       []table.Column
+	tickets       map[string][]clickup.Task
+	SelectedSpace string
+}
 
 func InitialModel(ctx *context.UserContext) Model {
 	columns := []table.Column{
@@ -43,12 +46,11 @@ func InitialModel(ctx *context.UserContext) Model {
 	)
 
 	return Model{
-		ctx:               ctx,
-		table:             t,
-		columns:           columns,
-		tickets:           map[string][]clickup.Task{},
-		SelectedSpace:     SPACE_SRE,
-		PrevSelectedSpace: SPACE_SRE,
+		ctx:           ctx,
+		table:         t,
+		columns:       columns,
+		tickets:       map[string][]clickup.Task{},
+		SelectedSpace: SPACE_SRE,
 	}
 }
 
@@ -82,29 +84,27 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
-	if m.SelectedSpace != m.PrevSelectedSpace {
-		m.ctx.Logger.Info("space changed")
-		m.PrevSelectedSpace = m.SelectedSpace
+	switch msg := msg.(type) {
+	case SpaceChangedMsg:
+		m.ctx.Logger.Info("TaskView receive SpaceChangedMsg")
 		tasks, err := m.getTickets(m.SelectedSpace)
 		if err != nil {
 			return m, common.ErrCmd(err)
 		}
-		m = m.syncTable(tasks)
-		cmds = append(cmds, cmd)
-	}
+		return m, TasksListReloadedCmd(tasks)
 
-	switch msg := msg.(type) {
 	case TasksListReloadedMsg:
 		m.ctx.Logger.Info("TaskView receive TasksListReloadedMsg")
 		m = m.syncTable(msg)
+		return m, nil
 
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
 		m.table.SetWidth(msg.Width - h)
 		m.table.SetHeight(msg.Height - v)
+		return m, nil
 	}
 
-	m.table, cmd = m.table.Update(msg)
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
 }
@@ -147,5 +147,3 @@ func (m Model) getTickets(space string) ([]clickup.Task, error) {
 	m.ctx.Logger.Info("Found %d tasks in view %s", len(tasks), views[0].Name)
 	return tasks, nil
 }
-
-type TasksListReloadedMsg []clickup.Task
