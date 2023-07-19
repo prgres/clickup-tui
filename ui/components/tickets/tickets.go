@@ -126,7 +126,7 @@ func (m Model) Init() tea.Msg {
 }
 
 func (m Model) getTickets(space string) ([]clickup.Task, error) {
-	m.ctx.Logger.Info("Getting tasks for space: " + space)
+	m.ctx.Logger.Infof("Getting tasks for space: %s", space)
 	if m.tickets[space] != nil {
 		m.ctx.Logger.Info("Tasks found in cache")
 		return m.tickets[space], nil
@@ -135,19 +135,19 @@ func (m Model) getTickets(space string) ([]clickup.Task, error) {
 	m.ctx.Logger.Info("Fetching tasks from API")
 	client := m.ctx.Clickup
 
-	m.ctx.Logger.Info("Getting views from space: " + space)
+	m.ctx.Logger.Infof("Getting views from space: %s", space)
 	views, err := client.GetViewsFromSpace(space)
 	if err != nil {
 		return nil, err
 	}
-	m.ctx.Logger.Info("Found %d views in space %s", len(views), space)
+	m.ctx.Logger.Infof("Found %d views in space %s", len(views), space)
 
-	m.ctx.Logger.Info("Getting tasks from view ID: %s NAME: %s", views[0].Id, views[0].Name)
+	m.ctx.Logger.Infof("Getting tasks from view ID: %s NAME: %s", views[0].Id, views[0].Name)
 	tasks, err := client.GetTasksFromView(views[0].Id)
 	if err != nil {
 		return nil, err
 	}
-	m.ctx.Logger.Info("Found %d tasks in view %s", len(tasks), views[0].Name)
+	m.ctx.Logger.Infof("Found %d tasks in view %s", len(tasks), views[0].Name)
 
 	return tasks, nil
 }

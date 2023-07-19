@@ -91,7 +91,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, ChangeViewCmd(sessionTasksView)
 
 	case spaces.SpaceChangeMsg:
-	  m.ctx.Logger.Info("UI received ChangeSpaceMsg: %d", string(msg))
+	  m.ctx.Logger.Infof("UI received ChangeSpaceMsg: %d", string(msg))
 		return m, tea.Batch(
 			tickets.SpaceChangedCmd(string(msg)),
 			ChangeViewCmd(sessionTasksView))

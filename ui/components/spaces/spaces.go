@@ -118,7 +118,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case "enter":
 			selectedSpace := m.list.SelectedItem().(item).desc
-			m.ctx.Logger.Info("Selected space %s", selectedSpace)
+			m.ctx.Logger.Infof("Selected space %s", selectedSpace)
 			m.SelectedSpace = selectedSpace
 			return m, SpaceChangeCmd(selectedSpace)
 
@@ -148,14 +148,14 @@ func (m Model) Init() tea.Msg {
 }
 
 func (m Model) getSpaces(team string) ([]clickup.Space, error) {
-	m.ctx.Logger.Info("Getting spaces for team: %s", team)
+	m.ctx.Logger.Infof("Getting spaces for team: %s", team)
 	client := m.ctx.Clickup
 
 	spaces, err := client.GetSpaces(team)
 	if err != nil {
 		return nil, err
 	}
-	m.ctx.Logger.Info("Found %d spaces for team: %d", len(spaces), team)
+	m.ctx.Logger.Infof("Found %d spaces for team: %s", len(spaces), team)
 
 	return spaces, nil
 }
