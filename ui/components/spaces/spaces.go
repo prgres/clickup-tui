@@ -6,9 +6,19 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
+	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
 )
 
+type HideSpaceMsg bool
+
+func hideSpaceView() tea.Cmd {
+	return func() tea.Msg {
+		return HideSpaceMsg(true)
+	}
+}
+
+type SpaceListReloadedMsg []clickup.Space
 
 type Model struct {
 	ctx           *context.UserContext
@@ -35,23 +45,50 @@ func InitialModel(ctx *context.UserContext) Model {
 	}
 }
 
-func (m Model) syncItems() Model {
-	m.ctx.Logger.Info(fmt.Sprintf("sync items %d", len(m.spaces)))
-	items := make([]list.Item, len(m.spaces))
+func (m Model) syncList(spaces []clickup.Space) Model {
+	m.ctx.Logger.Info("Synchroning list")
+	m.spaces = spaces
+
 	sre_index := 0
-	for i := range m.spaces {
-		if m.spaces[i].Id == SPACE_SRE {
+	items := spaceListToItems(spaces)
+	itemsList := itemListToItems(items)
+
+	for i, item := range items {
+		if item.desc == SPACE_SRE {
 			sre_index = i
-		}
-		items[i] = item{
-			title: m.spaces[i].Name,
-			desc:  m.spaces[i].Id,
 		}
 	}
 
-	m.list.SetItems(items)
+	m.list.SetItems(itemsList)
 	m.list.Select(sre_index)
 	return m
+}
+
+func itemListToItems(items []item) []list.Item {
+	listItems := make([]list.Item, len(items))
+	for i, item := range items {
+		listItems[i] = itemToListItem(item)
+	}
+	return listItems
+}
+
+func itemToListItem(item item) list.Item {
+	return list.Item(item)
+}
+
+func spaceListToItems(spaces []clickup.Space) []item {
+	items := make([]item, len(spaces))
+	for i, space := range spaces {
+		items[i] = spaceToItem(space)
+	}
+	return items
+}
+
+func spaceToItem(space clickup.Space) item {
+	return item{
+		space.Name,
+		space.Id,
+	}
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -59,11 +96,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case spacesMsg:
-		m.ctx.Logger.Info("spacesMsg")
-		m.spaces = msg
-		m = m.syncItems()
-		cmds = append(cmds, cmd)
+	case SpaceListReloadedMsg:
+		m.ctx.Logger.Info("SpaceView received SpaceListReloadedMsg")
+		m = m.syncList(msg)
+		return m, nil
 
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
@@ -74,7 +110,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case "enter":
 			m.SelectedSpace = m.list.SelectedItem().(item).desc
 			m.ctx.Logger.Info(fmt.Sprintf("selected space %s", m.SelectedSpace))
-			m.hidden = true
 			cmds = append(cmds, hideSpaceView())
 		}
 	}
@@ -85,63 +120,28 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func hideSpaceView() tea.Cmd {
-	return func() tea.Msg {
-		return HideSpaceMsg(true)
-	}
-}
-
-type HideSpaceMsg bool
-
 func (m Model) View() string {
-	// if len(m.list.Items()) != len(m.spaces) {
-	// items := make([]list.Item, 3)
-	// items := make([]list.Item, len(m.spaces))
-	// for i := range m.spaces {
-	// 	items[i] = item{
-	// 		title: "test",
-	// 		desc:  "desc",
-	// 	}
-	// }
-	// m.list = list.New(items, list.NewDefaultDelegate(), 0, 0)
-	// return m.ctx.Style.Tabs.Tab.Render(m.list.View())
 	return m.list.View()
-
-	// return docStyle.Render(m.list.View())
 }
 
 func (m Model) Init() tea.Msg {
+	spaces, err := m.getSpaces(TEAM_RAMP_NETWORK)
+	if err != nil {
+		return common.ErrMsg(err)
+	}
+
+	return SpaceListReloadedMsg(spaces)
+}
+
+func (m Model) getSpaces(team string) ([]clickup.Space, error) {
+	m.ctx.Logger.Info("Getting spaces for team: %s", team)
 	client := m.ctx.Clickup
-	m.ctx.Logger.Info("fetching spaces")
 
-	spaces, err := client.GetSpaces(TEAM_RAMP_NETWORK)
+	spaces, err := client.GetSpaces(team)
 	if err != nil {
-		return tea.Quit
+		return nil, err
 	}
-	return spacesMsg(spaces)
+	m.ctx.Logger.Info("Found %d spaces for team: %d", len(spaces), team)
 
-	// return fetchSpaces(m.ctx.Clickup)
+	return spaces, nil
 }
-
-func fetchSpaces(clickup *clickup.Client) tea.Cmd {
-	spaces, err := clickup.GetSpaces(TEAM_RAMP_NETWORK)
-	if err != nil {
-		return tea.Quit
-	}
-	return tea.Quit
-	return func() tea.Msg {
-		return spacesMsg(spaces)
-	}
-
-	// names := make([]string, len(spaces))
-	// for i := range spaces {
-	// 	names[i] = spaces[i].Name
-	// }
-
-	// return func() tea.Msg {
-	// 	// return someMsg{id: id}
-	// 	return spacesNames(names)
-	// }
-}
-
-type spacesMsg []clickup.Space
