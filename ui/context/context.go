@@ -10,13 +10,25 @@ type UserContext struct {
 	Style   theme.Style
 	Logger  logger1.Logger
 	Clickup *clickup.Client
+
+	WindowSize WindowSize
+}
+
+type WindowSize struct {
+	Width  int
+	Height int
 }
 
 func NewUserContext(clickup *clickup.Client, logger logger1.Logger) UserContext {
 	return UserContext{
 		Style:   theme.NewStyle(*theme.DefaultTheme),
-		Clickup: clickup,
 		Logger:  logger,
+		Clickup: clickup,
+
+		WindowSize: WindowSize{
+			Width:  0,
+			Height: 0,
+		},
 	}
 }
 

@@ -37,9 +37,6 @@ type Model struct {
 	SelectedSpace string
 	spinner       spinner.Model
 	showSpinner   bool
-
-	width  int
-	height int
 }
 
 func InitialModel(ctx *context.UserContext) Model {
@@ -119,13 +116,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("TaskView receive tea.WindowSizeMsg")
 		h, v := docStyle.GetFrameSize()
-
 		m.table.SetWidth(msg.Width - h)
 		m.table.SetHeight(msg.Height - v)
-
-		m.width = msg.Width
-		m.height = msg.Height
-
 		return m, nil
 
 	case spinner.TickMsg:
@@ -146,7 +138,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 func (m Model) View() string {
 	if m.showSpinner {
 		return lipgloss.Place(
-			m.width, m.height,
+			m.ctx.WindowSize.Width, m.ctx.WindowSize.Height,
 			lipgloss.Center,
 			lipgloss.Center,
 			fmt.Sprintf("%s Loading tasks...", m.spinner.View()),
