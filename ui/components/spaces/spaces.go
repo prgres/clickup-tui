@@ -54,7 +54,7 @@ func InitialModel(ctx *context.UserContext) Model {
 }
 
 func (m Model) syncList(spaces []clickup.Space) Model {
-	m.ctx.Logger.Info("Synchroning list")
+	m.ctx.Logger.Info("Synchronizing list")
 	m.spaces = spaces
 
 	sre_index := 0

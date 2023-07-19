@@ -55,7 +55,7 @@ func InitialModel(ctx *context.UserContext) Model {
 }
 
 func (m Model) syncTable(tasks []clickup.Task) Model {
-	m.ctx.Logger.Info("Synchoning table")
+	m.ctx.Logger.Info("Synchonizing table")
 	m.tickets[m.SelectedSpace] = tasks
 
 	items := taskListToRows(tasks)
