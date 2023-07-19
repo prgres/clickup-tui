@@ -24,6 +24,8 @@ func SpaceChangeCmd(space string) tea.Cmd {
 	}
 }
 
+type TeamChangeMsg string
+
 type SpaceListReloadedMsg []clickup.Space
 
 type Model struct {
@@ -31,6 +33,7 @@ type Model struct {
 	list          list.Model
 	SelectedSpace string
 	spaces        []clickup.Space
+	SelectedTeam  string
 }
 
 type item struct {
@@ -110,9 +113,15 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m, nil
 
 	case tea.WindowSizeMsg:
+		m.ctx.Logger.Info("SpaceView received tea.WindowSizeMsg")
 		h, v := docStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
 		return m, nil
+
+	case TeamChangeMsg:
+		m.ctx.Logger.Info("SpaceView received TeamChangeMsg")
+		m.SelectedTeam = string(msg)
+		return m, m.getSpacesCmd()
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
@@ -139,12 +148,18 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Msg {
-	spaces, err := m.getSpaces(TEAM_RAMP_NETWORK)
-	if err != nil {
-		return common.ErrMsg(err)
-	}
+	return TeamChangeMsg(TEAM_RAMP_NETWORK)
+}
 
-	return SpaceListReloadedMsg(spaces)
+func (m Model) getSpacesCmd() tea.Cmd {
+	return func() tea.Msg {
+		spaces, err := m.getSpaces(TEAM_RAMP_NETWORK)
+		if err != nil {
+			return common.ErrMsg(err)
+		}
+
+		return SpaceListReloadedMsg(spaces)
+	}
 }
 
 func (m Model) getSpaces(team string) ([]clickup.Space, error) {
