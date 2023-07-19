@@ -3,6 +3,7 @@ package ui
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
+	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/components/spaces"
 	"github.com/prgrs/clickup/ui/components/tabs"
 	"github.com/prgrs/clickup/ui/components/tickets"
@@ -41,6 +42,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 
 	switch msg := msg.(type) {
+	case common.ErrMsg:
+		m.ctx.Logger.Fatal(msg.Error())
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c", "q":

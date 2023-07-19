@@ -1,11 +1,10 @@
 package tickets
 
 import (
-	"fmt"
-
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/pkg/clickup"
+	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -53,19 +52,30 @@ func InitialModel(ctx *context.UserContext) Model {
 	}
 }
 
-func (m Model) syncItems() Model {
-	m.ctx.Logger.Info(fmt.Sprintf("sync items %d", len(m.tickets[m.SelectedSpace])))
-	items := make([]table.Row, len(m.tickets[m.SelectedSpace]))
-	for i, ticket := range m.tickets[m.SelectedSpace] {
-		items[i] = table.Row{
-			ticket.Status.Status,
-			ticket.Name,
-			ticket.GetAssignees(),
-		}
-	}
+func (m Model) syncTable(tasks []clickup.Task) Model {
+	m.ctx.Logger.Info("Synchoning table")
+	m.tickets[m.SelectedSpace] = tasks
 
+	items := taskListToRows(tasks)
 	m.table.SetRows(items)
+
 	return m
+}
+
+func taskToRow(task clickup.Task) table.Row {
+	return table.Row{
+		task.Status.Status,
+		task.Name,
+		task.GetAssignees(),
+	}
+}
+
+func taskListToRows(tasks []clickup.Task) []table.Row {
+	rows := make([]table.Row, len(tasks))
+	for i, task := range tasks {
+		rows[i] = taskToRow(task)
+	}
+	return rows
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -75,18 +85,18 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	if m.SelectedSpace != m.PrevSelectedSpace {
 		m.ctx.Logger.Info("space changed")
 		m.PrevSelectedSpace = m.SelectedSpace
-		msg = m.Init()
-		m = m.syncItems()
+		tasks, err := m.getTickets(m.SelectedSpace)
+		if err != nil {
+			return m, common.ErrCmd(err)
+		}
+		m = m.syncTable(tasks)
 		cmds = append(cmds, cmd)
 	}
 
 	switch msg := msg.(type) {
-	case ticketsMsg:
-		m.ctx.Logger.Info("ticketsMsg")
-		m.tickets[m.SelectedSpace] = msg
-		m = m.syncItems()
-		// _, cmd := m.list.Update(msg)
-		cmds = append(cmds, cmd)
+	case TasksListReloadedMsg:
+		m.ctx.Logger.Info("TaskView receive TasksListReloadedMsg")
+		m = m.syncTable(msg)
 
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
@@ -104,31 +114,38 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Msg {
-	if m.tickets[m.SelectedSpace] != nil {
-		return ticketsMsg(m.tickets[m.SelectedSpace])
-	}
-
-	client := m.ctx.Clickup
-	m.ctx.Logger.Info("fetching tickets")
-	m.ctx.Logger.Info("getting views from space " + m.SelectedSpace)
-	views, err := client.GetViewsFromSpace(m.SelectedSpace)
+	tasks, err := m.getTickets(m.SelectedSpace)
 	if err != nil {
-		m.ctx.Logger.Info("error")
-		m.ctx.Logger.Info(err)
-
-		return tea.Quit
-	}
-	// m.ctx.Logger.Info("views ", views)
-	m.ctx.Logger.Info("getting tasks from view " + views[0].Id + " " + views[0].Name)
-	tasks, err := client.GetTasksFromView(views[0].Id)
-	if err != nil {
-		m.ctx.Logger.Info("error")
-		m.ctx.Logger.Info(err)
-
-		return tea.Quit
+		return common.ErrMsg(err)
 	}
 
-	return ticketsMsg(tasks)
+	return TasksListReloadedMsg(tasks)
 }
 
-type ticketsMsg []clickup.Task
+func (m Model) getTickets(space string) ([]clickup.Task, error) {
+	m.ctx.Logger.Info("Getting tasks for space: " + space)
+	if m.tickets[m.SelectedSpace] != nil {
+		m.ctx.Logger.Info("Tasks found in cache")
+		return m.tickets[m.SelectedSpace], nil
+	}
+
+	m.ctx.Logger.Info("Fetching tasks from API")
+	client := m.ctx.Clickup
+
+	m.ctx.Logger.Info("Getting views from space: " + space)
+	views, err := client.GetViewsFromSpace(m.SelectedSpace)
+	if err != nil {
+		return nil, err
+	}
+	m.ctx.Logger.Info("Found %d views in space %s", len(views), space)
+
+	m.ctx.Logger.Info("Getting tasks from view ID: %s NAME: %s", views[0].Id, views[0].Name)
+	tasks, err := client.GetTasksFromView(views[0].Id)
+	if err != nil {
+		return nil, err
+	}
+	m.ctx.Logger.Info("Found %d tasks in view %s", len(tasks), views[0].Name)
+	return tasks, nil
+}
+
+type TasksListReloadedMsg []clickup.Task
