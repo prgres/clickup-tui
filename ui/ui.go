@@ -2,11 +2,13 @@ package ui
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/components/spaces"
 	"github.com/prgrs/clickup/ui/components/tabs"
 	"github.com/prgrs/clickup/ui/components/tickets"
+	"github.com/prgrs/clickup/ui/components/views"
 	"github.com/prgrs/clickup/ui/context"
 )
 
@@ -28,6 +30,7 @@ const (
 type Model struct {
 	ctx     *context.UserContext
 	tabs    tabs.Model
+	views   views.Model
 	tickets tickets.Model
 	spaces  spaces.Model
 	state   sessionState
@@ -37,8 +40,9 @@ func InitialModel(ctx *context.UserContext) Model {
 	return Model{
 		ctx:     ctx,
 		tabs:    tabs.InitialModel(ctx),
-		spaces:  spaces.InitialModel(ctx),
+		views:   views.InitialModel(ctx),
 		tickets: tickets.InitialModel(ctx),
+		spaces:  spaces.InitialModel(ctx),
 		state:   sessionTasksView,
 	}
 }
@@ -74,8 +78,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ctx.Logger.Info("UI received tea.WindowSizeMsg")
 		m.ctx.WindowSize.Width = msg.Width
 		m.ctx.WindowSize.Height = msg.Height
-		// return here is disable on purpose to allow the msg to be passed to the
-		// other components
+		// return here is disable on purpose to allow the msg
+		// to be passed to the other components
 
 	case ChangeViewMsg:
 		m.ctx.Logger.Info("UI received ChangeViewMsg")
@@ -97,9 +101,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, ChangeViewCmd(sessionTasksView)
 
 	case spaces.SpaceChangeMsg:
-	  m.ctx.Logger.Infof("UI received ChangeSpaceMsg: %d", string(msg))
+		m.ctx.Logger.Infof("UI received ChangeSpaceMsg: %d", string(msg))
 		return m, tea.Batch(
 			tickets.SpaceChangedCmd(string(msg)),
+			views.SpaceChangedCmd(string(msg)),
 			ChangeViewCmd(sessionTasksView))
 	}
 
@@ -107,6 +112,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 
 	m.tickets, cmd = m.tickets.Update(msg)
+	cmds = append(cmds, cmd)
+
+	m.views, cmd = m.views.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
@@ -117,15 +125,24 @@ func (m Model) View() string {
 	case sessionSpacesView:
 		return m.spaces.View()
 	case sessionTasksView:
-		return m.tickets.View()
+		return lipgloss.JoinVertical(
+			lipgloss.Top,
+			m.views.View(),
+			m.tickets.View(),
+		)
 	default:
-		return m.tickets.View()
+		return lipgloss.JoinVertical(
+			lipgloss.Top,
+			m.views.View(),
+			m.tickets.View(),
+		)
 	}
 }
 
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.spaces.Init,
+		m.views.Init,
 		m.tickets.Init,
 	)
 }
