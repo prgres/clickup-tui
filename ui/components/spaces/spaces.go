@@ -5,23 +5,16 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const (
-	TEAM_RAMP_NETWORK   = "24301226"
-	SPACE_SRE_LIST_COOL = "q5kna-61288"
-	SPACE_SRE           = "48458830"
-)
 
 type Model struct {
 	ctx           *context.UserContext
 	list          list.Model
 	SelectedSpace string
 	spaces        []clickup.Space
-	hidden        bool
 }
 
 type item struct {
@@ -39,7 +32,6 @@ func InitialModel(ctx *context.UserContext) Model {
 		ctx:           ctx,
 		SelectedSpace: "",
 		spaces:        []clickup.Space{},
-		hidden:        true,
 	}
 }
 
@@ -117,8 +109,6 @@ func (m Model) View() string {
 
 	// return docStyle.Render(m.list.View())
 }
-
-var docStyle = lipgloss.NewStyle().Margin(1, 2)
 
 func (m Model) Init() tea.Msg {
 	client := m.ctx.Clickup
