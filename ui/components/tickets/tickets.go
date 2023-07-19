@@ -2,10 +2,12 @@ package tickets
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
 )
 
@@ -31,6 +33,8 @@ type Model struct {
 	columns       []table.Column
 	tickets       map[string][]clickup.Task
 	SelectedSpace string
+	spinner       spinner.Model
+	showSpinner   bool
 }
 
 func InitialModel(ctx *context.UserContext) Model {
@@ -45,12 +49,18 @@ func InitialModel(ctx *context.UserContext) Model {
 		table.WithFocused(true),
 	)
 
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+
 	return Model{
 		ctx:           ctx,
 		table:         t,
 		columns:       columns,
 		tickets:       map[string][]clickup.Task{},
 		SelectedSpace: SPACE_SRE,
+		spinner:       s,
+		showSpinner:   true,
 	}
 }
 
@@ -79,7 +89,6 @@ func taskListToRows(tasks []clickup.Task) []table.Row {
 	}
 	return rows
 }
-
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
@@ -87,17 +96,15 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case SpaceChangedMsg:
 		m.ctx.Logger.Info("TaskView receive SpaceChangedMsg")
-		tasks, err := m.getTickets(string(msg))
-		if err != nil {
-			return m, common.ErrCmd(err)
-		}
+		m.showSpinner = true
 		m.SelectedSpace = string(msg)
-		return m, TasksListReloadedCmd(tasks)
+		return m, tea.Batch(m.getTicketsCmd(string(msg)), spinner.Tick)
 
 	case TasksListReloadedMsg:
 		m.ctx.Logger.Info("TaskView receive TasksListReloadedMsg")
 		m = m.syncTable(msg)
 		m.table, cmd = m.table.Update(msg)
+		m.showSpinner = false
 		return m, cmd
 
 	case tea.WindowSizeMsg:
@@ -105,7 +112,16 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.table.SetWidth(msg.Width - h)
 		m.table.SetHeight(msg.Height - v)
 		return m, nil
+
+	case spinner.TickMsg:
+		m.ctx.Logger.Info("TaskView receive spinner.TickMsg")
+		if !m.showSpinner {
+			return m, nil
+		}
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
 	}
+
 	m.table, cmd = m.table.Update(msg)
 	cmds = append(cmds, cmd)
 
@@ -113,12 +129,26 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	if m.showSpinner {
+		return m.spinner.View()
+	}
+
 	return m.table.View()
 }
 
 func (m Model) Init() tea.Msg {
 	return SpaceChangedMsg(m.SelectedSpace)
+}
 
+func (m Model) getTicketsCmd(space string) tea.Cmd {
+	return func() tea.Msg {
+		tasks, err := m.getTickets(space)
+		if err != nil {
+			return common.ErrMsg(err)
+		}
+
+		return TasksListReloadedMsg(tasks)
+	}
 }
 
 func (m Model) getTickets(space string) ([]clickup.Task, error) {
