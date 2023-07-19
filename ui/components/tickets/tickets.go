@@ -145,5 +145,6 @@ func (m Model) getTickets(space string) ([]clickup.Task, error) {
 		return nil, err
 	}
 	m.ctx.Logger.Info("Found %d tasks in view %s", len(tasks), views[0].Name)
+
 	return tasks, nil
 }
