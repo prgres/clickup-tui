@@ -87,16 +87,18 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case SpaceChangedMsg:
 		m.ctx.Logger.Info("TaskView receive SpaceChangedMsg")
-		tasks, err := m.getTickets(m.SelectedSpace)
+		tasks, err := m.getTickets(string(msg))
 		if err != nil {
 			return m, common.ErrCmd(err)
 		}
+		m.SelectedSpace = string(msg)
 		return m, TasksListReloadedCmd(tasks)
 
 	case TasksListReloadedMsg:
 		m.ctx.Logger.Info("TaskView receive TasksListReloadedMsg")
 		m = m.syncTable(msg)
-		return m, nil
+		m.table, cmd = m.table.Update(msg)
+		return m, cmd
 
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
@@ -104,8 +106,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.table.SetHeight(msg.Height - v)
 		return m, nil
 	}
-
+	m.table, cmd = m.table.Update(msg)
 	cmds = append(cmds, cmd)
+
 	return m, tea.Batch(cmds...)
 }
 
@@ -124,16 +127,16 @@ func (m Model) Init() tea.Msg {
 
 func (m Model) getTickets(space string) ([]clickup.Task, error) {
 	m.ctx.Logger.Info("Getting tasks for space: " + space)
-	if m.tickets[m.SelectedSpace] != nil {
+	if m.tickets[space] != nil {
 		m.ctx.Logger.Info("Tasks found in cache")
-		return m.tickets[m.SelectedSpace], nil
+		return m.tickets[space], nil
 	}
 
 	m.ctx.Logger.Info("Fetching tasks from API")
 	client := m.ctx.Clickup
 
 	m.ctx.Logger.Info("Getting views from space: " + space)
-	views, err := client.GetViewsFromSpace(m.SelectedSpace)
+	views, err := client.GetViewsFromSpace(space)
 	if err != nil {
 		return nil, err
 	}
