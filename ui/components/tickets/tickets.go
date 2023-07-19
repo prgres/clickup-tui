@@ -1,6 +1,8 @@
 package tickets
 
 import (
+	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/pkg/clickup"
@@ -35,6 +37,9 @@ type Model struct {
 	SelectedSpace string
 	spinner       spinner.Model
 	showSpinner   bool
+
+	width  int
+	height int
 }
 
 func InitialModel(ctx *context.UserContext) Model {
@@ -50,7 +55,11 @@ func InitialModel(ctx *context.UserContext) Model {
 	)
 
 	s := spinner.New()
-	s.Spinner = spinner.Dot
+	s.Spinner = spinner.Pulse
+	// spinner.Dot,
+	// spinner.Line,
+	// spinner.Pulse,
+	// spinner.Points,
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
 	return Model{
@@ -108,9 +117,15 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m, cmd
 
 	case tea.WindowSizeMsg:
+		m.ctx.Logger.Info("TaskView receive tea.WindowSizeMsg")
 		h, v := docStyle.GetFrameSize()
+
 		m.table.SetWidth(msg.Width - h)
 		m.table.SetHeight(msg.Height - v)
+
+		m.width = msg.Width
+		m.height = msg.Height
+
 		return m, nil
 
 	case spinner.TickMsg:
@@ -130,7 +145,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) View() string {
 	if m.showSpinner {
-		return m.spinner.View()
+		return lipgloss.Place(
+			m.width, m.height,
+			lipgloss.Center,
+			lipgloss.Center,
+			fmt.Sprintf("%s Loading tasks...", m.spinner.View()),
+		)
 	}
 
 	return m.table.View()
