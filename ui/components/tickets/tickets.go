@@ -117,12 +117,8 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Msg {
-	tasks, err := m.getTickets(m.SelectedSpace)
-	if err != nil {
-		return common.ErrMsg(err)
-	}
+	return SpaceChangedMsg(m.SelectedSpace)
 
-	return TasksListReloadedMsg(tasks)
 }
 
 func (m Model) getTickets(space string) ([]clickup.Task, error) {
