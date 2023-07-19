@@ -1,8 +1,6 @@
 package spaces
 
 import (
-	"fmt"
-
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
@@ -10,11 +8,19 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-type HideSpaceMsg bool
+type HideSpaceViewMsg bool
 
-func hideSpaceView() tea.Cmd {
+func HideSpaceViewCmd() tea.Cmd {
 	return func() tea.Msg {
-		return HideSpaceMsg(true)
+		return HideSpaceViewMsg(true)
+	}
+}
+
+type SpaceChangeMsg string
+
+func SpaceChangeCmd(space string) tea.Cmd {
+	return func() tea.Msg {
+		return SpaceChangeMsg(space)
 	}
 }
 
@@ -38,7 +44,9 @@ func (i item) FilterValue() string { return i.title }
 
 func InitialModel(ctx *context.UserContext) Model {
 	return Model{
-		list:          list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0),
+		list: list.New([]list.Item{},
+			list.NewDefaultDelegate(),
+			0, 0),
 		ctx:           ctx,
 		SelectedSpace: "",
 		spaces:        []clickup.Space{},
@@ -104,19 +112,25 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
+		return m, nil
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
-			m.SelectedSpace = m.list.SelectedItem().(item).desc
-			m.ctx.Logger.Info(fmt.Sprintf("selected space %s", m.SelectedSpace))
-			cmds = append(cmds, hideSpaceView())
+			selectedSpace := m.list.SelectedItem().(item).desc
+			m.ctx.Logger.Info("Selected space %s", selectedSpace)
+			m.SelectedSpace = selectedSpace
+			return m, SpaceChangeCmd(selectedSpace)
+
+		case "esc":
+			m.ctx.Logger.Info("Hiding space view")
+			return m, HideSpaceViewCmd()
 		}
 	}
 
 	m.list, cmd = m.list.Update(msg)
-
 	cmds = append(cmds, cmd)
+
 	return m, tea.Batch(cmds...)
 }
 

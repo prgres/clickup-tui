@@ -10,6 +10,14 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
+type ChangeViewMsg sessionState
+
+func ChangeViewCmd(view sessionState) tea.Cmd {
+	return func() tea.Msg {
+		return ChangeViewMsg(view)
+	}
+}
+
 type sessionState uint
 
 const (
@@ -42,63 +50,78 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case common.ErrMsg:
 		m.ctx.Logger.Fatal(msg.Error())
+		return m, tea.Quit
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 		case "1":
-			m.state = sessionSpacesView
-		case "esc":
-			m.state = sessionTasksView
+			return m, ChangeViewCmd(sessionSpacesView)
+		// case "esc":
+		// 	return m, ChangeViewCmd(sessionTasksView)
+		default:
+			switch m.state {
+			case sessionSpacesView:
+				m.spaces, cmd = m.spaces.Update(msg)
+				return m, cmd
+			case sessionTasksView:
+				m.tickets, cmd = m.tickets.Update(msg)
+				return m, cmd
+			}
 		}
 
-		switch m.state {
+	case ChangeViewMsg:
+		m.ctx.Logger.Info("UI received ChangeViewMsg")
+
+		switch sessionState(msg) {
 		case sessionSpacesView:
+			m.state = sessionSpacesView
 			m.spaces, cmd = m.spaces.Update(msg)
+			return m, cmd
+
 		case sessionTasksView:
+			m.state = sessionTasksView
 			m.tickets, cmd = m.tickets.Update(msg)
+			return m, cmd
 		}
-		cmds = append(cmds, cmd)
 
-	case spaces.HideSpaceMsg:
-		m.ctx.Logger.Info("hide space")
-		m.state = sessionTasksView
-		m.tickets.SelectedSpace = m.spaces.SelectedSpace
-		m.ctx.Logger.Info(m.tickets.SelectedSpace,
-			m.spaces.SelectedSpace)
+	case spaces.HideSpaceViewMsg:
+		m.ctx.Logger.Info("UI received HideSpaceViewMsg")
+		return m, ChangeViewCmd(sessionTasksView)
 
-		m.tickets, cmd = m.tickets.Update(
-			tickets.SpaceChangedMsg(m.spaces.SelectedSpace))
-		cmds = append(cmds, cmd)
-
-	default:
-		m.spaces, cmd = m.spaces.Update(msg)
-		cmds = append(cmds, cmd)
-
-		m.tickets, cmd = m.tickets.Update(msg)
-		cmds = append(cmds, cmd)
+	case spaces.SpaceChangeMsg:
+	  m.ctx.Logger.Info("UI received ChangeSpaceMsg: %d", string(msg))
+		return m, tea.Batch(
+			tickets.SpaceChangedCmd(string(msg)),
+			ChangeViewCmd(sessionTasksView))
 	}
+
+	m.spaces, cmd = m.spaces.Update(msg)
+	cmds = append(cmds, cmd)
+
+	m.tickets, cmd = m.tickets.Update(msg)
+	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }
 
 func (m Model) View() string {
-	if m.state == sessionSpacesView {
+	switch m.state {
+	case sessionSpacesView:
 		return m.spaces.View()
-	} else {
+	case sessionTasksView:
+		return m.tickets.View()
+	default:
 		return m.tickets.View()
 	}
-
-	// return lipgloss.JoinHorizontal(
-	// 	lipgloss.Left,
-	// 	m.spaces.View(),
-	// 	m.tickets.View(),
-	// )
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(m.spaces.Init, m.tickets.Init)
+	return tea.Batch(
+		m.spaces.Init,
+		m.tickets.Init,
+	)
 }
 
 type ticketsMsg []clickup.Task
