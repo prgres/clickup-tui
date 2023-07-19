@@ -10,6 +10,15 @@ import (
 )
 
 type ViewsListLoadedMsg []clickup.View
+
+type ViewChangedMsg string
+
+func ViewChangedCmd(view string) tea.Cmd {
+	return func() tea.Msg {
+		return ViewChangedMsg(view)
+	}
+}
+
 type SpaceChangedMsg string
 
 func SpaceChangedCmd(space string) tea.Cmd {
@@ -44,7 +53,16 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case SpaceChangedMsg:
 		m.ctx.Logger.Infof("ViewsView received SpaceChangedMsg")
 		m.SelectedSpace = string(msg)
-		return m, m.getViewsCmd(string(msg))
+		views,err := m.getViews(string(msg))
+		if err != nil {
+		  return m, nil // TODO: handle error
+		}
+		m.views[m.SelectedSpace]= views
+		m.SelectedView = m.views[m.SelectedSpace][0].Id
+
+		return m, tea.Batch(
+			ViewChangedCmd(m.SelectedView),
+		)
 
 	case ViewsListLoadedMsg:
 		m.ctx.Logger.Infof("ViewsView received ViewsListLoadedMsg")

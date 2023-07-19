@@ -81,7 +81,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// return here is disable on purpose to allow the msg
 		// to be passed to the other components
 
-	case ChangeViewMsg:
+	case ChangeViewMsg: // maybe ChangeScreenMsg
 		m.ctx.Logger.Info("UI received ChangeViewMsg")
 
 		switch sessionState(msg) {
@@ -101,10 +101,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, ChangeViewCmd(sessionTasksView)
 
 	case spaces.SpaceChangeMsg:
-		m.ctx.Logger.Infof("UI received ChangeSpaceMsg: %d", string(msg))
+		m.ctx.Logger.Infof("UI received SpaceChangeMsg: %s", string(msg))
 		return m, tea.Batch(
-			tickets.SpaceChangedCmd(string(msg)),
 			views.SpaceChangedCmd(string(msg)),
+			ChangeViewCmd(sessionTasksView))
+
+	case views.ViewChangedMsg:
+		m.ctx.Logger.Infof("UI received ViewChangedMsg: %s", string(msg))
+		return m, tea.Batch(
+			tickets.ViewChangedCmd(string(msg)),
 			ChangeViewCmd(sessionTasksView))
 	}
 

@@ -21,11 +21,11 @@ func TasksListReloadedCmd(tasks []clickup.Task) tea.Cmd {
 	}
 }
 
-type SpaceChangedMsg string
+type ViewChangedMsg string
 
-func SpaceChangedCmd(space string) tea.Cmd {
+func ViewChangedCmd(space string) tea.Cmd {
 	return func() tea.Msg {
-		return SpaceChangedMsg(space)
+		return ViewChangedMsg(space)
 	}
 }
 
@@ -34,7 +34,7 @@ type Model struct {
 	table         table.Model
 	columns       []table.Column
 	tickets       map[string][]clickup.Task
-	SelectedSpace string
+	SelectedView  string
 	spinner       spinner.Model
 	showSpinner   bool
 }
@@ -60,19 +60,19 @@ func InitialModel(ctx *context.UserContext) Model {
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
 	return Model{
-		ctx:           ctx,
-		table:         t,
-		columns:       columns,
-		tickets:       map[string][]clickup.Task{},
-		SelectedSpace: SPACE_SRE,
-		spinner:       s,
-		showSpinner:   true,
+		ctx:          ctx,
+		table:        t,
+		columns:      columns,
+		tickets:      map[string][]clickup.Task{},
+		SelectedView: SPACE_SRE_LIST_COOL,
+		spinner:      s,
+		showSpinner:  true,
 	}
 }
 
 func (m Model) syncTable(tasks []clickup.Task) Model {
 	m.ctx.Logger.Info("Synchonizing table")
-	m.tickets[m.SelectedSpace] = tasks
+	m.tickets[m.SelectedView] = tasks
 
 	items := taskListToRows(tasks)
 	m.table.SetRows(items)
@@ -100,10 +100,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case SpaceChangedMsg:
-		m.ctx.Logger.Info("TaskView receive SpaceChangedMsg")
+	case ViewChangedMsg:
+		m.ctx.Logger.Info("TaskView receive ViewChangedMsg")
 		m.showSpinner = true
-		m.SelectedSpace = string(msg)
+		m.SelectedView = string(msg)
 		return m, tea.Batch(m.getTicketsCmd(string(msg)), spinner.Tick)
 
 	case TasksListReloadedMsg:
@@ -149,12 +149,12 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Msg {
-	return SpaceChangedMsg(m.SelectedSpace)
+	return ViewChangedMsg(m.SelectedView)
 }
 
-func (m Model) getTicketsCmd(space string) tea.Cmd {
+func (m Model) getTicketsCmd(view string) tea.Cmd {
 	return func() tea.Msg {
-		tasks, err := m.getTickets(space)
+		tasks, err := m.getTickets(view)
 		if err != nil {
 			return common.ErrMsg(err)
 		}
@@ -163,29 +163,21 @@ func (m Model) getTicketsCmd(space string) tea.Cmd {
 	}
 }
 
-func (m Model) getTickets(space string) ([]clickup.Task, error) {
-	m.ctx.Logger.Infof("Getting tasks for space: %s", space)
-	if m.tickets[space] != nil {
+func (m Model) getTickets(view string) ([]clickup.Task, error) {
+	m.ctx.Logger.Infof("Getting tasks for view: %s", view)
+	if m.tickets[view] != nil {
 		m.ctx.Logger.Info("Tasks found in cache")
-		return m.tickets[space], nil
+		return m.tickets[view], nil
 	}
 
 	m.ctx.Logger.Info("Fetching tasks from API")
 	client := m.ctx.Clickup
 
-	m.ctx.Logger.Infof("Getting views from space: %s", space)
-	views, err := client.GetViewsFromSpace(space)
+	tasks, err := client.GetTasksFromView(view)
 	if err != nil {
 		return nil, err
 	}
-	m.ctx.Logger.Infof("Found %d views in space %s", len(views), space)
-
-	m.ctx.Logger.Infof("Getting tasks from view ID: %s NAME: %s", views[0].Id, views[0].Name)
-	tasks, err := client.GetTasksFromView(views[0].Id)
-	if err != nil {
-		return nil, err
-	}
-	m.ctx.Logger.Infof("Found %d tasks in view %s", len(tasks), views[0].Name)
+	m.ctx.Logger.Infof("Found %d tasks in view %s", len(tasks), view)
 
 	return tasks, nil
 }
