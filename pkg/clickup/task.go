@@ -74,14 +74,16 @@ func (c *Client) GetTasksFromView(viewId string) ([]Task, error) {
 		return nil, err
 	}
 	var objmap RequestGetTasks
-	// c.logger.Info("rawData ", string(rawData))
+
 	if err := json.Unmarshal(rawData, &objmap); err != nil {
 		return nil, err
 	}
 
 	if objmap.Err != "" {
-		return nil, fmt.Errorf(objmap.Err)
+		return nil, fmt.Errorf(
+			"Error occurs while getting tasks from view: %s. API response: %s",
+			viewId, string(rawData))
 	}
-	// c.logger.Info("tasks len ", len(objmap.Tasks))
+
 	return objmap.Tasks, nil
 }

@@ -1,9 +1,10 @@
 package ui
 
 import (
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/components/spaces"
 	"github.com/prgrs/clickup/ui/components/tabs"
@@ -25,6 +26,7 @@ type sessionState uint
 const (
 	sessionSpacesView sessionState = iota
 	sessionTasksView
+	sessionViewsView
 )
 
 type Model struct {
@@ -60,20 +62,38 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c", "q":
 			return m, tea.Quit
+
 		case "1":
 			return m, ChangeViewCmd(sessionSpacesView)
-		// case "esc":
-		// 	return m, ChangeViewCmd(sessionTasksView)
+
+		case "tab":
+			if m.state == sessionTasksView {
+				return m, ChangeViewCmd(sessionViewsView)
+			}
+
+			if m.state == sessionViewsView {
+				return m, ChangeViewCmd(sessionTasksView)
+			}
+
 		default:
 			switch m.state {
 			case sessionSpacesView:
 				m.spaces, cmd = m.spaces.Update(msg)
 				return m, cmd
+
 			case sessionTasksView:
 				m.tickets, cmd = m.tickets.Update(msg)
 				return m, cmd
+
+			case sessionViewsView:
+				m.views, cmd = m.views.Update(msg)
+				return m, cmd
+
+			default:
+				return m, nil
 			}
 		}
+
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("UI received tea.WindowSizeMsg")
 		m.ctx.WindowSize.Width = msg.Width
@@ -82,17 +102,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// to be passed to the other components
 
 	case ChangeViewMsg: // maybe ChangeScreenMsg
-		m.ctx.Logger.Info("UI received ChangeViewMsg")
+		m.ctx.Logger.Infof("UI received ChangeViewMsg: %d", msg)
 
 		switch sessionState(msg) {
 		case sessionSpacesView:
 			m.state = sessionSpacesView
-			m.spaces, cmd = m.spaces.Update(msg)
+			m.spaces, cmd = m.spaces.Update(common.FocusMsg(true))
 			return m, cmd
 
 		case sessionTasksView:
 			m.state = sessionTasksView
-			m.tickets, cmd = m.tickets.Update(msg)
+			m.tickets, cmd = m.tickets.Update(common.FocusMsg(true))
+			return m, cmd
+
+		case sessionViewsView:
+			m.state = sessionViewsView
+			m.views, cmd = m.views.Update(common.FocusMsg(true))
 			return m, cmd
 		}
 
@@ -108,9 +133,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case views.ViewChangedMsg:
 		m.ctx.Logger.Infof("UI received ViewChangedMsg: %s", string(msg))
+
 		return m, tea.Batch(
 			tickets.ViewChangedCmd(string(msg)),
-			ChangeViewCmd(sessionTasksView))
+		)
+
+	case views.FetchViewsMsg:
+		m.ctx.Logger.Infof(
+			"UI received FetchedViewsMsg: %s",
+			strings.Join(msg, ", "))
+
+		var cmds []tea.Cmd
+		for _, viewID := range msg {
+			cmds = append(cmds, tickets.FetchTasksForViewCmd(viewID))
+		}
+
+		return m, tea.Batch(cmds...)
 	}
 
 	m.spaces, cmd = m.spaces.Update(msg)
@@ -135,6 +173,7 @@ func (m Model) View() string {
 			m.views.View(),
 			m.tickets.View(),
 		)
+
 	default:
 		return lipgloss.JoinVertical(
 			lipgloss.Top,
@@ -151,5 +190,3 @@ func (m Model) Init() tea.Cmd {
 		m.tickets.Init,
 	)
 }
-
-type ticketsMsg []clickup.Task

@@ -29,14 +29,22 @@ func ViewChangedCmd(space string) tea.Cmd {
 	}
 }
 
+type FetchTasksForViewMsg string
+
+func FetchTasksForViewCmd(view string) tea.Cmd {
+	return func() tea.Msg {
+		return FetchTasksForViewMsg(view)
+	}
+}
+
 type Model struct {
-	ctx           *context.UserContext
-	table         table.Model
-	columns       []table.Column
-	tickets       map[string][]clickup.Task
-	SelectedView  string
-	spinner       spinner.Model
-	showSpinner   bool
+	ctx          *context.UserContext
+	table        table.Model
+	columns      []table.Column
+	tickets      map[string][]clickup.Task
+	SelectedView string
+	spinner      spinner.Model
+	showSpinner  bool
 }
 
 func InitialModel(ctx *context.UserContext) Model {
@@ -95,19 +103,20 @@ func taskListToRows(tasks []clickup.Task) []table.Row {
 	}
 	return rows
 }
+
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case ViewChangedMsg:
-		m.ctx.Logger.Info("TaskView receive ViewChangedMsg")
+		m.ctx.Logger.Infof("TaskView receive ViewChangedMsg: %s", string(msg))
 		m.showSpinner = true
 		m.SelectedView = string(msg)
 		return m, tea.Batch(m.getTicketsCmd(string(msg)), spinner.Tick)
 
 	case TasksListReloadedMsg:
-		m.ctx.Logger.Info("TaskView receive TasksListReloadedMsg")
+		m.ctx.Logger.Infof("TaskView receive TasksListReloadedMsg: %d", len(msg))
 		m = m.syncTable(msg)
 		m.table, cmd = m.table.Update(msg)
 		m.showSpinner = false
@@ -127,6 +136,21 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		m.spinner, cmd = m.spinner.Update(msg)
 		return m, cmd
+
+	case common.FocusMsg:
+		m.ctx.Logger.Info("TaskView received FocusMsg")
+		return m, nil
+
+	case FetchTasksForViewMsg:
+		m.ctx.Logger.Infof("TaskView received FetchViewMsg: %s", string(msg))
+		view := string(msg)
+		tasks, err := m.getTickets(view)
+		if err != nil {
+			return m, common.ErrCmd(err)
+		}
+		m.tickets[view] = tasks
+
+		return m, nil
 	}
 
 	m.table, cmd = m.table.Update(msg)

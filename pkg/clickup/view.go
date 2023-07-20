@@ -85,21 +85,69 @@ type RequiredViews struct {
 }
 
 func (r RequiredViews) GetViews() []View {
-	return []View{r.List, r.Board, r.Box, r.Calendar}
+	views := []View{}
+	if r.List.Id != "" {
+		views = append(views, r.List)
+	}
+
+	// if r.Board.Id != "" {
+	// 	views = append(views, r.Board)
+	// }
+
+	// if r.Box.Id != "" {
+	// 	views = append(views, r.Box)
+	// }
+
+	// if r.Calendar.Id != "" {
+	// 	views = append(views, r.Calendar)
+	// }
+
+	return views // []View{r.List, r.Board, r.Box, r.Calendar}
+}
+func filterListViews(views []View) []View {
+	filteredViews := []View{}
+	for _, view := range views {
+		if view.Type == "list" {
+			filteredViews = append(filteredViews, view)
+		}
+	}
+	return filteredViews
 }
 
 func (c *Client) GetViewsFromSpace(spaceId string) ([]View, error) {
+	errMsg := "Error occurs while getting views from space: %s. Error: %s"
+	errApiMsg := errMsg + " API response: %s"
+
 	rawData, err := c.requestGet("/space/" + spaceId + "/view")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(errMsg, spaceId, err)
 	}
 
 	var objmap RequestGetViews
 	if err := json.Unmarshal(rawData, &objmap); err != nil {
-		return nil, err
+		return nil, fmt.Errorf(
+			errApiMsg, spaceId, err, string(rawData))
 	}
+
 	if objmap.Err != "" {
-		return nil, fmt.Errorf(objmap.Err)
+		return nil, fmt.Errorf(
+			errMsg, spaceId, "API response contains error.", string(rawData))
 	}
-	return append(objmap.Views, objmap.RequiredViews.GetViews()...), nil
+
+	allViews := append(objmap.Views, objmap.RequiredViews.GetViews()...)
+	for _, v := range allViews {
+		if v.Id == "" || v.Name == "" {
+			return nil, fmt.Errorf(
+				"View id or name is empty, API response: %s", string(rawData))
+		}
+
+	}
+	if len(allViews) == 0 {
+		return nil, fmt.Errorf(
+			"API response is empty: %s", string(rawData))
+	}
+
+	filteredViews := filterListViews(allViews)
+
+	return append(filteredViews, objmap.RequiredViews.GetViews()...), nil
 }

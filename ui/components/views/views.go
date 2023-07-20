@@ -11,6 +11,14 @@ import (
 
 type ViewsListLoadedMsg []clickup.View
 
+type FetchViewsMsg []string
+
+func FetchViewsCmd(spaces []string) tea.Cmd {
+	return func() tea.Msg {
+		return FetchViewsMsg(spaces)
+	}
+}
+
 type ViewChangedMsg string
 
 func ViewChangedCmd(view string) tea.Cmd {
@@ -42,6 +50,29 @@ func InitialModel(ctx *context.UserContext) Model {
 		SelectedSpace: SPACE_SRE,
 	}
 }
+func nextView(views []clickup.View, SelectedView string) string {
+	for i, view := range views {
+		if view.Id == SelectedView {
+			if i+1 < len(views) {
+				return views[i+1].Id
+			}
+			return views[0].Id
+		}
+	}
+	return views[0].Id
+}
+
+func prevView(views []clickup.View, SelectedView string) string {
+	for i, view := range views {
+		if view.Id == SelectedView {
+			if i-1 >= 0 {
+				return views[i-1].Id
+			}
+			return views[len(views)-1].Id
+		}
+	}
+	return views[0].Id
+}
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
@@ -50,32 +81,77 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 
 	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch keypress := msg.String(); keypress {
+		case "h", "left":
+			m.SelectedView = prevView(m.views[m.SelectedSpace], m.SelectedView)
+			return m, ViewChangedCmd(m.SelectedView)
+		case "l", "right":
+			m.SelectedView = nextView(m.views[m.SelectedSpace], m.SelectedView)
+			return m, ViewChangedCmd(m.SelectedView)
+
+		default:
+			return m, nil
+		}
+
 	case SpaceChangedMsg:
 		m.ctx.Logger.Infof("ViewsView received SpaceChangedMsg")
 		m.SelectedSpace = string(msg)
-		views,err := m.getViews(string(msg))
+		views, err := m.getViews(string(msg))
 		if err != nil {
-		  return m, nil // TODO: handle error
+			return m, common.ErrCmd(err)
 		}
-		m.views[m.SelectedSpace]= views
+
+		m.views[m.SelectedSpace] = views
 		m.SelectedView = m.views[m.SelectedSpace][0].Id
+		viewsIds := []string{}
+		for _, view := range views {
+			if view.Id == m.SelectedView {
+				continue
+			}
+			viewsIds = append(viewsIds, view.Id)
+		}
 
 		return m, tea.Batch(
 			ViewChangedCmd(m.SelectedView),
+			FetchViewsCmd(viewsToIdList(views)),
 		)
+
+	case common.FocusMsg:
+		m.ctx.Logger.Info("ViewsView received FocusMsg")
+		return m, nil
 
 	case ViewsListLoadedMsg:
 		m.ctx.Logger.Infof("ViewsView received ViewsListLoadedMsg")
 		m.views[m.SelectedSpace] = []clickup.View(msg)
+		return m, nil
 	}
 
 	return m, tea.Batch(cmds...)
 }
 
+func removeView(views []clickup.View, s int) []clickup.View {
+	return append(views[:s], views[s+1:]...)
+}
+
+func viewsToIdList(views []clickup.View) []string {
+	ids := []string{}
+	for _, view := range views {
+		ids = append(ids, view.Id)
+	}
+	return ids
+}
+
 func (m Model) View() string {
 	viewsNames := []string{}
 	for _, view := range m.views[m.SelectedSpace] {
-		viewsNames = append(viewsNames, view.Name)
+		t := ""
+		if m.SelectedView == view.Id {
+			t = activeTabStyle.Render(view.Name)
+		} else {
+			t = inactiveTabStyle.Render(view.Name)
+		}
+		viewsNames = append(viewsNames, t)
 	}
 
 	return strings.Join(viewsNames, " | ")
