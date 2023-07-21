@@ -6,7 +6,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/ui/common"
-	"github.com/prgrs/clickup/ui/components/tabs"
 	"github.com/prgrs/clickup/ui/components/tickets"
 	"github.com/prgrs/clickup/ui/components/views"
 	"github.com/prgrs/clickup/ui/context"
@@ -33,7 +32,6 @@ type Model struct {
 	ctx   *context.UserContext
 	state sessionState
 
-	tabs    tabs.Model
 	views   views.Model
 	tickets tickets.Model
 
@@ -43,7 +41,6 @@ type Model struct {
 func InitialModel(ctx *context.UserContext) Model {
 	return Model{
 		ctx:  ctx,
-		tabs: tabs.InitialModel(ctx),
 
 		views:   views.InitialModel(ctx),
 		tickets: tickets.InitialModel(ctx),
