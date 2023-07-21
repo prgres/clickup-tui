@@ -8,14 +8,6 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-type HideSpaceViewMsg bool
-
-func HideSpaceViewCmd() tea.Cmd {
-	return func() tea.Msg {
-		return HideSpaceViewMsg(true)
-	}
-}
-
 type SpaceChangeMsg string
 
 func SpaceChangeCmd(space string) tea.Cmd {
@@ -130,10 +122,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.ctx.Logger.Infof("Selected space %s", selectedSpace)
 			m.SelectedSpace = selectedSpace
 			return m, SpaceChangeCmd(selectedSpace)
-
-		case "esc":
-			m.ctx.Logger.Info("Hiding space view")
-			return m, HideSpaceViewCmd()
 		}
 	}
 
@@ -148,6 +136,7 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Msg {
+	m.ctx.Logger.Infof("Initializing component: spacesList")
 	return TeamChangeMsg(TEAM_RAMP_NETWORK)
 }
 

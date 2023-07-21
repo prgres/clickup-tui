@@ -6,11 +6,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/ui/common"
-	"github.com/prgrs/clickup/ui/components/spaces"
 	"github.com/prgrs/clickup/ui/components/tabs"
 	"github.com/prgrs/clickup/ui/components/tickets"
 	"github.com/prgrs/clickup/ui/components/views"
 	"github.com/prgrs/clickup/ui/context"
+	"github.com/prgrs/clickup/ui/views/spaces"
 )
 
 type ChangeViewMsg sessionState
@@ -30,22 +30,26 @@ const (
 )
 
 type Model struct {
-	ctx     *context.UserContext
+	ctx   *context.UserContext
+	state sessionState
+
 	tabs    tabs.Model
 	views   views.Model
 	tickets tickets.Model
-	spaces  spaces.Model
-	state   sessionState
+
+	viewSpaces spaces.Model
 }
 
 func InitialModel(ctx *context.UserContext) Model {
 	return Model{
-		ctx:     ctx,
-		tabs:    tabs.InitialModel(ctx),
+		ctx:  ctx,
+		tabs: tabs.InitialModel(ctx),
+
 		views:   views.InitialModel(ctx),
 		tickets: tickets.InitialModel(ctx),
-		spaces:  spaces.InitialModel(ctx),
 		state:   sessionTasksView,
+
+		viewSpaces: spaces.InitialModel(ctx),
 	}
 }
 
@@ -78,7 +82,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		default:
 			switch m.state {
 			case sessionSpacesView:
-				m.spaces, cmd = m.spaces.Update(msg)
+				m.viewSpaces, cmd = m.viewSpaces.Update(msg)
 				return m, cmd
 
 			case sessionTasksView:
@@ -107,7 +111,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch sessionState(msg) {
 		case sessionSpacesView:
 			m.state = sessionSpacesView
-			m.spaces, cmd = m.spaces.Update(common.FocusMsg(true))
+			m.viewSpaces, cmd = m.viewSpaces.Update(common.FocusMsg(true))
 			return m, cmd
 
 		case sessionTasksView:
@@ -151,7 +155,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 	}
 
-	m.spaces, cmd = m.spaces.Update(msg)
+	m.viewSpaces, cmd = m.viewSpaces.Update(msg)
 	cmds = append(cmds, cmd)
 
 	m.tickets, cmd = m.tickets.Update(msg)
@@ -166,7 +170,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	switch m.state {
 	case sessionSpacesView:
-		return m.spaces.View()
+		return m.viewSpaces.View()
 	case sessionTasksView:
 		return lipgloss.JoinVertical(
 			lipgloss.Top,
@@ -185,7 +189,7 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
-		m.spaces.Init,
+		m.viewSpaces.Init,
 		m.views.Init,
 		m.tickets.Init,
 	)
