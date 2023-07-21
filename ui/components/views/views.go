@@ -157,8 +157,9 @@ func (m Model) View() string {
 	return strings.Join(viewsNames, " | ")
 }
 
-func (m Model) Init() tea.Msg {
-	return SpaceChangedMsg(SPACE_SRE)
+func (m Model) Init() tea.Cmd {
+	m.ctx.Logger.Info("Initializing component: TabsView")
+	return SpaceChangedCmd(SPACE_SRE)
 }
 
 func (m Model) getViewsCmd(space string) tea.Cmd {

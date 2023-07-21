@@ -172,8 +172,9 @@ func (m Model) View() string {
 	return m.table.View()
 }
 
-func (m Model) Init() tea.Msg {
-	return ViewChangedMsg(m.SelectedView)
+func (m Model) Init() tea.Cmd {
+	m.ctx.Logger.Info("Initializing component: TaskTable")
+	return ViewChangedCmd(m.SelectedView)
 }
 
 func (m Model) getTicketsCmd(view string) tea.Cmd {

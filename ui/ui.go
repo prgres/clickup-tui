@@ -4,12 +4,12 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/components/tickets"
 	"github.com/prgrs/clickup/ui/components/views"
 	"github.com/prgrs/clickup/ui/context"
 	"github.com/prgrs/clickup/ui/views/spaces"
+	"github.com/prgrs/clickup/ui/views/tasks"
 )
 
 type ChangeViewMsg sessionState
@@ -25,28 +25,23 @@ type sessionState uint
 const (
 	sessionSpacesView sessionState = iota
 	sessionTasksView
-	sessionViewsView
 )
 
 type Model struct {
 	ctx   *context.UserContext
 	state sessionState
 
-	views   views.Model
-	tickets tickets.Model
-
 	viewSpaces spaces.Model
+	viewTasks  tasks.Model
 }
 
 func InitialModel(ctx *context.UserContext) Model {
 	return Model{
-		ctx:  ctx,
-
-		views:   views.InitialModel(ctx),
-		tickets: tickets.InitialModel(ctx),
-		state:   sessionTasksView,
+		ctx:   ctx,
+		state: sessionTasksView,
 
 		viewSpaces: spaces.InitialModel(ctx),
+		viewTasks:  tasks.InitialModel(ctx),
 	}
 }
 
@@ -67,15 +62,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "1":
 			return m, ChangeViewCmd(sessionSpacesView)
 
-		case "tab":
-			if m.state == sessionTasksView {
-				return m, ChangeViewCmd(sessionViewsView)
-			}
-
-			if m.state == sessionViewsView {
-				return m, ChangeViewCmd(sessionTasksView)
-			}
-
 		default:
 			switch m.state {
 			case sessionSpacesView:
@@ -83,11 +69,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, cmd
 
 			case sessionTasksView:
-				m.tickets, cmd = m.tickets.Update(msg)
-				return m, cmd
-
-			case sessionViewsView:
-				m.views, cmd = m.views.Update(msg)
+				m.viewTasks, cmd = m.viewTasks.Update(msg)
 				return m, cmd
 
 			default:
@@ -113,12 +95,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case sessionTasksView:
 			m.state = sessionTasksView
-			m.tickets, cmd = m.tickets.Update(common.FocusMsg(true))
-			return m, cmd
-
-		case sessionViewsView:
-			m.state = sessionViewsView
-			m.views, cmd = m.views.Update(common.FocusMsg(true))
+			m.viewSpaces, cmd = m.viewSpaces.Update(common.FocusMsg(true))
 			return m, cmd
 		}
 
@@ -155,10 +132,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.viewSpaces, cmd = m.viewSpaces.Update(msg)
 	cmds = append(cmds, cmd)
 
-	m.tickets, cmd = m.tickets.Update(msg)
-	cmds = append(cmds, cmd)
-
-	m.views, cmd = m.views.Update(msg)
+	m.viewTasks, cmd = m.viewTasks.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
@@ -169,25 +143,16 @@ func (m Model) View() string {
 	case sessionSpacesView:
 		return m.viewSpaces.View()
 	case sessionTasksView:
-		return lipgloss.JoinVertical(
-			lipgloss.Top,
-			m.views.View(),
-			m.tickets.View(),
-		)
-
+		return m.viewTasks.View()
 	default:
-		return lipgloss.JoinVertical(
-			lipgloss.Top,
-			m.views.View(),
-			m.tickets.View(),
-		)
+		return m.viewTasks.View()
 	}
 }
 
 func (m Model) Init() tea.Cmd {
+	m.ctx.Logger.Info("Initializing UI")
 	return tea.Batch(
-		m.viewSpaces.Init,
-		m.views.Init,
-		m.tickets.Init,
+		m.viewSpaces.Init(),
+		m.viewTasks.Init(),
 	)
 }

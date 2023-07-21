@@ -66,7 +66,7 @@ func (m Model) View() string {
 	return m.componentSpaceList.View()
 }
 
-func (m Model) Init() tea.Msg {
-	m.ctx.Logger.Infof("Initializing view: spaces")
-	return m.componentSpaceList.Init()
+func (m Model) Init() tea.Cmd {
+	m.ctx.Logger.Infof("Initializing view: Spaces")
+	return m.componentSpaceList.Init
 }
