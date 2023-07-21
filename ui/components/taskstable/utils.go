@@ -1,4 +1,4 @@
-package tickets
+package taskstable
 
 import "github.com/charmbracelet/lipgloss"
 

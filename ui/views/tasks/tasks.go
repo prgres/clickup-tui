@@ -1,9 +1,11 @@
 package tasks
 
 import (
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/prgrs/clickup/ui/components/tickets"
+	"github.com/prgrs/clickup/ui/components/taskstable"
 	"github.com/prgrs/clickup/ui/components/views"
 	"github.com/prgrs/clickup/ui/context"
 )
@@ -21,14 +23,14 @@ type Model struct {
 	state TasksState
 
 	componentViewsTabs  views.Model
-	componentTasksTable tickets.Model
+	componentTasksTable taskstable.Model
 }
 
 func InitialModel(ctx *context.UserContext) Model {
 	return Model{
 		ctx:                 ctx,
 		componentViewsTabs:  views.InitialModel(ctx),
-		componentTasksTable: tickets.InitialModel(ctx),
+		componentTasksTable: taskstable.InitialModel(ctx),
 		state:               TasksStateTasksTable,
 	}
 }
@@ -43,10 +45,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case "tab":
 			switch m.state {
 			case TasksStateTasksTable:
-			  m.state = TasksStateViewsTabs
+				m.state = TasksStateViewsTabs
 
 			case TasksStateViewsTabs:
-			  m.state = TasksStateTasksTable
+				m.state = TasksStateTasksTable
 			}
 		default:
 			switch m.state {
@@ -59,6 +61,25 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				return m, cmd
 			}
 		}
+
+	case views.FetchViewsMsg:
+		m.ctx.Logger.Infof("ViewTasks received FetchViewsMsg: %s",
+			strings.Join(msg, ", "))
+
+		var cmds []tea.Cmd
+		for _, viewID := range msg {
+			cmds = append(cmds, taskstable.FetchTasksForViewCmd(viewID))
+		}
+
+		return m, tea.Batch(cmds...)
+
+	case views.ViewChangedMsg:
+		m.ctx.Logger.Info("ViewTasks received ViewChangedMsg")
+		return m, taskstable.ViewChangedCmd(string(msg))
+
+	case SpaceChangedMsg:
+		m.ctx.Logger.Info("ViewTasks received SpaceChangedMsg")
+		return m, views.SpaceChangedCmd(string(msg))
 	}
 
 	m.componentViewsTabs, cmd = m.componentViewsTabs.Update(msg)

@@ -1,12 +1,8 @@
 package ui
 
 import (
-	"strings"
-
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/ui/common"
-	"github.com/prgrs/clickup/ui/components/tickets"
-	"github.com/prgrs/clickup/ui/components/views"
 	"github.com/prgrs/clickup/ui/context"
 	"github.com/prgrs/clickup/ui/views/spaces"
 	"github.com/prgrs/clickup/ui/views/tasks"
@@ -106,27 +102,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case spaces.SpaceChangeMsg:
 		m.ctx.Logger.Infof("UI received SpaceChangeMsg: %s", string(msg))
 		return m, tea.Batch(
-			views.SpaceChangedCmd(string(msg)),
+			tasks.SpaceChangedCmd(string(msg)),
 			ChangeViewCmd(sessionTasksView))
 
-	case views.ViewChangedMsg:
-		m.ctx.Logger.Infof("UI received ViewChangedMsg: %s", string(msg))
-
-		return m, tea.Batch(
-			tickets.ViewChangedCmd(string(msg)),
-		)
-
-	case views.FetchViewsMsg:
-		m.ctx.Logger.Infof(
-			"UI received FetchedViewsMsg: %s",
-			strings.Join(msg, ", "))
-
-		var cmds []tea.Cmd
-		for _, viewID := range msg {
-			cmds = append(cmds, tickets.FetchTasksForViewCmd(viewID))
-		}
-
-		return m, tea.Batch(cmds...)
 	}
 
 	m.viewSpaces, cmd = m.viewSpaces.Update(msg)
