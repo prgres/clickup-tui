@@ -174,10 +174,18 @@ func (m Model) getViewsCmd(space string) tea.Cmd {
 
 func (m Model) getViews(space string) ([]clickup.View, error) {
 	m.ctx.Logger.Infof("Getting views for space: %s", space)
-	if m.views[space] != nil {
-		m.ctx.Logger.Info("Tasks found in cache")
-		return m.views[space], nil
+
+	data, ok := m.ctx.Cache.Get("views", space)
+	if ok {
+		m.ctx.Logger.Infof("Views found in cache")
+		var views []clickup.View
+		if err := m.ctx.Cache.ParseData(data, &views); err != nil {
+			return nil, err
+		}
+
+		return views, nil
 	}
+	m.ctx.Logger.Info("Views not found in cache")
 
 	m.ctx.Logger.Info("Fetching tasks from API")
 	client := m.ctx.Clickup
@@ -188,6 +196,9 @@ func (m Model) getViews(space string) ([]clickup.View, error) {
 		return nil, err
 	}
 	m.ctx.Logger.Infof("Found %d views in space %s", len(views), space)
+
+	m.ctx.Logger.Info("Caching views")
+	m.ctx.Cache.Set("views", space, views)
 
 	return views, nil
 }

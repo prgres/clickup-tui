@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
-	"os"
-
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
+	"github.com/prgrs/clickup/pkg/cache"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui"
 	"github.com/prgrs/clickup/ui/context"
@@ -21,22 +19,38 @@ const (
 
 func main() {
 	logger := log.Default()
+
 	f, err := tea.LogToFileWith("debug.log", "debug", logger)
 	if err != nil {
-		fmt.Println("fatal:", err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 	defer f.Close()
 
 	logger.Info("Starting up...")
 
-	clickup := clickup.NewDefaultClientWithLogger(TOKEN, logger)
-	ctx := context.NewUserContext(clickup, logger)
+	logger.Info("Initializing cache...")
+	cache := cache.NewCache(logger)
+	defer cache.Dump()
 
+	if err := cache.Load(); err != nil {
+		logger.Fatal(err)
+	}
+
+	logger.Info("Initializing clickup client...")
+	clickup := clickup.NewDefaultClientWithLogger(TOKEN, logger)
+
+	logger.Info("Initializing user context...")
+	ctx := context.NewUserContext(
+		clickup,
+		logger,
+		cache)
+
+	logger.Info("Initializing main model...")
 	mainModel := ui.InitialModel(&ctx)
 
+	logger.Info("Initializing program...")
 	p := tea.NewProgram(mainModel, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 }

@@ -160,10 +160,18 @@ func (m Model) getTicketsCmd(view string) tea.Cmd {
 
 func (m Model) getTickets(view string) ([]clickup.Task, error) {
 	m.ctx.Logger.Infof("Getting tasks for view: %s", view)
-	if m.tickets[view] != nil {
-		m.ctx.Logger.Info("Tasks found in cache")
-		return m.tickets[view], nil
+
+	data, ok := m.ctx.Cache.Get("tasks", view)
+	if ok {
+		m.ctx.Logger.Infof("Tasks found in cache")
+		var tasks []clickup.Task
+		if err := m.ctx.Cache.ParseData(data, &tasks); err != nil {
+			return nil, err
+		}
+
+		return tasks, nil
 	}
+	m.ctx.Logger.Info("Tasks not found in cache")
 
 	m.ctx.Logger.Info("Fetching tasks from API")
 	client := m.ctx.Clickup
@@ -173,6 +181,9 @@ func (m Model) getTickets(view string) ([]clickup.Task, error) {
 		return nil, err
 	}
 	m.ctx.Logger.Infof("Found %d tasks in view %s", len(tasks), view)
+
+	m.ctx.Logger.Info("Caching tasks")
+	m.ctx.Cache.Set("tasks", view, tasks)
 
 	return tasks, nil
 }
