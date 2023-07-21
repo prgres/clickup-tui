@@ -9,6 +9,14 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
+type ViewLoadedMsg clickup.View
+
+func ViewLoadedCmd(view clickup.View) tea.Cmd {
+	return func() tea.Msg {
+		return ViewLoadedMsg(view)
+	}
+}
+
 type ViewsListLoadedMsg []clickup.View
 
 type FetchViewsMsg []string
@@ -36,10 +44,11 @@ func SpaceChangedCmd(space string) tea.Cmd {
 }
 
 type Model struct {
-	ctx           *context.UserContext
-	views         map[string][]clickup.View
-	SelectedView  string
-	SelectedSpace string
+	ctx                *context.UserContext
+	views              map[string][]clickup.View
+	SelectedView       string
+	SelectedViewStruct clickup.View
+	SelectedSpace      string
 }
 
 func InitialModel(ctx *context.UserContext) Model {
@@ -125,6 +134,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.ctx.Logger.Infof("ViewsView received ViewsListLoadedMsg")
 		m.views[m.SelectedSpace] = []clickup.View(msg)
 		return m, nil
+
+	case ViewChangedMsg:
+		m.ctx.Logger.Infof("ViewsView received ViewChangedMsg")
+		viewName := string(msg)
+		allViews := m.views[m.SelectedSpace]
+		for _, view := range allViews {
+			if view.Id == viewName {
+				m.SelectedViewStruct = view
+				return m, tea.Batch(ViewLoadedCmd(view))
+			}
+		}
 	}
 
 	return m, tea.Batch(cmds...)

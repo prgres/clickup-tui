@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/components/taskstable"
 	"github.com/prgrs/clickup/ui/components/views"
 	"github.com/prgrs/clickup/ui/context"
@@ -102,8 +103,13 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case views.ViewChangedMsg:
 		m.ctx.Logger.Info("ViewTasks received ViewChangedMsg")
 		m.showSpinner = true
+
 		cmd = taskstable.ViewChangedCmd(string(msg))
 		cmds = append(cmds, cmd)
+
+		m.componentViewsTabs, cmd = m.componentViewsTabs.Update(msg)
+		cmds = append(cmds, cmd)
+
 		return m, tea.Batch(cmds...)
 
 	case taskstable.TasksListReady:
@@ -124,6 +130,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		m.spinner, cmd = m.spinner.Update(msg)
 		cmds = append(cmds, cmd)
+		return m, tea.Batch(cmds...)
+
+	case views.ViewLoadedMsg:
+		m.ctx.Logger.Info("TaskView receive views.ViewLoadedMsg")
+		cmds = append(cmds, taskstable.ViewLoadedCmd(clickup.View(msg)))
 		return m, tea.Batch(cmds...)
 	}
 

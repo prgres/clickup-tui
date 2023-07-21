@@ -9,6 +9,14 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 )
 
+type ViewLoadedMsg clickup.View
+
+func ViewLoadedCmd(view clickup.View) tea.Cmd {
+	return func() tea.Msg {
+		return ViewLoadedMsg(view)
+	}
+}
+
 type TasksListReady bool
 
 func TasksListReadyCmd() tea.Cmd {
@@ -74,6 +82,8 @@ func (m Model) syncTable(tasks []clickup.Task) Model {
 	m.ctx.Logger.Info("Synchonizing table")
 	m.tickets[m.SelectedView] = tasks
 
+	m.table.SetColumns(m.columns)
+
 	items := taskListToRows(tasks)
 	m.table.SetRows(items)
 
@@ -130,6 +140,16 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			return m, common.ErrCmd(err)
 		}
 		m.tickets[view] = tasks
+
+	case ViewLoadedMsg:
+		m.ctx.Logger.Infof("ViewsView received ViewLoadedMsg")
+		view := clickup.View(msg)
+		columnsNames := view.Columns.GetColumnsFields()
+		columns := make([]table.Column, len(columnsNames))
+		for i, name := range columnsNames {
+			columns[i] = table.Column{Title: name, Width: 30}
+		}
+		m.columns = columns
 	}
 
 	m.table, cmd = m.table.Update(msg)
