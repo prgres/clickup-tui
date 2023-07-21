@@ -49,7 +49,25 @@ type ViewFilter struct {
 }
 
 type ViewColumns struct {
-	Fields []interface{} `json:"fields"`
+	Fields []ColumnField `json:"fields"`
+}
+
+func (v ViewColumns) GetColumnsFields() []string {
+	fields := []string{}
+	for _, column := range v.Fields {
+		fields = append(fields, column.Field)
+	}
+
+	return fields
+}
+
+type ColumnField struct {
+	Field   string `json:"field"`
+	Idx     int    `json:"idx"`
+	Width   int    `json:"width"`
+	Hidden  bool   `json:"hidden"`
+	Name    string `json:"name"`
+	Display string `json:"display"`
 }
 
 type ViewTeamSidebar struct {
