@@ -1,17 +1,21 @@
 package taskstable
 
 import (
-	"fmt"
-
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
 
-	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
 )
+
+type TasksListReady bool
+
+func TasksListReadyCmd() tea.Cmd {
+	return func() tea.Msg {
+		return TasksListReady(true)
+	}
+}
 
 type TasksListReloadedMsg []clickup.Task
 
@@ -43,8 +47,6 @@ type Model struct {
 	columns      []table.Column
 	tickets      map[string][]clickup.Task
 	SelectedView string
-	spinner      spinner.Model
-	showSpinner  bool
 }
 
 func InitialModel(ctx *context.UserContext) Model {
@@ -59,22 +61,12 @@ func InitialModel(ctx *context.UserContext) Model {
 		table.WithFocused(true),
 	)
 
-	s := spinner.New()
-	s.Spinner = spinner.Pulse
-	// spinner.Dot,
-	// spinner.Line,
-	// spinner.Pulse,
-	// spinner.Points,
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-
 	return Model{
 		ctx:          ctx,
 		table:        t,
 		columns:      columns,
 		tickets:      map[string][]clickup.Task{},
 		SelectedView: SPACE_SRE_LIST_COOL,
-		spinner:      s,
-		showSpinner:  true,
 	}
 }
 
@@ -111,35 +103,24 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case ViewChangedMsg:
 		m.ctx.Logger.Infof("TaskView receive ViewChangedMsg: %s", string(msg))
-		m.showSpinner = true
 		m.SelectedView = string(msg)
-		return m, tea.Batch(m.getTicketsCmd(string(msg)), spinner.Tick)
+		cmds = append(cmds, m.getTicketsCmd(string(msg)))
 
 	case TasksListReloadedMsg:
 		m.ctx.Logger.Infof("TaskView receive TasksListReloadedMsg: %d", len(msg))
 		m = m.syncTable(msg)
 		m.table, cmd = m.table.Update(msg)
-		m.showSpinner = false
-		return m, cmd
+		cmds = append(cmds, cmd)
+		cmds = append(cmds, TasksListReadyCmd())
 
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("TaskView receive tea.WindowSizeMsg")
 		h, v := docStyle.GetFrameSize()
 		m.table.SetWidth(msg.Width - h)
 		m.table.SetHeight(msg.Height - v)
-		return m, nil
-
-	case spinner.TickMsg:
-		m.ctx.Logger.Info("TaskView receive spinner.TickMsg")
-		if !m.showSpinner {
-			return m, nil
-		}
-		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
 
 	case common.FocusMsg:
 		m.ctx.Logger.Info("TaskView received FocusMsg")
-		return m, nil
 
 	case FetchTasksForViewMsg:
 		m.ctx.Logger.Infof("TaskView received FetchViewMsg: %s", string(msg))
@@ -149,8 +130,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			return m, common.ErrCmd(err)
 		}
 		m.tickets[view] = tasks
-
-		return m, nil
 	}
 
 	m.table, cmd = m.table.Update(msg)
@@ -160,15 +139,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	if m.showSpinner {
-		return lipgloss.Place(
-			m.ctx.WindowSize.Width, m.ctx.WindowSize.Height,
-			lipgloss.Center,
-			lipgloss.Center,
-			fmt.Sprintf("%s Loading tasks...", m.spinner.View()),
-		)
-	}
-
 	return m.table.View()
 }
 
