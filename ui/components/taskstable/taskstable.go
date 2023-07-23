@@ -72,8 +72,10 @@ func InitialModel(ctx *context.UserContext) Model {
 	}
 
 	return Model{
-		ctx:          ctx,
-		table:        table.New(),
+		ctx: ctx,
+		table: table.New(
+			table.WithFocused(true),
+		),
 		columns:      columns,
 		requiredCols: requiredCols,
 		tickets:      map[string][]clickup.Task{},
@@ -92,6 +94,7 @@ func (m Model) syncTable(tasks []clickup.Task) Model {
 	m.table = table.New(
 		table.WithColumns(m.columns),
 		table.WithRows(items),
+		table.WithFocused(true),
 	)
 
 	return m
