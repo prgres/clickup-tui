@@ -110,6 +110,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		if err != nil {
 			return m, common.ErrCmd(err)
 		}
+		if len(views) == 0 {
+			return m, tea.Batch(
+				ViewChangedCmd(m.SelectedView),
+			)
+		}
 
 		m.views[m.SelectedSpace] = views
 		m.SelectedView = m.views[m.SelectedSpace][0].Id

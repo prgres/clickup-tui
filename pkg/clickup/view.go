@@ -161,8 +161,7 @@ func (c *Client) GetViewsFromSpace(spaceId string) ([]View, error) {
 
 	}
 	if len(allViews) == 0 {
-		return nil, fmt.Errorf(
-			"API response is empty: %s", string(rawData))
+		return []View{}, nil
 	}
 
 	filteredViews := filterListViews(allViews)
