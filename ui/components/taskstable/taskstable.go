@@ -53,26 +53,29 @@ type Model struct {
 	ctx          *context.UserContext
 	table        table.Model
 	columns      []table.Column
+	requiredCols []table.Column
 	tickets      map[string][]clickup.Task
 	SelectedView string
 }
 
 func InitialModel(ctx *context.UserContext) Model {
-	columns := []table.Column{
-		{Title: "Status", Width: 15},
-		{Title: "Name", Width: 90},
-		{Title: "Assignees", Width: 20},
+	columns := []table.Column{}
+	requiredCols := []table.Column{
+		{
+			Title: "name",
+			Width: 30,
+		},
+		{
+			Title: "status",
+			Width: 30,
+		},
 	}
-
-	t := table.New(
-		table.WithColumns(columns),
-		table.WithFocused(true),
-	)
 
 	return Model{
 		ctx:          ctx,
-		table:        t,
+		table:        table.New(),
 		columns:      columns,
+		requiredCols: requiredCols,
 		tickets:      map[string][]clickup.Task{},
 		SelectedView: SPACE_SRE_LIST_COOL,
 	}
@@ -82,26 +85,52 @@ func (m Model) syncTable(tasks []clickup.Task) Model {
 	m.ctx.Logger.Info("Synchonizing table")
 	m.tickets[m.SelectedView] = tasks
 
-	m.table.SetColumns(m.columns)
+	items := taskListToRows(tasks, m.columns)
+	m.ctx.Logger.Infof("Values: %v", items)
+	m.ctx.Logger.Infof("Columns: %v", m.columns)
 
-	items := taskListToRows(tasks)
-	m.table.SetRows(items)
+	m.table = table.New(
+		table.WithColumns(m.columns),
+		table.WithRows(items),
+	)
 
 	return m
 }
 
-func taskToRow(task clickup.Task) table.Row {
-	return table.Row{
-		task.Status.Status,
-		task.Name,
-		task.GetAssignees(),
+func taskToRow(task clickup.Task, columns []table.Column) table.Row {
+	values := table.Row{}
+	for _, column := range columns {
+		switch column.Title {
+		case "status":
+			values = append(values, task.Status.Status)
+		case "name":
+			values = append(values, task.Name)
+		case "assignee":
+			values = append(values, task.GetAssignees())
+		case "list":
+			values = append(values, task.List.String())
+		case "tags":
+			values = append(values, task.GetTags())
+		case "folder":
+			values = append(values, task.Folder.String())
+		case "url":
+			values = append(values, task.Url)
+		case "space":
+			values = append(values, task.Space.Id)
+		case "id":
+			values = append(values, task.Id)
+		default:
+			values = append(values, "XXX")
+		}
 	}
+
+	return values
 }
 
-func taskListToRows(tasks []clickup.Task) []table.Row {
+func taskListToRows(tasks []clickup.Task, columns []table.Column) []table.Row {
 	rows := make([]table.Row, len(tasks))
 	for i, task := range tasks {
-		rows[i] = taskToRow(task)
+		rows[i] = taskToRow(task, columns)
 	}
 	return rows
 }
@@ -144,11 +173,20 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case ViewLoadedMsg:
 		m.ctx.Logger.Infof("ViewsView received ViewLoadedMsg")
 		view := clickup.View(msg)
-		columnsNames := view.Columns.GetColumnsFields()
-		columns := make([]table.Column, len(columnsNames))
-		for i, name := range columnsNames {
-			columns[i] = table.Column{Title: name, Width: 30}
+
+		columns := []table.Column{}
+		columns = append(columns, m.requiredCols...)
+
+		for _, field := range view.Columns.Fields {
+			if field.Field == "name" || field.Field == "status" { // TODO: check if in requiredCols
+				continue
+			}
+			columns = append(columns, table.Column{
+				Title: field.Field,
+				Width: 30,
+			})
 		}
+		m.ctx.Logger.Infof("Columns: %d", len(columns))
 		m.columns = columns
 	}
 
