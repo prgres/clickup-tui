@@ -97,7 +97,7 @@ type Status struct {
 }
 
 type Creator struct {
-	Id             uint   `json:"id"`
+	Id             int   `json:"id"`
 	Username       string `json:"username"`
 	Color          string `json:"color"`
 	ProfilePicture string `json:"profilePicture"`
