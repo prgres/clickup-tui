@@ -13,22 +13,63 @@ type Task struct {
 	Orderindex   string        `json:"orderindex"`
 	DateCreated  string        `json:"date_created"`
 	DateUpdated  string        `json:"date_updated"`
-	DateClosed   interface{}   `json:"date_closed"`
-	DateDone     interface{}   `json:"date_done"`
+	DateClosed   string        `json:"date_closed"`
+	DateDone     string        `json:"date_done"`
 	Creator      Creator       `json:"creator"`
 	Assignees    []Assignee    `json:"assignees"`
 	Checklists   []interface{} `json:"checklists"`
-	Tags         []interface{} `json:"tags"`
+	Tags         []TaskTag     `json:"tags"`
 	Parent       interface{}   `json:"parent"`
 	Priority     interface{}   `json:"priority"`
 	Duedate      interface{}   `json:"duedate"`
 	Startdate    interface{}   `json:"startdate"`
 	Timeestimate interface{}   `json:"timeestimate"`
 	Timespent    interface{}   `json:"timespent"`
-	List         interface{}   `json:"list"`
-	Folder       interface{}   `json:"folder"`
-	Space        interface{}   `json:"space"`
+	List         TaskList      `json:"list"`
+	Folder       TaskFolder    `json:"folder"`
+	Space        TaskSpace     `json:"space"`
 	Url          string        `json:"url"`
+}
+
+type TaskTag struct {
+	Created int64  `json:"created"`
+	Name    string `json:"name"`
+	Tag_bg  string `json:"tag_bg"`
+	Tag_fg  string `json:"tag_fg"`
+}
+
+func (t Task) GetTags() string {
+	tags := strings.Builder{}
+	for _, tag := range t.Tags {
+		tags.WriteString(tag.Name)
+	}
+
+	return tags.String()
+}
+
+type TaskList struct {
+	Access bool   `json:"access"`
+	Id     string `json:"id"`
+	Name   string `json:"name"`
+}
+
+func (t TaskList) String() string {
+	return fmt.Sprintf("%s (%s)", t.Name, t.Id)
+}
+
+type TaskFolder struct {
+	Access bool   `json:"access"`
+	Hidden bool   `json:"hidden"`
+	Id     string `json:"id"`
+	Name   string `json:"name"`
+}
+
+func (t TaskFolder) String() string {
+	return fmt.Sprintf("%s (%s)", t.Name, t.Id)
+}
+
+type TaskSpace struct {
+	Id string `json:"id"`
 }
 
 func (t Task) GetAssignees() string {
