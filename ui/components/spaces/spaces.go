@@ -123,9 +123,9 @@ func (m Model) View() string {
 	return m.list.View()
 }
 
-func (m Model) Init() tea.Msg {
+func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Infof("Initializing component: spacesList")
-	return TeamChangeMsg(TEAM_RAMP_NETWORK)
+	return TeamChangeCmd(TEAM_RAMP_NETWORK)
 }
 
 func (m Model) getSpacesCmd() tea.Cmd {

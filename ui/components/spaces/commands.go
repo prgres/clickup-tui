@@ -15,4 +15,10 @@ func SpaceChangeCmd(space string) tea.Cmd {
 
 type TeamChangeMsg string
 
+func TeamChangeCmd(team string) tea.Cmd {
+	return func() tea.Msg {
+		return TeamChangeMsg(team)
+	}
+}
+
 type SpaceListReloadedMsg []clickup.Space

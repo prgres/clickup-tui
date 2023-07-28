@@ -36,7 +36,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-
 		case "esc":
 			m.ctx.Logger.Info("Hiding space view")
 			return m, HideSpaceViewCmd()
@@ -68,5 +67,5 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Infof("Initializing view: Spaces")
-	return m.componentSpaceList.Init
+	return m.componentSpaceList.Init()
 }
