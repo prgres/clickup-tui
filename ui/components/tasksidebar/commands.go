@@ -9,3 +9,11 @@ func InitCmd() tea.Cmd {
 		return InitMsg(true)
 	}
 }
+
+type TaskSelectedMsg string
+
+func TaskSelectedCmd(task string) tea.Cmd {
+	return func() tea.Msg {
+		return TaskSelectedMsg(task)
+	}
+}

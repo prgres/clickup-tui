@@ -11,14 +11,6 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-type TaskSelectedMsg string
-
-func TaskSelectedCmd(task string) tea.Cmd {
-	return func() tea.Msg {
-		return TaskSelectedMsg(task)
-	}
-}
-
 type Model struct {
 	ctx      *context.UserContext
 	viewport viewport.Model

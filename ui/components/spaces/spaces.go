@@ -8,18 +8,6 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-type SpaceChangeMsg string
-
-func SpaceChangeCmd(space string) tea.Cmd {
-	return func() tea.Msg {
-		return SpaceChangeMsg(space)
-	}
-}
-
-type TeamChangeMsg string
-
-type SpaceListReloadedMsg []clickup.Space
-
 type Model struct {
 	ctx           *context.UserContext
 	list          list.Model
