@@ -5,14 +5,6 @@ import (
 	"github.com/prgrs/clickup/pkg/clickup"
 )
 
-type ViewLoadedMsg clickup.View
-
-func ViewLoadedCmd(view clickup.View) tea.Cmd {
-	return func() tea.Msg {
-		return ViewLoadedMsg(view)
-	}
-}
-
 type ViewsListLoadedMsg []clickup.View
 
 type FetchViewsMsg []string

@@ -13,14 +13,6 @@ func TaskSelectedCmd(task string) tea.Cmd {
 	}
 }
 
-type ViewLoadedMsg clickup.View
-
-func ViewLoadedCmd(view clickup.View) tea.Cmd {
-	return func() tea.Msg {
-		return ViewLoadedMsg(view)
-	}
-}
-
 type TasksListReady bool
 
 func TasksListReadyCmd() tea.Cmd {

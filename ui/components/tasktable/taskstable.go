@@ -155,7 +155,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		m.tickets[view] = tasks
 
-	case ViewLoadedMsg:
+	case common.ViewLoadedMsg:
 		m.ctx.Logger.Infof("TaskTable received ViewLoadedMsg")
 		view := clickup.View(msg)
 

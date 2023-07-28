@@ -102,18 +102,18 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m, nil
 
 	case ViewsListLoadedMsg:
-		m.ctx.Logger.Infof("ViewsView received ViewsListLoadedMsg")
+		m.ctx.Logger.Info("ViewsView received ViewsListLoadedMsg")
 		m.views[m.SelectedSpace] = []clickup.View(msg)
 		return m, nil
 
 	case ViewChangedMsg:
-		m.ctx.Logger.Infof("ViewsView received ViewChangedMsg")
+		m.ctx.Logger.Info("ViewsView received ViewChangedMsg")
 		viewName := string(msg)
 		allViews := m.views[m.SelectedSpace]
 		for _, view := range allViews {
 			if view.Id == viewName {
 				m.SelectedViewStruct = view
-				return m, tea.Batch(ViewLoadedCmd(view))
+				return m, tea.Batch(common.ViewLoadedCmd(view))
 			}
 		}
 	}
