@@ -1,4 +1,4 @@
-package taskstable
+package tasktable
 
 import "github.com/charmbracelet/lipgloss"
 

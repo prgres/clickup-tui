@@ -1,4 +1,4 @@
-package views
+package viewtabs
 
 import (
 	"strings"

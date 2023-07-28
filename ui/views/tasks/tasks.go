@@ -8,8 +8,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/pkg/clickup"
-	"github.com/prgrs/clickup/ui/components/taskstable"
-	"github.com/prgrs/clickup/ui/components/views"
+	"github.com/prgrs/clickup/ui/components/tasktable"
+	"github.com/prgrs/clickup/ui/components/viewtabs"
 	"github.com/prgrs/clickup/ui/context"
 )
 
@@ -25,8 +25,8 @@ type Model struct {
 	ctx   *context.UserContext
 	state TasksState
 
-	componentViewsTabs  views.Model
-	componentTasksTable taskstable.Model
+	componentViewsTabs   viewtabs.Model
+	componentTasksTable  tasktable.Model
 
 	spinner     spinner.Model
 	showSpinner bool
@@ -45,8 +45,8 @@ func InitialModel(ctx *context.UserContext) Model {
 		ctx:   ctx,
 		state: TasksStateTasksTable,
 
-		componentViewsTabs:  views.InitialModel(ctx),
-		componentTasksTable: taskstable.InitialModel(ctx),
+		componentViewsTabs:   viewtabs.InitialModel(ctx),
+		componentTasksTable:  tasktable.InitialModel(ctx),
 
 		spinner:     s,
 		showSpinner: true,
@@ -89,22 +89,22 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			}
 		}
 
-	case views.FetchViewsMsg:
+	case viewtabs.FetchViewsMsg:
 		m.ctx.Logger.Infof("ViewTasks received FetchViewsMsg: %s",
 			strings.Join(msg, ", "))
 
 		var cmds []tea.Cmd
 		for _, viewID := range msg {
-			cmds = append(cmds, taskstable.FetchTasksForViewCmd(viewID))
+			cmds = append(cmds, tasktable.FetchTasksForViewCmd(viewID))
 		}
 
 		return m, tea.Batch(cmds...)
 
-	case views.ViewChangedMsg:
+	case viewtabs.ViewChangedMsg:
 		m.ctx.Logger.Info("ViewTasks received ViewChangedMsg")
 		m.showSpinner = true
 
-		cmd = taskstable.ViewChangedCmd(string(msg))
+		cmd = tasktable.ViewChangedCmd(string(msg))
 		cmds = append(cmds, cmd)
 
 		m.componentViewsTabs, cmd = m.componentViewsTabs.Update(msg)
@@ -112,14 +112,14 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 		return m, tea.Batch(cmds...)
 
-	case taskstable.TasksListReady:
+	case tasktable.TasksListReady:
 		m.ctx.Logger.Info("ViewTasks received TasksListReady")
 		m.showSpinner = false
 		return m, tea.Batch(cmds...)
 
 	case SpaceChangedMsg:
 		m.ctx.Logger.Info("ViewTasks received SpaceChangedMsg")
-		cmd = views.SpaceChangedCmd(string(msg))
+		cmd = viewtabs.SpaceChangedCmd(string(msg))
 		cmds = append(cmds, cmd)
 		return m, tea.Batch(cmds...)
 
@@ -132,10 +132,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 		return m, tea.Batch(cmds...)
 
-	case views.ViewLoadedMsg:
 		m.ctx.Logger.Info("TaskView receive views.ViewLoadedMsg")
-		cmds = append(cmds, taskstable.ViewLoadedCmd(clickup.View(msg)))
 		return m, tea.Batch(cmds...)
+	case viewtabs.ViewLoadedMsg:
+		cmds = append(cmds, tasktable.ViewLoadedCmd(clickup.View(msg)))
 	}
 
 	m.componentViewsTabs, cmd = m.componentViewsTabs.Update(msg)

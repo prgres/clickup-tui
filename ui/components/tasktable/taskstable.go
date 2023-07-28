@@ -1,10 +1,13 @@
-package taskstable
+package tasktable
 
 import (
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
+	"github.com/prgrs/clickup/ui/views"
 
 	"github.com/charmbracelet/bubbles/table"
 )
@@ -56,17 +59,27 @@ type Model struct {
 	requiredCols []table.Column
 	tickets      map[string][]clickup.Task
 	SelectedView string
+
+	autoColumns bool
 }
 
 func InitialModel(ctx *context.UserContext) Model {
 	columns := []table.Column{}
 	requiredCols := []table.Column{
 		{
+			Title: "id",
+			Width: 0,
+		},
+		{
 			Title: "name",
 			Width: 30,
 		},
 		{
 			Title: "status",
+			Width: 30,
+		},
+		{
+			Title: "assignee",
 			Width: 30,
 		},
 	}
@@ -80,6 +93,7 @@ func InitialModel(ctx *context.UserContext) Model {
 		requiredCols: requiredCols,
 		tickets:      map[string][]clickup.Task{},
 		SelectedView: SPACE_SRE_LIST_COOL,
+		autoColumns:  false,
 	}
 }
 
@@ -88,8 +102,8 @@ func (m Model) syncTable(tasks []clickup.Task) Model {
 	m.tickets[m.SelectedView] = tasks
 
 	items := taskListToRows(tasks, m.columns)
-	m.ctx.Logger.Infof("Values: %v", items)
-	m.ctx.Logger.Infof("Columns: %v", m.columns)
+	// m.ctx.Logger.Infof("Values: %v", items)
+	// m.ctx.Logger.Infof("Columns: %v", m.columns)
 
 	m.table = table.New(
 		table.WithColumns(m.columns),
@@ -143,29 +157,40 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+
+	case tea.KeyMsg:
+		switch keypress := msg.String(); keypress {
+		case "enter":
+			row := m.table.SelectedRow()
+
+			m.ctx.Logger.Infof("TaskTable receive enter: %v", row)
+			cmds = append(cmds, TaskSelectedCmd(strings.Join(row, " ")))
+		}
+
 	case ViewChangedMsg:
-		m.ctx.Logger.Infof("TaskView receive ViewChangedMsg: %s", string(msg))
+		m.ctx.Logger.Infof("TaskTable receive ViewChangedMsg: %s", string(msg))
 		m.SelectedView = string(msg)
 		cmds = append(cmds, m.getTicketsCmd(string(msg)))
 
 	case TasksListReloadedMsg:
-		m.ctx.Logger.Infof("TaskView receive TasksListReloadedMsg: %d", len(msg))
+		m.ctx.Logger.Infof("TaskTable receive TasksListReloadedMsg: %d", len(msg))
 		m = m.syncTable(msg)
 		m.table, cmd = m.table.Update(msg)
 		cmds = append(cmds, cmd)
 		cmds = append(cmds, TasksListReadyCmd())
 
-	case tea.WindowSizeMsg:
-		m.ctx.Logger.Info("TaskView receive tea.WindowSizeMsg")
+	case views.WindowSizeMsg:
+		// case tea.WindowSizeMsg:
+		m.ctx.Logger.Info("TaskTable receive tea.WindowSizeMsg")
 		h, v := docStyle.GetFrameSize()
 		m.table.SetWidth(msg.Width - h)
 		m.table.SetHeight(msg.Height - v)
 
 	case common.FocusMsg:
-		m.ctx.Logger.Info("TaskView received FocusMsg")
+		m.ctx.Logger.Info("TaskTable received FocusMsg")
 
 	case FetchTasksForViewMsg:
-		m.ctx.Logger.Infof("TaskView received FetchViewMsg: %s", string(msg))
+		m.ctx.Logger.Infof("TaskTable received FetchViewMsg: %s", string(msg))
 		view := string(msg)
 		tasks, err := m.getTickets(view)
 		if err != nil {
@@ -174,21 +199,24 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.tickets[view] = tasks
 
 	case ViewLoadedMsg:
-		m.ctx.Logger.Infof("ViewsView received ViewLoadedMsg")
+		m.ctx.Logger.Infof("TaskTable received ViewLoadedMsg")
 		view := clickup.View(msg)
 
 		columns := []table.Column{}
 		columns = append(columns, m.requiredCols...)
 
-		for _, field := range view.Columns.Fields {
-			if field.Field == "name" || field.Field == "status" { // TODO: check if in requiredCols
-				continue
+		if m.autoColumns {
+			for _, field := range view.Columns.Fields {
+				if field.Field == "name" || field.Field == "status" { // TODO: check if in requiredCols
+					continue
+				}
+				columns = append(columns, table.Column{
+					Title: field.Field,
+					Width: 30,
+				})
 			}
-			columns = append(columns, table.Column{
-				Title: field.Field,
-				Width: 30,
-			})
 		}
+
 		m.ctx.Logger.Infof("Columns: %d", len(columns))
 		m.columns = columns
 	}
