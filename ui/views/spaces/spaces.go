@@ -47,12 +47,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				return m, cmd
 			}
 		}
-
-	case spaces.SpaceChangeMsg:
-		m.ctx.Logger.Infof("UI received SpaceChangeMsg: %s", string(msg))
-		return m, tea.Batch(
-			SpaceChangeCmd(string(msg)),
-		)
 	}
 
 	m.componentSpaceList, cmd = m.componentSpaceList.Update(msg)

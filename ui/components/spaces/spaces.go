@@ -109,7 +109,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedSpace := m.list.SelectedItem().(item).desc
 			m.ctx.Logger.Infof("Selected space %s", selectedSpace)
 			m.SelectedSpace = selectedSpace
-			return m, SpaceChangeCmd(selectedSpace)
+			return m, common.SpaceChangeCmd(selectedSpace)
 		}
 	}
 

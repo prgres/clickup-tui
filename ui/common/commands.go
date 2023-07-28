@@ -17,3 +17,11 @@ func WindowSizeCmd(msg tea.WindowSizeMsg) tea.Cmd {
 		return WindowSizeMsg(msg)
 	}
 }
+
+type SpaceChangeMsg string
+
+func SpaceChangeCmd(space string) tea.Cmd {
+	return func() tea.Msg {
+		return SpaceChangeMsg(space)
+	}
+}

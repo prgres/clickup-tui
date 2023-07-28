@@ -131,12 +131,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.showSpinner = false
 		// return m, tea.Batch(cmds...)
 
-	case SpaceChangedMsg:
-		m.ctx.Logger.Info("ViewTasks received SpaceChangedMsg")
-		cmd = viewtabs.SpaceChangedCmd(string(msg))
-		cmds = append(cmds, cmd)
-		// return m, tea.Batch(cmds...)
-
 	case spinner.TickMsg:
 		m.ctx.Logger.Info("ViewTask receive spinner.TickMsg")
 		if !m.showSpinner {

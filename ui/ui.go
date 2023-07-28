@@ -98,11 +98,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ctx.Logger.Info("UI received HideSpaceViewMsg")
 		return m, ChangeViewCmd(sessionTasksView)
 
-	case spaces.SpaceChangeMsg:
+	case common.SpaceChangeMsg:
 		m.ctx.Logger.Infof("UI received SpaceChangeMsg: %s", string(msg))
-		return m, tea.Batch(
-			tasks.SpaceChangedCmd(string(msg)),
-			ChangeViewCmd(sessionTasksView))
+		cmds = append(cmds, ChangeViewCmd(sessionTasksView))
 	}
 
 	m.viewSpaces, cmd = m.viewSpaces.Update(msg)

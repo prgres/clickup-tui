@@ -69,7 +69,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			return m, nil
 		}
 
-	case SpaceChangedMsg:
+	case common.SpaceChangeMsg:
 		m.ctx.Logger.Infof("ViewsView received SpaceChangedMsg")
 		m.SelectedSpace = string(msg)
 		views, err := m.getViews(string(msg))
@@ -150,7 +150,7 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Info("Initializing component: TabsView")
-	return SpaceChangedCmd(SPACE_SRE)
+	return common.SpaceChangeCmd(SPACE_SRE)
 }
 
 func (m Model) getViewsCmd(space string) tea.Cmd {

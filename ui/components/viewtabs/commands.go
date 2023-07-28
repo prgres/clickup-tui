@@ -30,11 +30,3 @@ func ViewChangedCmd(view string) tea.Cmd {
 		return ViewChangedMsg(view)
 	}
 }
-
-type SpaceChangedMsg string
-
-func SpaceChangedCmd(space string) tea.Cmd {
-	return func() tea.Msg {
-		return SpaceChangedMsg(space)
-	}
-}
