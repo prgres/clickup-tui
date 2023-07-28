@@ -25,7 +25,6 @@ func InitialModel(ctx *context.UserContext) Model {
 		ctx:                ctx,
 		componentSpaceList: spaces.InitialModel(ctx),
 		state:              SpacesStateList,
-		// state:              SpacesStateLoading,
 	}
 }
 
@@ -53,6 +52,6 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Cmd {
-	m.ctx.Logger.Infof("Initializing view: Spaces")
+	m.ctx.Logger.Info("Initializing view: Spaces")
 	return m.componentSpaceList.Init()
 }

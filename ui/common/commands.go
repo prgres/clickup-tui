@@ -25,3 +25,11 @@ func SpaceChangeCmd(space string) tea.Cmd {
 		return SpaceChangeMsg(space)
 	}
 }
+
+type TeamChangeMsg string
+
+func TeamChangeCmd(team string) tea.Cmd {
+	return func() tea.Msg {
+		return TeamChangeMsg(team)
+	}
+}

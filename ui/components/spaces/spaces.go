@@ -101,7 +101,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.list.SetSize(msg.Width-h, msg.Height-v)
 		return m, nil
 
-	case TeamChangeMsg:
+	case common.TeamChangeMsg:
 		m.ctx.Logger.Info("SpaceView received TeamChangeMsg")
 		m.SelectedTeam = string(msg)
 		return m, m.getSpacesCmd()
@@ -128,7 +128,7 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Infof("Initializing component: spacesList")
-	return TeamChangeCmd(TEAM_RAMP_NETWORK)
+	return common.TeamChangeCmd(TEAM_RAMP_NETWORK)
 }
 
 func (m Model) getSpacesCmd() tea.Cmd {
