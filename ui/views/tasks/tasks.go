@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/pkg/clickup"
+	"github.com/prgrs/clickup/ui/components/tasksidebar"
 	"github.com/prgrs/clickup/ui/components/tasktable"
 	"github.com/prgrs/clickup/ui/components/viewtabs"
 	"github.com/prgrs/clickup/ui/context"
@@ -20,6 +21,7 @@ const (
 	TasksStateLoading TasksState = iota
 	TasksStateTasksTable
 	TasksStateViewsTabs
+	TasksStateTaskSidebar
 )
 
 type Model struct {
@@ -28,6 +30,7 @@ type Model struct {
 
 	componentViewsTabs   viewtabs.Model
 	componentTasksTable  tasktable.Model
+	componentTaskSidebar tasksidebar.Model
 
 	spinner     spinner.Model
 	showSpinner bool
@@ -48,6 +51,7 @@ func InitialModel(ctx *context.UserContext) Model {
 
 		componentViewsTabs:   viewtabs.InitialModel(ctx),
 		componentTasksTable:  tasktable.InitialModel(ctx),
+		componentTaskSidebar: tasksidebar.InitialModel(ctx),
 
 		spinner:     s,
 		showSpinner: true,
@@ -76,10 +80,20 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.state = TasksStateTasksTable
 				return m, tea.Batch(cmds...)
 			}
+
+		case "esc":
+			m.state = TasksStateTasksTable
+			return m, tea.Batch(cmds...)
+
 		default:
 			switch m.state {
 			case TasksStateTasksTable:
 				m.componentTasksTable, cmd = m.componentTasksTable.Update(msg)
+				cmds = append(cmds, cmd)
+				return m, tea.Batch(cmds...)
+
+			case TasksStateTaskSidebar:
+				m.componentTaskSidebar, cmd = m.componentTaskSidebar.Update(msg)
 				cmds = append(cmds, cmd)
 				return m, tea.Batch(cmds...)
 
@@ -99,7 +113,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, tasktable.FetchTasksForViewCmd(viewID))
 		}
 
-		return m, tea.Batch(cmds...)
+		// return m, tea.Batch(cmds...)
 
 	case viewtabs.ViewChangedMsg:
 		m.ctx.Logger.Info("ViewTasks received ViewChangedMsg")
@@ -111,21 +125,21 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.componentViewsTabs, cmd = m.componentViewsTabs.Update(msg)
 		cmds = append(cmds, cmd)
 
-		return m, tea.Batch(cmds...)
+		// return m, tea.Batch(cmds...)
 
 	case tasktable.TasksListReady:
 		m.ctx.Logger.Info("ViewTasks received TasksListReady")
 		m.showSpinner = false
-		return m, tea.Batch(cmds...)
+		// return m, tea.Batch(cmds...)
 
 	case SpaceChangedMsg:
 		m.ctx.Logger.Info("ViewTasks received SpaceChangedMsg")
 		cmd = viewtabs.SpaceChangedCmd(string(msg))
 		cmds = append(cmds, cmd)
-		return m, tea.Batch(cmds...)
+		// return m, tea.Batch(cmds...)
 
 	case spinner.TickMsg:
-		m.ctx.Logger.Info("TaskView receive spinner.TickMsg")
+		m.ctx.Logger.Info("ViewTask receive spinner.TickMsg")
 		if !m.showSpinner {
 			return m, tea.Batch(cmds...)
 		}
@@ -133,20 +147,28 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 		return m, tea.Batch(cmds...)
 
-		m.ctx.Logger.Info("TaskView receive views.ViewLoadedMsg")
-		return m, tea.Batch(cmds...)
 	case viewtabs.ViewLoadedMsg:
+		m.ctx.Logger.Info("ViewTask receive views.ViewLoadedMsg")
 		cmds = append(cmds, tasktable.ViewLoadedCmd(clickup.View(msg)))
+		// return m, tea.Batch(cmds...)
+
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("ViewTask receive tea.WindowSizeMsg")
 		cmds = append(cmds, views.WindowSizeCmd(msg))
 
+	case tasktable.TaskSelectedMsg:
+		m.ctx.Logger.Info("ViewTask receive tasktable.TaskSelectedMsg")
+		m.state = TasksStateTaskSidebar
+		cmds = append(cmds, tasksidebar.TaskSelectedCmd(string(msg)))
 	}
 
 	m.componentViewsTabs, cmd = m.componentViewsTabs.Update(msg)
 	cmds = append(cmds, cmd)
 
 	m.componentTasksTable, cmd = m.componentTasksTable.Update(msg)
+	cmds = append(cmds, cmd)
+
+	m.componentTaskSidebar, cmd = m.componentTaskSidebar.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
@@ -165,7 +187,11 @@ func (m Model) View() string {
 	return lipgloss.JoinVertical(
 		lipgloss.Top,
 		m.componentViewsTabs.View(),
-		m.componentTasksTable.View(),
+		lipgloss.JoinHorizontal(
+			lipgloss.Top,
+			m.componentTasksTable.View(),
+			m.componentTaskSidebar.View(),
+		),
 	)
 }
 
@@ -174,6 +200,7 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.componentViewsTabs.Init(),
 		m.componentTasksTable.Init(),
+		m.componentTaskSidebar.Init(),
 		m.spinner.Tick,
 	)
 }

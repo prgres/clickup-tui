@@ -97,7 +97,7 @@ type Status struct {
 }
 
 type Creator struct {
-	Id             int   `json:"id"`
+	Id             int    `json:"id"`
 	Username       string `json:"username"`
 	Color          string `json:"color"`
 	ProfilePicture string `json:"profilePicture"`
@@ -107,6 +107,11 @@ type RequestGetTasks struct {
 	Tasks    []Task `json:"tasks"`
 	LastPage bool   `json:"last_page"`
 	Err      string `json:"err"`
+}
+
+type RequestGetTask struct {
+	Task Task   `json:"task"`
+	Err  string `json:"err"`
 }
 
 func (c *Client) GetTasksFromView(viewId string) ([]Task, error) {
@@ -127,4 +132,18 @@ func (c *Client) GetTasksFromView(viewId string) ([]Task, error) {
 	}
 
 	return objmap.Tasks, nil
+}
+
+func (c *Client) GetTask(taskId string) (Task, error) {
+	rawData, err := c.requestGet("/task/" + taskId)
+	if err != nil {
+		return Task{}, err
+	}
+	var objmap Task
+
+	if err := json.Unmarshal(rawData, &objmap); err != nil {
+		return Task{}, err
+	}
+
+	return objmap, nil
 }

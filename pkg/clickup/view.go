@@ -161,6 +161,7 @@ func (c *Client) GetViewsFromSpace(spaceId string) ([]View, error) {
 
 	}
 	if len(allViews) == 0 {
+		c.logger.Fatal("No views found in space: %s", spaceId)
 		return []View{}, nil
 	}
 
