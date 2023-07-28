@@ -11,6 +11,7 @@ import (
 	"github.com/prgrs/clickup/ui/components/tasktable"
 	"github.com/prgrs/clickup/ui/components/viewtabs"
 	"github.com/prgrs/clickup/ui/context"
+	"github.com/prgrs/clickup/ui/views"
 )
 
 type TasksState uint
@@ -136,6 +137,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 	case viewtabs.ViewLoadedMsg:
 		cmds = append(cmds, tasktable.ViewLoadedCmd(clickup.View(msg)))
+	case tea.WindowSizeMsg:
+		m.ctx.Logger.Info("ViewTask receive tea.WindowSizeMsg")
+		cmds = append(cmds, views.WindowSizeCmd(msg))
+
 	}
 
 	m.componentViewsTabs, cmd = m.componentViewsTabs.Update(msg)
