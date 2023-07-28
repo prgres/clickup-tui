@@ -26,10 +26,13 @@ func (i item) Description() string { return i.desc }
 func (i item) FilterValue() string { return i.title }
 
 func InitialModel(ctx *context.UserContext) Model {
+	l := list.New([]list.Item{},
+		list.NewDefaultDelegate(),
+		0, 0)
+	l.KeyMap.Quit.Unbind()
+
 	return Model{
-		list: list.New([]list.Item{},
-			list.NewDefaultDelegate(),
-			0, 0),
+		list:          l,
 		ctx:           ctx,
 		SelectedSpace: "",
 		spaces:        []clickup.Space{},
