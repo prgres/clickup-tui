@@ -9,3 +9,11 @@ func FocusCmd() tea.Cmd {
 		return FocusMsg(true)
 	}
 }
+
+type WindowSizeMsg tea.WindowSizeMsg
+
+func WindowSizeCmd(msg tea.WindowSizeMsg) tea.Cmd {
+	return func() tea.Msg {
+		return WindowSizeMsg(msg)
+	}
+}

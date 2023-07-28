@@ -7,8 +7,8 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
+	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
-	"github.com/prgrs/clickup/ui/views"
 )
 
 type TaskSelectedMsg string
@@ -42,7 +42,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.ctx.Logger.Info("TaskSidebar receive InitMsg")
 		m.viewport.SetContent(content)
 
-	case views.WindowSizeMsg:
+	case common.WindowSizeMsg:
 		m.ctx.Logger.Info("TaskSidebar receive tea.WindowSizeMsg")
 
 		m.viewport.Width = msg.Width

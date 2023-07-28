@@ -77,8 +77,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ctx.Logger.Info("UI received tea.WindowSizeMsg")
 		m.ctx.WindowSize.Width = msg.Width
 		m.ctx.WindowSize.Height = msg.Height
-		// return here is disable on purpose to allow the msg
-		// to be passed to the other components
+		cmds = append(cmds, common.WindowSizeCmd(msg))
 
 	case ChangeViewMsg: // maybe ChangeScreenMsg
 		m.ctx.Logger.Infof("UI received ChangeViewMsg: %d", msg)

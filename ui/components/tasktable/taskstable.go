@@ -3,13 +3,11 @@ package tasktable
 import (
 	"strings"
 
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
-	"github.com/prgrs/clickup/ui/views"
-
-	"github.com/charmbracelet/bubbles/table"
 )
 
 type TaskSelectedMsg string
@@ -187,8 +185,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 		cmds = append(cmds, TasksListReadyCmd())
 
-	case views.WindowSizeMsg:
-		// case tea.WindowSizeMsg:
+	case common.WindowSizeMsg:
 		m.ctx.Logger.Info("TaskTable receive tea.WindowSizeMsg")
 		h, v := docStyle.GetFrameSize()
 		m.table.SetWidth(msg.Width - h)
