@@ -16,6 +16,7 @@ type Model struct {
 	columns      []table.Column
 	requiredCols []table.Column
 	tickets      map[string][]clickup.Task
+
 	SelectedView string
 
 	autoColumns bool
@@ -190,7 +191,15 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Info("Initializing component: TaskTable")
-	return ViewChangedCmd(m.SelectedView)
+	tasks, err := m.getTickets(m.SelectedView)
+	if err != nil {
+		return common.ErrCmd(err)
+	}
+	var cmd tea.Cmd
+	m = m.syncTable(tasks)
+	m.table, cmd = m.table.Update(tasks)
+	row := m.table.SelectedRow()
+	return tea.Batch(cmd, TasksListReadyCmd(), TaskSelectedCmd(strings.Join(row, " ")))
 }
 
 func (m Model) getTicketsCmd(view string) tea.Cmd {

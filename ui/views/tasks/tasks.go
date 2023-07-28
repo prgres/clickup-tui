@@ -132,12 +132,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	case spinner.TickMsg:
 		m.ctx.Logger.Info("ViewTask receive spinner.TickMsg")
-		if !m.showSpinner {
-			return m, tea.Batch(cmds...)
+		if m.showSpinner {
+			m.spinner, cmd = m.spinner.Update(msg)
+			cmds = append(cmds, cmd)
 		}
-		m.spinner, cmd = m.spinner.Update(msg)
-		cmds = append(cmds, cmd)
-		return m, tea.Batch(cmds...)
 
 	case tasktable.TaskSelectedMsg:
 		m.ctx.Logger.Info("ViewTask receive tasktable.TaskSelectedMsg")
