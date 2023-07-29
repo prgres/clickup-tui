@@ -15,7 +15,7 @@ type Model struct {
 	table        table.Model
 	columns      []table.Column
 	requiredCols []table.Column
-	tickets      map[string][]clickup.Task
+	tasks        map[string][]clickup.Task
 
 	SelectedView string
 
@@ -50,7 +50,7 @@ func InitialModel(ctx *context.UserContext) Model {
 		),
 		columns:      columns,
 		requiredCols: requiredCols,
-		tickets:      map[string][]clickup.Task{},
+		tasks:      map[string][]clickup.Task{},
 		SelectedView: SPACE_SRE_LIST_COOL,
 		autoColumns:  false,
 	}
@@ -58,7 +58,7 @@ func InitialModel(ctx *context.UserContext) Model {
 
 func (m Model) syncTable(tasks []clickup.Task) Model {
 	m.ctx.Logger.Info("Synchonizing table")
-	m.tickets[m.SelectedView] = tasks
+	m.tasks[m.SelectedView] = tasks
 
 	items := taskListToRows(tasks, m.columns)
 	// m.ctx.Logger.Infof("Values: %v", items)
@@ -71,44 +71,6 @@ func (m Model) syncTable(tasks []clickup.Task) Model {
 	)
 
 	return m
-}
-
-func taskToRow(task clickup.Task, columns []table.Column) table.Row {
-	values := table.Row{}
-	for _, column := range columns {
-		switch column.Title {
-		case "status":
-			values = append(values, task.Status.Status)
-		case "name":
-			values = append(values, task.Name)
-		case "assignee":
-			values = append(values, task.GetAssignees())
-		case "list":
-			values = append(values, task.List.String())
-		case "tags":
-			values = append(values, task.GetTags())
-		case "folder":
-			values = append(values, task.Folder.String())
-		case "url":
-			values = append(values, task.Url)
-		case "space":
-			values = append(values, task.Space.Id)
-		case "id":
-			values = append(values, task.Id)
-		default:
-			values = append(values, "XXX")
-		}
-	}
-
-	return values
-}
-
-func taskListToRows(tasks []clickup.Task, columns []table.Column) []table.Row {
-	rows := make([]table.Row, len(tasks))
-	for i, task := range tasks {
-		rows[i] = taskToRow(task, columns)
-	}
-	return rows
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -129,7 +91,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case ViewChangedMsg:
 		m.ctx.Logger.Infof("TaskTable receive ViewChangedMsg: %s", string(msg))
 		m.SelectedView = string(msg)
-		cmds = append(cmds, m.getTicketsCmd(string(msg)))
+		cmds = append(cmds, m.getTasksCmd(string(msg)))
 
 	case TasksListReloadedMsg:
 		m.ctx.Logger.Infof("TaskTable receive TasksListReloadedMsg: %d", len(msg))
@@ -150,11 +112,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case FetchTasksForViewMsg:
 		m.ctx.Logger.Infof("TaskTable received FetchViewMsg: %s", string(msg))
 		view := string(msg)
-		tasks, err := m.getTickets(view)
+		tasks, err := m.getTasks(view)
 		if err != nil {
 			return m, common.ErrCmd(err)
 		}
-		m.tickets[view] = tasks
+		m.tasks[view] = tasks
 
 	case common.ViewLoadedMsg:
 		m.ctx.Logger.Infof("TaskTable received ViewLoadedMsg")
@@ -191,7 +153,7 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Info("Initializing component: TaskTable")
-	tasks, err := m.getTickets(m.SelectedView)
+	tasks, err := m.getTasks(m.SelectedView)
 	if err != nil {
 		return common.ErrCmd(err)
 	}
@@ -200,45 +162,4 @@ func (m Model) Init() tea.Cmd {
 	m.table, cmd = m.table.Update(tasks)
 	row := m.table.SelectedRow()
 	return tea.Batch(cmd, TasksListReadyCmd(), TaskSelectedCmd(strings.Join(row, " ")))
-}
-
-func (m Model) getTicketsCmd(view string) tea.Cmd {
-	return func() tea.Msg {
-		tasks, err := m.getTickets(view)
-		if err != nil {
-			return common.ErrMsg(err)
-		}
-
-		return TasksListReloadedMsg(tasks)
-	}
-}
-
-func (m Model) getTickets(view string) ([]clickup.Task, error) {
-	m.ctx.Logger.Infof("Getting tasks for view: %s", view)
-
-	data, ok := m.ctx.Cache.Get("tasks", view)
-	if ok {
-		m.ctx.Logger.Infof("Tasks found in cache")
-		var tasks []clickup.Task
-		if err := m.ctx.Cache.ParseData(data, &tasks); err != nil {
-			return nil, err
-		}
-
-		return tasks, nil
-	}
-	m.ctx.Logger.Info("Tasks not found in cache")
-
-	m.ctx.Logger.Info("Fetching tasks from API")
-	client := m.ctx.Clickup
-
-	tasks, err := client.GetTasksFromView(view)
-	if err != nil {
-		return nil, err
-	}
-	m.ctx.Logger.Infof("Found %d tasks in view %s", len(tasks), view)
-
-	m.ctx.Logger.Info("Caching tasks")
-	m.ctx.Cache.Set("tasks", view, tasks)
-
-	return tasks, nil
 }
