@@ -2,7 +2,6 @@ package tasksidebar
 
 import (
 	"encoding/json"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -80,16 +79,17 @@ func (m Model) Init() tea.Cmd {
 func (m Model) getTask(id string) (clickup.Task, error) {
 	m.ctx.Logger.Infof("Getting task: %s", id)
 
-	// data, ok := m.ctx.Cache.Get("task", id)
-	// if ok {
-	// 	m.ctx.Logger.Infof("Task found in cache")
-	// 	var task clickup.Task
-	// 	if err := m.ctx.Cache.ParseData(data, &task); err != nil {
-	// 		return clickup.Task{}, err
-	// 	}
+	data, ok := m.ctx.Cache.Get("task", id)
+	if ok {
+		m.ctx.Logger.Infof("Task found in cache")
+		var task clickup.Task
+		if err := m.ctx.Cache.ParseData(data, &task); err != nil {
+			return clickup.Task{}, err
+		}
 
-	// 	return task, nil
-	// }
+		return task, nil
+	}
+
 	m.ctx.Logger.Info("Task not found in cache")
 
 	m.ctx.Logger.Info("Fetching task from API")
