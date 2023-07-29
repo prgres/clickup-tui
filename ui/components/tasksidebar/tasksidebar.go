@@ -42,7 +42,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	case TaskSelectedMsg:
 		m.ctx.Logger.Info("TaskSidebar receive TaskSelectedMsg")
-		id := strings.Split(string(msg), " ")[0]
+		id := string(msg)
 		task, err := m.getTask(id)
 		if err != nil {
 			m.ctx.Logger.Fatal(err)

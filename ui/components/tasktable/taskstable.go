@@ -22,24 +22,24 @@ type Model struct {
 	autoColumns bool
 }
 
+func (m Model) getSelectedViewTasks() []clickup.Task {
+	return m.tasks[m.SelectedView]
+}
+
 func InitialModel(ctx *context.UserContext) Model {
 	columns := []table.Column{}
 	requiredCols := []table.Column{
 		{
-			Title: "id",
-			Width: 0,
-		},
-		{
 			Title: "name",
-			Width: 30,
+			Width: 40,
 		},
 		{
 			Title: "status",
-			Width: 30,
+			Width: 15,
 		},
 		{
 			Title: "assignee",
-			Width: 30,
+			Width: 40,
 		},
 	}
 
@@ -82,10 +82,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
-			row := m.table.SelectedRow()
-
-			m.ctx.Logger.Infof("TaskTable receive enter: %v", row)
-			cmds = append(cmds, TaskSelectedCmd(strings.Join(row, " ")))
+			index := m.table.Cursor()
+			task := m.getSelectedViewTasks()[index]
+			m.ctx.Logger.Infof("TaskTable receive enter: %d", index)
+			cmds = append(cmds, TaskSelectedCmd(task.Id))
 		}
 
 	case ViewChangedMsg:
