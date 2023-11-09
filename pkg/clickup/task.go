@@ -7,28 +7,32 @@ import (
 )
 
 type Task struct {
-	Id           string        `json:"id"`
-	Name         string        `json:"name"`
-	Status       Status        `json:"status"`
-	Orderindex   string        `json:"orderindex"`
-	DateCreated  string        `json:"date_created"`
-	DateUpdated  string        `json:"date_updated"`
-	DateClosed   string        `json:"date_closed"`
-	DateDone     string        `json:"date_done"`
-	Creator      Creator       `json:"creator"`
-	Assignees    []Assignee    `json:"assignees"`
-	Checklists   []interface{} `json:"checklists"`
-	Tags         []TaskTag     `json:"tags"`
-	Parent       interface{}   `json:"parent"`
-	Priority     interface{}   `json:"priority"`
-	Duedate      interface{}   `json:"duedate"`
-	Startdate    interface{}   `json:"startdate"`
-	Timeestimate interface{}   `json:"timeestimate"`
-	Timespent    interface{}   `json:"timespent"`
-	List         TaskList      `json:"list"`
-	Folder       TaskFolder    `json:"folder"`
-	Space        TaskSpace     `json:"space"`
-	Url          string        `json:"url"`
+	Id                  string        `json:"id"`
+	CustomId            string        `json:"custom_id"`
+	Name                string        `json:"name"`
+	TextContent         string        `json:"text_content"`
+	Description         string        `json:"description"`
+	MarkdownDescription string        `json:"markdown_description"`
+	Status              Status        `json:"status"`
+	Orderindex          string        `json:"orderindex"`
+	DateCreated         string        `json:"date_created"`
+	DateUpdated         string        `json:"date_updated"`
+	DateClosed          string        `json:"date_closed"`
+	DateDone            string        `json:"date_done"`
+	Creator             Creator       `json:"creator"`
+	Assignees           []Assignee    `json:"assignees"`
+	Checklists          []interface{} `json:"checklists"`
+	Tags                []TaskTag     `json:"tags"`
+	Parent              interface{}   `json:"parent"`
+	Priority            interface{}   `json:"priority"`
+	Duedate             interface{}   `json:"duedate"`
+	Startdate           interface{}   `json:"startdate"`
+	Timeestimate        interface{}   `json:"timeestimate"`
+	Timespent           interface{}   `json:"timespent"`
+	List                TaskList      `json:"list"`
+	Folder              TaskFolder    `json:"folder"`
+	Space               TaskSpace     `json:"space"`
+	Url                 string        `json:"url"`
 }
 
 type TaskTag struct {

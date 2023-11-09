@@ -40,17 +40,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.viewport.Height = msg.Height - 2
 
 	case TaskSelectedMsg:
-		m.ctx.Logger.Info("TaskSidebar receive TaskSelectedMsg")
 		id := string(msg)
+		m.ctx.Logger.Infof("TaskSidebar receive TaskSelectedMsg: %s", id)
+
 		task, err := m.getTask(id)
 		if err != nil {
-			m.ctx.Logger.Fatal(err)
-			return m, nil
+			return m, common.ErrCmd(err)
 		}
 
 		taskJson, err := json.MarshalIndent(task, "", "  ")
 		if err != nil {
-			m.ctx.Logger.Fatal(err)
+			return m, common.ErrCmd(err)
 			return m, nil
 		}
 
@@ -70,9 +70,6 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Info("Initializing component: TaskSidebar")
-	// m.viewport.SetContent("Hello, world!")
-	// m.viewport.YPosition = 10
-
 	return InitCmd()
 }
 
@@ -89,7 +86,6 @@ func (m Model) getTask(id string) (clickup.Task, error) {
 
 		return task, nil
 	}
-
 	m.ctx.Logger.Info("Task not found in cache")
 
 	m.ctx.Logger.Info("Fetching task from API")
