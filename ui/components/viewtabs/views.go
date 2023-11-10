@@ -14,7 +14,8 @@ type Model struct {
 	views              map[string][]clickup.View
 	SelectedView       string
 	SelectedViewStruct clickup.View
-	SelectedFolder     string
+	SelectedList       string
+	// SelectedFolder     string
 	// SelectedSpace      string
 }
 
@@ -60,25 +61,56 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "h", "left":
-			m.SelectedView = prevView(m.views[m.SelectedFolder], m.SelectedView)
+			m.SelectedView = prevView(m.views[m.SelectedList], m.SelectedView)
 			return m, ViewChangedCmd(m.SelectedView)
 		case "l", "right":
-			m.SelectedView = nextView(m.views[m.SelectedFolder], m.SelectedView)
+			m.SelectedView = nextView(m.views[m.SelectedList], m.SelectedView)
 			return m, ViewChangedCmd(m.SelectedView)
 
 		default:
 			return m, nil
 		}
 
-	case common.FolderChangeMsg:
-		m.ctx.Logger.Infof("ViewsView received FolderChangeMsg: %s", string(msg))
-		m.SelectedFolder = string(msg)
+	// case common.FolderChangeMsg:
+	// 	m.ctx.Logger.Infof("ViewsView received FolderChangeMsg: %s", string(msg))
+	// 	m.SelectedFolder = string(msg)
 
-		views, err := m.getViewsFromFolder(string(msg))
+	// 	views, err := m.getViewsFromFolder(string(msg))
+	// 	if err != nil {
+	// 		return m, common.ErrCmd(err)
+	// 	}
+	// 	m.ctx.Logger.Infof("----GOT %d VIEWS FORM FOLDER: %s", len(views), string(msg))
+
+	// 	if len(views) == 0 {
+	// 		return m, tea.Batch(
+	// 			ViewChangedCmd(m.SelectedView),
+	// 		)
+	// 	}
+
+	// 	m.views[m.SelectedFolder] = views
+	// 	m.SelectedView = m.views[m.SelectedFolder][0].Id
+	// 	viewsIds := []string{}
+	// 	for _, view := range views {
+	// 		m.ctx.Logger.Infof("----VIEW: %s; %s", view.Name, view.Id)
+	// 		if view.Id == m.SelectedView {
+	// 			continue
+	// 		}
+	// 		viewsIds = append(viewsIds, view.Id)
+	// 	}
+
+	// 	return m, tea.Batch(
+	// 		ViewChangedCmd(m.SelectedView),
+	// 		FetchViewsCmd(viewsToIdList(views)),
+	// 	)
+
+	case common.ListChangeMsg:
+		m.ctx.Logger.Infof("ViewsView received ListChangeMsg: %s", string(msg))
+		m.SelectedList = string(msg)
+
+		views, err := m.getViewsFromList(string(msg))
 		if err != nil {
 			return m, common.ErrCmd(err)
 		}
-		m.ctx.Logger.Infof("----GOT %d VIEWS FORM FOLDER: %s", len(views), string(msg))
 
 		if len(views) == 0 {
 			return m, tea.Batch(
@@ -86,8 +118,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			)
 		}
 
-		m.views[m.SelectedFolder] = views
-		m.SelectedView = m.views[m.SelectedFolder][0].Id
+		m.views[m.SelectedList] = views
+		m.SelectedView = m.views[m.SelectedList][0].Id
 		viewsIds := []string{}
 		for _, view := range views {
 			m.ctx.Logger.Infof("----VIEW: %s; %s", view.Name, view.Id)
@@ -143,7 +175,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case ViewChangedMsg:
 		m.ctx.Logger.Info("ViewsView received ViewChangedMsg")
 		viewName := string(msg)
-		allViews := m.views[m.SelectedFolder]
+		allViews := m.views[m.SelectedList]
+		// allViews := m.views[m.SelectedFolder]
 		// allViews := m.views[m.SelectedSpace]
 		for _, view := range allViews {
 			if view.Id == viewName {
@@ -170,7 +203,8 @@ func viewsToIdList(views []clickup.View) []string {
 
 func (m Model) View() string {
 	viewsNames := []string{}
-	for _, view := range m.views[m.SelectedFolder] {
+	for _, view := range m.views[m.SelectedList] {
+	// for _, view := range m.views[m.SelectedFolder] {
 		// for _, view := range m.views[m.SelectedSpace] {
 		t := ""
 		if m.SelectedView == view.Id {
@@ -186,7 +220,7 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Info("Initializing component: TabsView")
-	return common.FolderChangeCmd(FOLDER_INITIATIVE)
+	return common.ListChangeCmd(FOLDER_INITIATIVE)
 }
 
 func (m Model) getViewsFromSpaceCmd(space string) tea.Cmd {
@@ -212,16 +246,16 @@ func (m Model) getViewsFromFolderCmd(folder string) tea.Cmd {
 func (m Model) getViewsFromFolder(folder string) ([]clickup.View, error) {
 	m.ctx.Logger.Infof("Getting views for folder: %s", folder)
 
-	// data, ok := m.ctx.Cache.Get("views", folder)
-	// if ok {
-	// 	m.ctx.Logger.Infof("Views found in cache")
-	// 	var views []clickup.View
-	// 	if err := m.ctx.Cache.ParseData(data, &views); err != nil {
-	// 		return nil, err
-	// 	}
+	data, ok := m.ctx.Cache.Get("views", folder)
+	if ok {
+		m.ctx.Logger.Infof("Views found in cache")
+		var views []clickup.View
+		if err := m.ctx.Cache.ParseData(data, &views); err != nil {
+			return nil, err
+		}
 
-	// 	return views, nil
-	// }
+		return views, nil
+	}
 	m.ctx.Logger.Info("Views not found in cache")
 
 	m.ctx.Logger.Info("Fetching views from API")
@@ -236,6 +270,37 @@ func (m Model) getViewsFromFolder(folder string) ([]clickup.View, error) {
 
 	m.ctx.Logger.Info("Caching views")
 	m.ctx.Cache.Set("views", folder, views)
+
+	return views, nil
+}
+
+func (m Model) getViewsFromList(listId string) ([]clickup.View, error) {
+	m.ctx.Logger.Infof("Getting views for folder: %s", listId)
+
+	data, ok := m.ctx.Cache.Get("views", listId)
+	if ok {
+		m.ctx.Logger.Infof("Views found in cache")
+		var views []clickup.View
+		if err := m.ctx.Cache.ParseData(data, &views); err != nil {
+			return nil, err
+		}
+
+		return views, nil
+	}
+	m.ctx.Logger.Info("Views not found in cache")
+
+	m.ctx.Logger.Info("Fetching views from API")
+	client := m.ctx.Clickup
+
+	m.ctx.Logger.Infof("Getting views from folder: %s", listId)
+	views, err := client.GetViewsFromList(listId)
+	if err != nil {
+		return nil, err
+	}
+	m.ctx.Logger.Infof("Found %d views in folder %s", len(views), listId)
+
+	m.ctx.Logger.Info("Caching views")
+	m.ctx.Cache.Set("views", listId, views)
 
 	return views, nil
 }

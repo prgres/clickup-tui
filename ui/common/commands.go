@@ -37,6 +37,14 @@ func FolderChangeCmd(space string) tea.Cmd {
 	}
 }
 
+type ListChangeMsg string
+
+func ListChangeCmd(space string) tea.Cmd {
+	return func() tea.Msg {
+		return ListChangeMsg(space)
+	}
+}
+
 type TeamChangeMsg string
 
 func TeamChangeCmd(team string) tea.Cmd {

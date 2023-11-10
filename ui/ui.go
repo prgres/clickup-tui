@@ -5,6 +5,7 @@ import (
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
 	"github.com/prgrs/clickup/ui/views/folders"
+	"github.com/prgrs/clickup/ui/views/lists"
 	"github.com/prgrs/clickup/ui/views/spaces"
 	"github.com/prgrs/clickup/ui/views/tasks"
 )
@@ -22,6 +23,7 @@ type sessionState uint
 const (
 	sessionSpacesView sessionState = iota
 	sessionFoldersView
+	sessionListsView
 	sessionTasksView
 )
 
@@ -31,6 +33,7 @@ type Model struct {
 
 	viewSpaces  spaces.Model
 	viewTasks   tasks.Model
+	viewLists   lists.Model
 	viewFolders folders.Model
 }
 
@@ -41,6 +44,7 @@ func InitialModel(ctx *context.UserContext) Model {
 
 		viewSpaces:  spaces.InitialModel(ctx),
 		viewTasks:   tasks.InitialModel(ctx),
+		viewLists:   lists.InitialModel(ctx),
 		viewFolders: folders.InitialModel(ctx),
 	}
 }
@@ -66,6 +70,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, ChangeViewCmd(sessionFoldersView)
 
 		case "3":
+			return m, ChangeViewCmd(sessionListsView)
+
+		case "4":
 			return m, ChangeViewCmd(sessionTasksView)
 
 		default:
@@ -81,6 +88,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case sessionFoldersView:
 				m.viewFolders, cmd = m.viewFolders.Update(msg)
 				return m, cmd
+
+			case sessionListsView:
+				m.viewLists, cmd = m.viewLists.Update(msg)
+				return m, cmd
+
 			default:
 				return m, nil
 			}
@@ -106,6 +118,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.viewFolders, cmd = m.viewFolders.Update(common.FocusMsg(true))
 			return m, cmd
 
+		case sessionListsView:
+			m.state = sessionListsView
+			m.viewLists, cmd = m.viewLists.Update(common.FocusMsg(true))
+			return m, cmd
+
 		case sessionTasksView:
 			m.state = sessionTasksView
 			m.viewSpaces, cmd = m.viewSpaces.Update(common.FocusMsg(true))
@@ -122,6 +139,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case common.FolderChangeMsg:
 		m.ctx.Logger.Infof("UI received FolderChangeMsg: %s", string(msg))
+		cmds = append(cmds, ChangeViewCmd(sessionListsView))
+
+	case common.ListChangeMsg:
+		m.ctx.Logger.Infof("UI received ListChangeMsg: %s", string(msg))
 		cmds = append(cmds, ChangeViewCmd(sessionTasksView))
 	}
 
@@ -134,6 +155,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.viewFolders, cmd = m.viewFolders.Update(msg)
 	cmds = append(cmds, cmd)
 
+	m.viewLists, cmd = m.viewLists.Update(msg)
+	cmds = append(cmds, cmd)
+
 	return m, tea.Batch(cmds...)
 }
 
@@ -143,6 +167,8 @@ func (m Model) View() string {
 		return m.viewSpaces.View()
 	case sessionTasksView:
 		return m.viewTasks.View()
+	case sessionListsView:
+		return m.viewLists.View()
 	case sessionFoldersView:
 		return m.viewFolders.View()
 	default:
@@ -155,6 +181,7 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.viewSpaces.Init(),
 		m.viewTasks.Init(),
+		m.viewLists.Init(),
 		m.viewFolders.Init(),
 	)
 }
