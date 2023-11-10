@@ -37,6 +37,7 @@ func InitialModel(ctx *context.UserContext) Model {
 		list:           l,
 		ctx:            ctx,
 		SelectedFolder: "",
+		SelectedSpace:  SPACE_SRE,
 		folders:        []clickup.Folder{},
 	}
 }
@@ -131,7 +132,7 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Infof("Initializing component: foldersList")
-	return common.FolderChangeCmd(FOLDER_INITIATIVE)
+	return common.SpaceChangeCmd(SPACE_SRE)
 }
 
 func (m Model) getFoldersCmd(space string) tea.Cmd {

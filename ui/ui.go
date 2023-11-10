@@ -37,8 +37,7 @@ type Model struct {
 func InitialModel(ctx *context.UserContext) Model {
 	return Model{
 		ctx:   ctx,
-		state: sessionFoldersView,
-		// state: sessionTasksView,
+		state: sessionTasksView,
 
 		viewSpaces:  spaces.InitialModel(ctx),
 		viewTasks:   tasks.InitialModel(ctx),
