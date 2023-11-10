@@ -237,7 +237,7 @@ func (c *Client) GetViewsFromList(listId string) ([]View, error) {
 
 	}
 	if len(allViews) == 0 {
-		c.logger.Fatal("No views found in folder: %s", listId)
+		// c.logger.Fatal("No views found in list: %s", listId)
 		return []View{}, nil
 	}
 
