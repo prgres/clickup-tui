@@ -82,9 +82,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			case sessionListsView:
 				return m, ChangeViewCmd(sessionFoldersView)
-
-			default:
-				return m, nil
 			}
 
 		default:
