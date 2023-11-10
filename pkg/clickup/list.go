@@ -19,12 +19,12 @@ type ListSpace struct {
 }
 
 type List struct {
-	Id               string     `json:"id"`
-	Name             string     `json:"name"`
-	OrderIndex       int        `json:"orderindex"`
-	Content          string     `json:"content"`
-	Status           string     `json:"status"`
-	Priority         string     `json:"priority"`
+	Id         string `json:"id"`
+	Name       string `json:"name"`
+	OrderIndex int    `json:"orderindex"`
+	Content    string `json:"content"`
+	Status     string `json:"status"`
+	// Priority         string     `json:"priority"`
 	Assignee         string     `json:"assignee"`
 	TaskCount        int        `json:"task_count"`
 	DueDate          string     `json:"due_date"`
