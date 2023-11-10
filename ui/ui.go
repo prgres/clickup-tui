@@ -75,6 +75,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "4":
 			return m, ChangeViewCmd(sessionTasksView)
 
+		case "esc":
+			switch m.state {
+			case sessionFoldersView:
+				return m, ChangeViewCmd(sessionSpacesView)
+
+			case sessionListsView:
+				return m, ChangeViewCmd(sessionFoldersView)
+
+			default:
+				return m, nil
+			}
+
 		default:
 			switch m.state {
 			case sessionSpacesView:
