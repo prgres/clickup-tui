@@ -4,6 +4,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
+	"github.com/prgrs/clickup/ui/views/folders"
 	"github.com/prgrs/clickup/ui/views/spaces"
 	"github.com/prgrs/clickup/ui/views/tasks"
 )
@@ -20,6 +21,7 @@ type sessionState uint
 
 const (
 	sessionSpacesView sessionState = iota
+	sessionFoldersView
 	sessionTasksView
 )
 
@@ -27,17 +29,20 @@ type Model struct {
 	ctx   *context.UserContext
 	state sessionState
 
-	viewSpaces spaces.Model
-	viewTasks  tasks.Model
+	viewSpaces  spaces.Model
+	viewTasks   tasks.Model
+	viewFolders folders.Model
 }
 
 func InitialModel(ctx *context.UserContext) Model {
 	return Model{
 		ctx:   ctx,
-		state: sessionTasksView,
+		state: sessionFoldersView,
+		// state: sessionTasksView,
 
-		viewSpaces: spaces.InitialModel(ctx),
-		viewTasks:  tasks.InitialModel(ctx),
+		viewSpaces:  spaces.InitialModel(ctx),
+		viewTasks:   tasks.InitialModel(ctx),
+		viewFolders: folders.InitialModel(ctx),
 	}
 }
 
@@ -58,6 +63,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "1":
 			return m, ChangeViewCmd(sessionSpacesView)
 
+		case "2":
+			return m, ChangeViewCmd(sessionFoldersView)
+
+		case "3":
+			return m, ChangeViewCmd(sessionTasksView)
+
 		default:
 			switch m.state {
 			case sessionSpacesView:
@@ -68,6 +79,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.viewTasks, cmd = m.viewTasks.Update(msg)
 				return m, cmd
 
+			case sessionFoldersView:
+				m.viewFolders, cmd = m.viewFolders.Update(msg)
+				return m, cmd
 			default:
 				return m, nil
 			}
@@ -88,6 +102,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.viewSpaces, cmd = m.viewSpaces.Update(common.FocusMsg(true))
 			return m, cmd
 
+		case sessionFoldersView:
+			m.state = sessionFoldersView
+			m.viewFolders, cmd = m.viewFolders.Update(common.FocusMsg(true))
+			return m, cmd
+
 		case sessionTasksView:
 			m.state = sessionTasksView
 			m.viewSpaces, cmd = m.viewSpaces.Update(common.FocusMsg(true))
@@ -100,6 +119,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case common.SpaceChangeMsg:
 		m.ctx.Logger.Infof("UI received SpaceChangeMsg: %s", string(msg))
+		cmds = append(cmds, ChangeViewCmd(sessionFoldersView))
+
+	case common.FolderChangeMsg:
+		m.ctx.Logger.Infof("UI received FolderChangeMsg: %s", string(msg))
 		cmds = append(cmds, ChangeViewCmd(sessionTasksView))
 	}
 
@@ -107,6 +130,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 
 	m.viewTasks, cmd = m.viewTasks.Update(msg)
+	cmds = append(cmds, cmd)
+
+	m.viewFolders, cmd = m.viewFolders.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
@@ -118,6 +144,8 @@ func (m Model) View() string {
 		return m.viewSpaces.View()
 	case sessionTasksView:
 		return m.viewTasks.View()
+	case sessionFoldersView:
+		return m.viewFolders.View()
 	default:
 		return m.viewTasks.View()
 	}
@@ -128,5 +156,6 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.viewSpaces.Init(),
 		m.viewTasks.Init(),
+		m.viewFolders.Init(),
 	)
 }

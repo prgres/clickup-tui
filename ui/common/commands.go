@@ -29,6 +29,14 @@ func SpaceChangeCmd(space string) tea.Cmd {
 	}
 }
 
+type FolderChangeMsg string
+
+func FolderChangeCmd(space string) tea.Cmd {
+	return func() tea.Msg {
+		return FolderChangeMsg(space)
+	}
+}
+
 type TeamChangeMsg string
 
 func TeamChangeCmd(team string) tea.Cmd {
