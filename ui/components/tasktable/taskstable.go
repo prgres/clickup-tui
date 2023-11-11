@@ -5,6 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
@@ -50,7 +51,7 @@ func InitialModel(ctx *context.UserContext) Model {
 		),
 		columns:      columns,
 		requiredCols: requiredCols,
-		tasks:      map[string][]clickup.Task{},
+		tasks:        map[string][]clickup.Task{},
 		SelectedView: SPACE_SRE_LIST_COOL,
 		autoColumns:  false,
 	}
@@ -148,7 +149,16 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	return m.table.View()
+	return lipgloss.NewStyle().
+		Width(int(0.8 * float32(m.table.Width()))).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderBottom(true).
+		BorderRight(true).
+		BorderTop(true).
+		BorderLeft(true).
+		Render(
+			m.table.View(),
+		)
 }
 
 func (m Model) Init() tea.Cmd {
