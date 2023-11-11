@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
@@ -202,20 +203,26 @@ func viewsToIdList(views []clickup.View) []string {
 }
 
 func (m Model) View() string {
-	viewsNames := []string{}
+	s := strings.Builder{}
+	if len(m.views[m.SelectedList]) == 0 {
+		return s.String()
+	}
+
+	s.WriteString("Views")
+
 	for _, view := range m.views[m.SelectedList] {
-	// for _, view := range m.views[m.SelectedFolder] {
-		// for _, view := range m.views[m.SelectedSpace] {
 		t := ""
 		if m.SelectedView == view.Id {
 			t = activeTabStyle.Render(view.Name)
 		} else {
 			t = inactiveTabStyle.Render(view.Name)
 		}
-		viewsNames = append(viewsNames, t)
+		s.WriteString(" | ")
+		s.WriteString(t)
 	}
 
-	return strings.Join(viewsNames, " | ")
+	return lipgloss.NewStyle().
+		Render(s.String())
 }
 
 func (m Model) Init() tea.Cmd {
