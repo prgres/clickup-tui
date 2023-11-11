@@ -5,6 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
@@ -37,7 +38,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.ctx.Logger.Info("TaskSidebar receive tea.WindowSizeMsg")
 
 		m.viewport.Width = msg.Width
-		m.viewport.Height = msg.Height - 2
+		m.viewport.Height = msg.Height
 
 	case TaskSelectedMsg:
 		id := string(msg)
@@ -65,7 +66,14 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	return m.viewport.View()
+	return lipgloss.NewStyle().
+		Width(int(0.2 * float32(m.viewport.Width))).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderRight(true).
+		BorderBottom(true).
+		BorderTop(true).
+		BorderLeft(true).
+		Render(m.viewport.View())
 }
 
 func (m Model) Init() tea.Cmd {
