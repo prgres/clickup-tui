@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/components/tasksidebar"
 	"github.com/prgrs/clickup/ui/components/tasktable"
 	"github.com/prgrs/clickup/ui/components/viewtabs"
@@ -113,6 +114,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 		// return m, tea.Batch(cmds...)
 
+	case common.WindowSizeMsg:
+		m.ctx.Logger.Info("TaskSidebar receive tea.WindowSizeMsg")
+
 	case viewtabs.ViewChangedMsg:
 		m.ctx.Logger.Info("ViewTasks received ViewChangedMsg")
 		m.showSpinner = true
@@ -165,15 +169,22 @@ func (m Model) View() string {
 		)
 	}
 
-	return lipgloss.JoinVertical(
-		lipgloss.Top,
-		m.componentViewsTabs.View(),
-		lipgloss.JoinHorizontal(
+	return lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderRight(true).
+		BorderBottom(true).
+		BorderTop(true).
+		BorderLeft(true).
+		Width(m.ctx.WindowSize.Width).
+		Render(lipgloss.JoinVertical(
 			lipgloss.Top,
-			m.componentTasksTable.View(),
-			m.componentTaskSidebar.View(),
-		),
-	)
+			m.componentViewsTabs.View(),
+			lipgloss.JoinHorizontal(
+				lipgloss.Top,
+				m.componentTasksTable.View(),
+				m.componentTaskSidebar.View(),
+			),
+		))
 }
 
 func (m Model) Init() tea.Cmd {
