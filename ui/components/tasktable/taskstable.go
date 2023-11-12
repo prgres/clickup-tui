@@ -101,11 +101,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 		cmds = append(cmds, TasksListReadyCmd())
 
-	case common.WindowSizeMsg:
 		m.ctx.Logger.Info("TaskTable receive tea.WindowSizeMsg")
 		h, v := docStyle.GetFrameSize()
 		m.table.SetWidth(msg.Width - h)
 		m.table.SetHeight(msg.Height - v)
+	case tea.WindowSizeMsg:
 
 	case common.FocusMsg:
 		m.ctx.Logger.Info("TaskTable received FocusMsg")

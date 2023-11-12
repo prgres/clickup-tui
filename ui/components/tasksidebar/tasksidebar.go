@@ -34,7 +34,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.ctx.Logger.Info("TaskSidebar receive InitMsg")
 		m.viewport.SetContent("Loading...")
 
-	case common.WindowSizeMsg:
+	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("TaskSidebar receive tea.WindowSizeMsg")
 
 		m.viewport.Width = msg.Width

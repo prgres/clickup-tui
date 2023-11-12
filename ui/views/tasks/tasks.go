@@ -7,7 +7,6 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/components/tasksidebar"
 	"github.com/prgrs/clickup/ui/components/tasktable"
 	"github.com/prgrs/clickup/ui/components/viewtabs"
@@ -114,8 +113,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 		// return m, tea.Batch(cmds...)
 
-	case common.WindowSizeMsg:
 		m.ctx.Logger.Info("TaskSidebar receive tea.WindowSizeMsg")
+	case tea.WindowSizeMsg:
 
 	case viewtabs.ViewChangedMsg:
 		m.ctx.Logger.Info("ViewTasks received ViewChangedMsg")
