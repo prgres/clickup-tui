@@ -17,9 +17,12 @@ type Model struct {
 }
 
 func InitialModel(ctx *context.UserContext) Model {
+	v := viewport.New(0, 0)
+	v.Style = lipgloss.NewStyle().
+		Height(0)
 	return Model{
 		ctx:      ctx,
-		viewport: viewport.New(30, 30),
+		viewport: v,
 	}
 }
 
@@ -30,15 +33,15 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	)
 
 	switch msg := msg.(type) {
+
 	case InitMsg:
 		m.ctx.Logger.Info("TaskSidebar receive InitMsg")
 		m.viewport.SetContent("Loading...")
 
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("TaskSidebar receive tea.WindowSizeMsg")
-
-		m.viewport.Width = msg.Width
-		m.viewport.Height = msg.Height
+		m.viewport.Width = int(0.3 * float32(m.ctx.WindowSize.Width))
+		m.viewport.Height = int(0.7 * float32(m.ctx.WindowSize.Height))
 
 	case TaskSelectedMsg:
 		id := string(msg)
@@ -55,7 +58,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 		m.viewport.SetContent(string(taskJson))
-		m.viewport.GotoTop()
+		_ = m.viewport.GotoTop()
 	}
 
 	m.viewport, cmd = m.viewport.Update(msg)
@@ -66,12 +69,13 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) View() string {
 	return lipgloss.NewStyle().
-		Width(int(0.2 * float32(m.viewport.Width))).
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderRight(true).
 		BorderBottom(true).
 		BorderTop(true).
 		BorderLeft(true).
+		Width(m.viewport.Width).
+		Height(m.viewport.Height).
 		Render(
 			m.viewport.View(),
 		)

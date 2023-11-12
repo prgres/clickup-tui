@@ -47,6 +47,8 @@ func InitialModel(ctx *context.UserContext) Model {
 		ctx: ctx,
 		table: table.New(
 			table.WithFocused(true),
+			table.WithHeight(0),
+			table.WithWidth(0),
 		),
 		columns:      columns,
 		requiredCols: requiredCols,
@@ -62,11 +64,8 @@ func (m Model) syncTable(tasks []clickup.Task) Model {
 
 	items := taskListToRows(tasks, m.columns)
 
-	m.table = table.New(
-		table.WithColumns(m.columns),
-		table.WithRows(items),
-		table.WithFocused(true),
-	)
+	m.table.SetColumns(m.columns)
+	m.table.SetRows(items)
 
 	return m
 }
@@ -98,11 +97,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 		cmds = append(cmds, TasksListReadyCmd())
 
-		m.ctx.Logger.Info("TaskTable receive tea.WindowSizeMsg")
-		h, v := docStyle.GetFrameSize()
-		m.table.SetWidth(msg.Width - h)
-		m.table.SetHeight(msg.Height - v)
 	case tea.WindowSizeMsg:
+		m.ctx.Logger.Infof("TaskTable receive tea.WindowSizeMsg Width: %d Height %d", msg.Width, msg.Height)
+		w := int(0.6 * float32(m.ctx.WindowSize.Width))
+		h := int(0.7 * float32(m.ctx.WindowSize.Height))
+		m.table.SetWidth(w)
+		m.table.SetHeight(h)
 
 	case common.FocusMsg:
 		m.ctx.Logger.Info("TaskTable received FocusMsg")
@@ -147,7 +147,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) View() string {
 	return lipgloss.NewStyle().
-		Width(int(0.8 * float32(m.table.Width()))).
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderBottom(true).
 		BorderRight(true).

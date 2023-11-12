@@ -123,7 +123,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.SelectedView = m.views[m.SelectedList][0].Id
 		viewsIds := []string{}
 		for _, view := range views {
-			m.ctx.Logger.Infof("----VIEW: %s; %s", view.Name, view.Id)
 			if view.Id == m.SelectedView {
 				continue
 			}
@@ -222,7 +221,14 @@ func (m Model) View() string {
 	}
 
 	return lipgloss.NewStyle().
-		Render(s.String())
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderRight(true).
+		BorderBottom(true).
+		BorderTop(true).
+		BorderLeft(true).
+		Render(
+			s.String(),
+		)
 }
 
 func (m Model) Init() tea.Cmd {

@@ -41,7 +41,6 @@ func InitialModel(ctx *context.UserContext) Model {
 	// spinner.Line,
 	// spinner.Pulse,
 	// spinner.Points,
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
 	return Model{
 		ctx:   ctx,
@@ -174,7 +173,6 @@ func (m Model) View() string {
 		BorderBottom(true).
 		BorderTop(true).
 		BorderLeft(true).
-		Width(m.ctx.WindowSize.Width).
 		Render(lipgloss.JoinVertical(
 			lipgloss.Top,
 			m.componentViewsTabs.View(),
