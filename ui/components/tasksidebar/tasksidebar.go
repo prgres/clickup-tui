@@ -52,7 +52,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		taskJson, err := json.MarshalIndent(task, "", "  ")
 		if err != nil {
 			return m, common.ErrCmd(err)
-			return m, nil
 		}
 
 		m.viewport.SetContent(string(taskJson))
@@ -73,7 +72,9 @@ func (m Model) View() string {
 		BorderBottom(true).
 		BorderTop(true).
 		BorderLeft(true).
-		Render(m.viewport.View())
+		Render(
+			m.viewport.View(),
+		)
 }
 
 func (m Model) Init() tea.Cmd {

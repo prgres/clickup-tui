@@ -113,8 +113,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 		// return m, tea.Batch(cmds...)
 
-		m.ctx.Logger.Info("TaskSidebar receive tea.WindowSizeMsg")
 	case tea.WindowSizeMsg:
+		m.ctx.Logger.Info("ViewTasks receive tea.WindowSizeMsg")
 
 	case viewtabs.ViewChangedMsg:
 		m.ctx.Logger.Info("ViewTasks received ViewChangedMsg")

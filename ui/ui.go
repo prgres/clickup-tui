@@ -108,10 +108,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		m.ctx.Logger.Info("UI received tea.WindowSizeMsg")
+		m.ctx.Logger.Infof("UI received tea.WindowSizeMsg. Width: %d Height %d", msg.Width, msg.Height)
 		m.ctx.WindowSize.Width = msg.Width
 		m.ctx.WindowSize.Height = msg.Height
-		cmds = append(cmds, common.WindowSizeCmd(msg))
 
 	case ChangeViewMsg: // maybe ChangeScreenMsg
 		m.ctx.Logger.Infof("UI received ChangeViewMsg: %d", msg)

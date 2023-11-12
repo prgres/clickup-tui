@@ -19,8 +19,7 @@ type Model struct {
 	tasks        map[string][]clickup.Task
 
 	SelectedView string
-
-	autoColumns bool
+	autoColumns  bool
 }
 
 func (m Model) getSelectedViewTasks() []clickup.Task {
@@ -62,8 +61,6 @@ func (m Model) syncTable(tasks []clickup.Task) Model {
 	m.tasks[m.SelectedView] = tasks
 
 	items := taskListToRows(tasks, m.columns)
-	// m.ctx.Logger.Infof("Values: %v", items)
-	// m.ctx.Logger.Infof("Columns: %v", m.columns)
 
 	m.table = table.New(
 		table.WithColumns(m.columns),

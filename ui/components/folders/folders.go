@@ -89,7 +89,6 @@ func folderToItem(folder clickup.Folder) item {
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
-	m.ctx.Logger.Infof("Updating component: foldersList,len=%d", len(m.folders))
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -97,7 +96,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case FoldersListReloadedMsg:
 		m.ctx.Logger.Info("FolderView received FoldersListReloadedMsg")
 		m = m.syncList(msg)
-		// return m, nil
 
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("FolderView received tea.WindowSizeMsg")
