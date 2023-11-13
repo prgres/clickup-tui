@@ -1,7 +1,8 @@
 package tasksidebar
 
 import (
-	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -53,12 +54,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			return m, common.ErrCmd(err)
 		}
 
-		taskJson, err := json.MarshalIndent(task, "", "  ")
-		if err != nil {
-			return m, common.ErrCmd(err)
-		}
+		m.viewport.SetContent(m.renderTask(task))
 
-		m.viewport.SetContent(string(taskJson))
 		_ = m.viewport.GotoTop()
 	}
 
@@ -66,6 +63,16 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
+}
+
+func (m Model) renderTask(task clickup.Task) string {
+	s := strings.Builder{}
+	s.WriteString(
+		fmt.Sprintf("[#%s] %s\n", task.Id, task.Name),
+	)
+	s.WriteString("--------------------\n")
+	s.WriteString(task.Description)
+	return s.String()
 }
 
 func (m Model) View() string {
