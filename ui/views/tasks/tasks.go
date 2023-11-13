@@ -147,11 +147,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 	case tasktable.TaskSelectedMsg:
-		m.ctx.Logger.Info("ViewTask receive tasktable.TaskSelectedMsg")
+		id := string(msg)
+		m.ctx.Logger.Infof("ViewTask receive tasktable.TaskSelectedMsg: %s", id)
 		m.state = TasksStateTaskSidebar
 		m.componentTasksTable.Focused = false
 		m.componentTaskSidebar.Focused = true
-		cmds = append(cmds, tasksidebar.TaskSelectedCmd(string(msg)))
+		cmds = append(cmds, tasksidebar.TaskSelectedCmd(id))
 	}
 
 	m.componentViewsTabs, cmd = m.componentViewsTabs.Update(msg)
