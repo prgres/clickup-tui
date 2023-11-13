@@ -199,13 +199,6 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Info("Initializing component: TaskTable")
-	tasks, err := m.getTasks(m.SelectedView)
-	if err != nil {
-		return common.ErrCmd(err)
-	}
-
-	m.loadTasks(tasks)
 	m.refreshTable()
-
 	return nil
 }

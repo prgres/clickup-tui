@@ -117,8 +117,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, tasktable.FetchTasksForViewCmd(viewID))
 		}
 
-		// return m, tea.Batch(cmds...)
-
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("ViewTasks receive tea.WindowSizeMsg")
 
@@ -132,12 +130,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.componentViewsTabs, cmd = m.componentViewsTabs.Update(msg)
 		cmds = append(cmds, cmd)
 
-		// return m, tea.Batch(cmds...)
-
 	case tasktable.TasksListReady:
 		m.ctx.Logger.Info("ViewTasks received TasksListReady")
 		m.showSpinner = false
-		// return m, tea.Batch(cmds...)
 
 	case spinner.TickMsg:
 		m.ctx.Logger.Info("ViewTask receive spinner.TickMsg")

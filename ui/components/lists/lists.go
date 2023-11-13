@@ -100,20 +100,19 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.ctx.Logger.Info("ListsView received tea.WindowSizeMsg")
 		h, v := docStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
-		return m, nil
 
 	case common.FolderChangeMsg:
-		m.ctx.Logger.Info("ListsView received FolderChangeMsg: %d", string(msg))
+		m.ctx.Logger.Infof("ListsView received FolderChangeMsg: %s", string(msg))
 		m.SelectedFolder = string(msg)
-		return m, m.getListsCmd(m.SelectedFolder)
+		cmds = append(cmds, m.getListsCmd(m.SelectedFolder))
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
 			selectedList := m.list.SelectedItem().(item).desc
-			m.ctx.Logger.Infof("Selected folder %s", selectedList)
+			m.ctx.Logger.Infof("Selected list %s", selectedList)
 			m.SelectedList = selectedList
-			return m, common.ListChangeCmd(m.SelectedList)
+			cmds = append(cmds, common.ListChangeCmd(m.SelectedList))
 		}
 	}
 
