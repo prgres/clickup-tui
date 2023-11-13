@@ -42,7 +42,7 @@ func InitialModel(ctx *context.UserContext) Model {
 	}
 }
 
-func (m Model) syncList(folders []clickup.Folder) Model {
+func (m *Model) syncList(folders []clickup.Folder) {
 	m.ctx.Logger.Info("Synchronizing list")
 	m.folders = folders
 
@@ -58,7 +58,6 @@ func (m Model) syncList(folders []clickup.Folder) Model {
 
 	m.list.SetItems(itemsList)
 	m.list.Select(sre_index)
-	return m
 }
 
 func itemListToItems(items []item) []list.Item {
@@ -95,7 +94,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case FoldersListReloadedMsg:
 		m.ctx.Logger.Info("FolderView received FoldersListReloadedMsg")
-		m = m.syncList(msg)
+		m.syncList(msg)
 
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("FolderView received tea.WindowSizeMsg")
