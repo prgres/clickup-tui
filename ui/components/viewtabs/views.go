@@ -169,7 +169,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	case ViewsListLoadedMsg:
 		m.ctx.Logger.Info("ViewsView received ViewsListLoadedMsg")
-		m.views[m.SelectedView] = []clickup.View(msg)
+		m.views[m.SelectedList] = []clickup.View(msg)
 		// m.views[m.SelectedSpace] = []clickup.View(msg)
 		return m, nil
 
@@ -239,7 +239,7 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Info("Initializing component: TabsView")
-	return common.ListChangeCmd(FOLDER_INITIATIVE)
+	return common.FolderChangeCmd(FOLDER_INITIATIVE)
 }
 
 func (m Model) getViewsFromSpaceCmd(space string) tea.Cmd {
