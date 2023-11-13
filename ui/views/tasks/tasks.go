@@ -71,15 +71,22 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			switch m.state {
 			case TasksStateTasksTable:
 				m.state = TasksStateViewsTabs
+				m.componentTasksTable.Focused = false
+				m.componentViewsTabs.Focused = true
 				return m, tea.Batch(cmds...)
 
 			case TasksStateViewsTabs:
 				m.state = TasksStateTasksTable
+				m.componentTasksTable.Focused = true
+				m.componentViewsTabs.Focused = false
 				return m, tea.Batch(cmds...)
 			}
 
 		case "esc":
 			m.state = TasksStateTasksTable
+			m.componentTasksTable.Focused = true
+			m.componentTaskSidebar.Focused = false
+			m.componentViewsTabs.Focused = false
 			return m, tea.Batch(cmds...)
 
 		default:
@@ -142,6 +149,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tasktable.TaskSelectedMsg:
 		m.ctx.Logger.Info("ViewTask receive tasktable.TaskSelectedMsg")
 		m.state = TasksStateTaskSidebar
+		m.componentTasksTable.Focused = false
+		m.componentTaskSidebar.Focused = true
 		cmds = append(cmds, tasksidebar.TaskSelectedCmd(string(msg)))
 	}
 

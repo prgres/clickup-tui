@@ -18,6 +18,7 @@ type Model struct {
 	SelectedList       string
 	// SelectedFolder     string
 	// SelectedSpace      string
+	Focused bool
 }
 
 func InitialModel(ctx *context.UserContext) Model {
@@ -220,8 +221,13 @@ func (m Model) View() string {
 		s.WriteString(t)
 	}
 
+	bColor := lipgloss.Color("#FFF")
+	if m.Focused {
+		bColor = lipgloss.Color("#8909FF")
+	}
 	return lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(bColor).
 		BorderRight(true).
 		BorderBottom(true).
 		BorderTop(true).

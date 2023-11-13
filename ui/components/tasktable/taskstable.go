@@ -20,6 +20,7 @@ type Model struct {
 
 	SelectedView string
 	autoColumns  bool
+	Focused      bool
 }
 
 func (m Model) getSelectedViewTasks() []clickup.Task {
@@ -146,8 +147,13 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	bColor := lipgloss.Color("#FFF")
+	if m.Focused {
+		bColor = lipgloss.Color("#8909FF")
+	}
 	return lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(bColor).
 		BorderBottom(true).
 		BorderRight(true).
 		BorderTop(true).
