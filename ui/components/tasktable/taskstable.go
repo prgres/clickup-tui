@@ -1,8 +1,6 @@
 package tasktable
 
 import (
-	"strings"
-
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -18,9 +16,17 @@ type Model struct {
 	requiredCols []table.Column
 	tasks        map[string][]clickup.Task
 
-	SelectedView string
-	autoColumns  bool
-	Focused      bool
+	SelectedView      string
+	SelectedTaskIndex int
+
+	Focused bool
+	autoColumns bool
+	size size
+}
+
+type size struct {
+	Width  int
+	Height int
 }
 
 func (m Model) getSelectedViewTasks() []clickup.Task {
@@ -43,14 +49,20 @@ func InitialModel(ctx *context.UserContext) Model {
 			Width: 40,
 		},
 	}
+
+	size := size{
+		Width:  0,
+		Height: 0,
+	}
+
 	tablesStyles := table.DefaultStyles()
 	tablesStyles.Cell = tablesStyles.Cell.Copy().
 		PaddingBottom(1)
 
 	t := table.New(
 		table.WithFocused(true),
-		table.WithHeight(0),
-		table.WithWidth(0),
+		table.WithHeight(size.Height),
+		table.WithWidth(size.Width),
 		table.WithStyles(tablesStyles),
 		table.WithCellsWrap(true),
 	)
@@ -63,17 +75,29 @@ func InitialModel(ctx *context.UserContext) Model {
 		tasks:        map[string][]clickup.Task{},
 		SelectedView: SPACE_SRE_LIST_COOL,
 		autoColumns:  false,
+		size:         size,
 	}
 }
 
-func (m Model) syncTable(tasks []clickup.Task) Model {
+func (m Model) refreshTable() Model {
 	m.ctx.Logger.Info("Synchonizing table")
-	m.tasks[m.SelectedView] = tasks
+	tasks := m.tasks[m.SelectedView]
 
 	items := taskListToRows(tasks, m.columns)
 
 	m.table.SetColumns(m.columns)
 	m.table.SetRows(items)
+	m.SelectedTaskIndex = m.table.Cursor()
+
+	m.table.SetWidth(m.size.Width)
+	m.table.SetHeight(m.size.Height)
+
+	return m
+}
+
+func (m Model) loadTasks(tasks []clickup.Task) Model {
+	m.ctx.Logger.Info("Reloading table")
+	m.tasks[m.SelectedView] = tasks
 
 	return m
 }
@@ -100,11 +124,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	case TasksListReloadedMsg:
 		m.ctx.Logger.Infof("TaskTable receive TasksListReloadedMsg: %d", len(msg))
-		m = m.syncTable(msg)
-		m.table, cmd = m.table.Update(msg)
+		tasks := msg
+		m = m.loadTasks(tasks)
+		m = m.refreshTable()
 
-		index := m.table.Cursor()
-		task := m.getSelectedViewTasks()[index]
+		task := m.getSelectedViewTasks()[m.SelectedTaskIndex]
 
 		cmds = append(cmds, cmd, TasksListReadyCmd(), TaskSelectedCmd(task.Id))
 
@@ -112,8 +136,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.ctx.Logger.Infof("TaskTable receive tea.WindowSizeMsg Width: %d Height %d", msg.Width, msg.Height)
 		w := int(0.6 * float32(m.ctx.WindowSize.Width))
 		h := int(0.7 * float32(m.ctx.WindowSize.Height))
-		m.table.SetWidth(w)
-		m.table.SetHeight(h)
+		m.size.Width = w
+		m.size.Height = h
+		m = m.refreshTable()
+		m.ctx.Logger.Infof("TaskTable set width: %d height: %d", w, h)
 
 	case FetchTasksForViewMsg:
 		m.ctx.Logger.Infof("TaskTable received FetchViewMsg: %s", string(msg))
@@ -158,6 +184,7 @@ func (m Model) View() string {
 	if m.Focused {
 		bColor = lipgloss.Color("#8909FF")
 	}
+
 	return lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(bColor).
@@ -177,9 +204,8 @@ func (m Model) Init() tea.Cmd {
 		return common.ErrCmd(err)
 	}
 	var cmd tea.Cmd
-	m = m.syncTable(tasks)
-	m.table, cmd = m.table.Update(tasks)
-	row := m.table.SelectedRow()
+	m = m.loadTasks(tasks)
+	m = m.refreshTable()
 
-	return tea.Batch(cmd, TasksListReadyCmd(), TaskSelectedCmd(strings.Join(row, " ")))
+	return tea.Batch(cmd)
 }
