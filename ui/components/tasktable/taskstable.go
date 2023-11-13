@@ -19,14 +19,18 @@ type Model struct {
 	SelectedView      string
 	SelectedTaskIndex int
 
-	Focused bool
+	Focused     bool
 	autoColumns bool
-	size size
+	size        size
 }
 
 type size struct {
 	Width  int
 	Height int
+}
+
+func (m Model) getSelectedViewTaskIdByIndex(index int) string {
+	return m.getSelectedViewTasks()[index].Id
 }
 
 func (m Model) getSelectedViewTasks() []clickup.Task {
@@ -79,10 +83,9 @@ func InitialModel(ctx *context.UserContext) Model {
 	}
 }
 
-func (m Model) refreshTable() Model {
+func (m *Model) refreshTable() {
 	m.ctx.Logger.Info("Synchonizing table")
-	tasks := m.tasks[m.SelectedView]
-
+	tasks := m.getSelectedViewTasks()
 	items := taskListToRows(tasks, m.columns)
 
 	m.table.SetColumns(m.columns)
@@ -91,15 +94,11 @@ func (m Model) refreshTable() Model {
 
 	m.table.SetWidth(m.size.Width)
 	m.table.SetHeight(m.size.Height)
-
-	return m
 }
 
-func (m Model) loadTasks(tasks []clickup.Task) Model {
+func (m *Model) loadTasks(tasks []clickup.Task) {
 	m.ctx.Logger.Info("Reloading table")
 	m.tasks[m.SelectedView] = tasks
-
-	return m
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -112,9 +111,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case "enter":
 			index := m.table.Cursor()
-			task := m.getSelectedViewTasks()[index]
+			taskId := m.getSelectedViewTaskIdByIndex(index)
 			m.ctx.Logger.Infof("TaskTable receive enter: %d", index)
-			cmds = append(cmds, TaskSelectedCmd(task.Id))
+			cmds = append(cmds, TaskSelectedCmd(taskId))
 		}
 
 	case ViewChangedMsg:
@@ -125,21 +124,22 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case TasksListReloadedMsg:
 		m.ctx.Logger.Infof("TaskTable receive TasksListReloadedMsg: %d", len(msg))
 		tasks := msg
-		m = m.loadTasks(tasks)
-		m = m.refreshTable()
+		m.loadTasks(tasks)
+		m.refreshTable()
 
-		task := m.getSelectedViewTasks()[m.SelectedTaskIndex]
+		taskId := m.getSelectedViewTaskIdByIndex(m.SelectedTaskIndex)
 
-		cmds = append(cmds, cmd, TasksListReadyCmd(), TaskSelectedCmd(task.Id))
+		cmds = append(cmds, cmd, TasksListReadyCmd(), TaskSelectedCmd(taskId))
 
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Infof("TaskTable receive tea.WindowSizeMsg Width: %d Height %d", msg.Width, msg.Height)
-		w := int(0.6 * float32(m.ctx.WindowSize.Width))
-		h := int(0.7 * float32(m.ctx.WindowSize.Height))
-		m.size.Width = w
-		m.size.Height = h
-		m = m.refreshTable()
-		m.ctx.Logger.Infof("TaskTable set width: %d height: %d", w, h)
+		m.size.Width = int(0.6 * float32(m.ctx.WindowSize.Width))
+		m.size.Height = int(0.7 * float32(m.ctx.WindowSize.Height))
+
+		m.ctx.Logger.Infof("TaskTable set width: %d height: %d",
+			m.size.Width, m.size.Height)
+
+		m.refreshTable()
 
 	case FetchTasksForViewMsg:
 		m.ctx.Logger.Infof("TaskTable received FetchViewMsg: %s", string(msg))
@@ -203,9 +203,9 @@ func (m Model) Init() tea.Cmd {
 	if err != nil {
 		return common.ErrCmd(err)
 	}
-	var cmd tea.Cmd
-	m = m.loadTasks(tasks)
-	m = m.refreshTable()
 
-	return tea.Batch(cmd)
+	m.loadTasks(tasks)
+	m.refreshTable()
+
+	return nil
 }
