@@ -209,7 +209,7 @@ func (c *Client) GetViewsFromFolder(folderId string) ([]View, error) {
 }
 
 func (c *Client) GetViewsFromList(listId string) ([]View, error) {
-	errMsg := "Error occurs while getting views from folder: %s. Error: %s"
+	errMsg := "Error occurs while getting views from list: %s. Error: %s"
 	errApiMsg := errMsg + " API response: %s"
 
 	rawData, err := c.requestGet("/list/" + listId + "/view")

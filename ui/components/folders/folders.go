@@ -1,8 +1,6 @@
 package folders
 
 import (
-	"encoding/json"
-
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
@@ -100,12 +98,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.ctx.Logger.Info("FolderView received tea.WindowSizeMsg")
 		h, v := docStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
-		return m, nil
 
 	case common.SpaceChangeMsg:
-		m.ctx.Logger.Info("FolderView received SpaceChangeMsg: %d", string(msg))
+		m.ctx.Logger.Infof("FolderView received SpaceChangeMsg: %s", string(msg))
 		m.SelectedSpace = string(msg)
-		return m, m.getFoldersCmd(m.SelectedSpace)
+		cmds = append(cmds, m.getFoldersCmd(m.SelectedSpace))
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
@@ -113,7 +110,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedFolder := m.list.SelectedItem().(item).desc
 			m.ctx.Logger.Infof("Selected folder %s", selectedFolder)
 			m.SelectedFolder = selectedFolder
-			return m, common.FolderChangeCmd(selectedFolder)
+			cmds = append(cmds, common.FolderChangeCmd(selectedFolder))
 		}
 	}
 
@@ -165,11 +162,6 @@ func (m Model) getFolders(space string) ([]clickup.Folder, error) {
 		return nil, err
 	}
 	m.ctx.Logger.Infof("Found %d folders for space: %s", len(folders), space)
-
-	for _, f := range folders {
-		j, _ := json.MarshalIndent(f, "", "  ")
-		m.ctx.Logger.Infof("%s", j)
-	}
 
 	m.ctx.Logger.Infof("Caching folders")
 	m.ctx.Cache.Set("folders", space, folders)
