@@ -90,7 +90,7 @@ func (m Model) View() string {
 		Width(m.viewport.Width).
 		Height(m.viewport.Height).
 		Render(
-			m.viewport.View(),
+			m.viewport.View() + "\n", // a extra newline due to table height do not consider headerView
 		)
 }
 
