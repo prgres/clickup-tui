@@ -105,9 +105,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.table.SetWidth(w)
 		m.table.SetHeight(h)
 
-	case common.FocusMsg:
-		m.ctx.Logger.Info("TaskTable received FocusMsg")
-
 	case FetchTasksForViewMsg:
 		m.ctx.Logger.Infof("TaskTable received FetchViewMsg: %s", string(msg))
 		view := string(msg)
@@ -173,5 +170,6 @@ func (m Model) Init() tea.Cmd {
 	m = m.syncTable(tasks)
 	m.table, cmd = m.table.Update(tasks)
 	row := m.table.SelectedRow()
+
 	return tea.Batch(cmd, TasksListReadyCmd(), TaskSelectedCmd(strings.Join(row, " ")))
 }
