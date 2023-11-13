@@ -133,7 +133,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case sessionTasksView:
 			m.state = sessionTasksView
-			m.viewSpaces, cmd = m.viewSpaces.Update(common.FocusMsg(true))
+			m.viewTasks, cmd = m.viewTasks.Update(common.FocusMsg(true))
 			return m, cmd
 		}
 
