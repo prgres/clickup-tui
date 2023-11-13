@@ -37,10 +37,6 @@ type Model struct {
 func InitialModel(ctx *context.UserContext) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
-	// spinner.Dot,
-	// spinner.Line,
-	// spinner.Pulse,
-	// spinner.Points,
 
 	return Model{
 		ctx:   ctx,
@@ -59,10 +55,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
-	if m.showSpinner {
-		m.spinner, cmd = m.spinner.Update(msg)
-		cmds = append(cmds, cmd)
-	}
+	// if m.showSpinner {
+	// 	m.spinner, cmd = m.spinner.Update(msg)
+	// 	cmds = append(cmds, cmd)
+	// }
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -130,9 +126,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.componentViewsTabs, cmd = m.componentViewsTabs.Update(msg)
 		cmds = append(cmds, cmd)
 
-	case tasktable.TasksListReady:
-		m.ctx.Logger.Info("ViewTasks received TasksListReady")
+	case tasktable.TasksListReadyMsg:
+		id := string(msg)
+		m.ctx.Logger.Infof("ViewTasks received TasksListReady: %s", id)
 		m.showSpinner = false
+		cmds = append(cmds, tasksidebar.TaskSelectedCmd(id))
 
 	case spinner.TickMsg:
 		m.ctx.Logger.Info("ViewTask receive spinner.TickMsg")

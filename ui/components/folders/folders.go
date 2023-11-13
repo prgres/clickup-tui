@@ -93,6 +93,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case FoldersListReloadedMsg:
 		m.ctx.Logger.Info("FolderView received FoldersListReloadedMsg")
 		m.syncList(msg)
+		cmds = append(cmds, FoldersListReadyCmd())
 
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("FolderView received tea.WindowSizeMsg")
@@ -126,7 +127,8 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Infof("Initializing component: foldersList")
-	return common.SpaceChangeCmd(SPACE_SRE)
+	return nil
+	// return common.SpaceChangeCmd(SPACE_SRE)
 }
 
 func (m Model) getFoldersCmd(space string) tea.Cmd {

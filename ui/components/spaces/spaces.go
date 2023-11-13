@@ -39,7 +39,7 @@ func InitialModel(ctx *context.UserContext) Model {
 	}
 }
 
-func (m Model) syncList(spaces []clickup.Space) Model {
+func (m *Model) syncList(spaces []clickup.Space) {
 	m.ctx.Logger.Info("Synchronizing list")
 	m.spaces = spaces
 
@@ -55,7 +55,6 @@ func (m Model) syncList(spaces []clickup.Space) Model {
 
 	m.list.SetItems(itemsList)
 	m.list.Select(sre_index)
-	return m
 }
 
 func itemListToItems(items []item) []list.Item {
@@ -92,19 +91,18 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case SpaceListReloadedMsg:
 		m.ctx.Logger.Info("SpaceView received SpaceListReloadedMsg")
-		m = m.syncList(msg)
-		return m, nil
+		m.syncList(msg)
+		cmds = append(cmds, SpaceListReadyCmd())
 
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("SpaceView received tea.WindowSizeMsg")
 		h, v := docStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
-		return m, nil
 
 	case common.TeamChangeMsg:
 		m.ctx.Logger.Info("SpaceView received TeamChangeMsg")
 		m.SelectedTeam = string(msg)
-		return m, m.getSpacesCmd()
+		cmds = append(cmds, m.getSpacesCmd())
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
@@ -112,7 +110,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedSpace := m.list.SelectedItem().(item).desc
 			m.ctx.Logger.Infof("Selected space %s", selectedSpace)
 			m.SelectedSpace = selectedSpace
-			return m, common.SpaceChangeCmd(selectedSpace)
+			cmds = append(cmds, common.SpaceChangeCmd(selectedSpace))
 		}
 	}
 

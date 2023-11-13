@@ -95,6 +95,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case ListsListReloadedMsg:
 		m.ctx.Logger.Info("ListsView received ListsListReloadedMsg")
 		m.syncList(msg)
+		cmds = append(cmds, ListsListReadyCmd())
 
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("ListsView received tea.WindowSizeMsg")
@@ -128,7 +129,8 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Infof("Initializing component: listsList")
-	return common.FolderChangeCmd(m.SelectedFolder)
+	return nil
+	// return common.FolderChangeCmd(m.SelectedFolder)
 }
 
 func (m Model) getListsCmd(folderId string) tea.Cmd {

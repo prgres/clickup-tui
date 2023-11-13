@@ -63,6 +63,9 @@ func InitialModel(ctx *context.UserContext) Model {
 	tablesStyles.Cell = tablesStyles.Cell.Copy().
 		PaddingBottom(1)
 
+	tablesStyles.Header = tablesStyles.Header.Copy().
+		PaddingBottom(1)
+
 	t := table.New(
 		table.WithFocused(true),
 		table.WithHeight(size.Height),
@@ -129,7 +132,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 		taskId := m.getSelectedViewTaskIdByIndex(m.SelectedTaskIndex)
 
-		cmds = append(cmds, cmd, TasksListReadyCmd(), TaskSelectedCmd(taskId))
+		cmds = append(cmds, cmd, TasksListReadyCmd(taskId))
+		// cmds = append(cmds, cmd, TasksListReadyCmd())
+		// cmds = append(cmds, cmd, TasksListReadyCmd(), TaskSelectedCmd(taskId))
 
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Infof("TaskTable receive tea.WindowSizeMsg Width: %d Height %d", msg.Width, msg.Height)

@@ -40,7 +40,7 @@ type Model struct {
 func InitialModel(ctx *context.UserContext) Model {
 	return Model{
 		ctx:   ctx,
-		state: sessionTasksView,
+		state: sessionSpacesView,
 
 		viewSpaces:  spaces.InitialModel(ctx),
 		viewTasks:   tasks.InitialModel(ctx),
@@ -63,26 +63,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 
-		case "1":
-			return m, ChangeViewCmd(sessionSpacesView)
+		// case "1":
+		// 	return m, ChangeViewCmd(sessionSpacesView)
 
-		case "2":
-			return m, ChangeViewCmd(sessionFoldersView)
+		// case "2":
+		// 	return m, ChangeViewCmd(sessionFoldersView)
 
-		case "3":
-			return m, ChangeViewCmd(sessionListsView)
+		// case "3":
+		// 	return m, ChangeViewCmd(sessionListsView)
 
-		case "4":
-			return m, ChangeViewCmd(sessionTasksView)
+		// case "4":
+		// 	return m, ChangeViewCmd(sessionTasksView)
 
-		case "esc":
-			switch m.state {
-			case sessionFoldersView:
-				return m, ChangeViewCmd(sessionSpacesView)
+		// case "esc":
+		// 	switch m.state {
+		// 	case sessionFoldersView:
+		// 		return m, ChangeViewCmd(sessionSpacesView)
 
-			case sessionListsView:
-				return m, ChangeViewCmd(sessionFoldersView)
-			}
+		// 	case sessionListsView:
+		// 		return m, ChangeViewCmd(sessionFoldersView)
+		// 	}
 
 		default:
 			switch m.state {
@@ -101,9 +101,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case sessionListsView:
 				m.viewLists, cmd = m.viewLists.Update(msg)
 				return m, cmd
-
-			default:
-				return m, nil
 			}
 		}
 
@@ -137,33 +134,33 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
-	case spaces.HideSpaceViewMsg:
-		m.ctx.Logger.Info("UI received HideSpaceViewMsg")
-		return m, ChangeViewCmd(sessionTasksView)
+		// case spaces.HideSpaceViewMsg:
+		// 	m.ctx.Logger.Info("UI received HideSpaceViewMsg")
+		// 	return m, ChangeViewCmd(sessionTasksView)
 
-	case common.SpaceChangeMsg:
-		m.ctx.Logger.Infof("UI received SpaceChangeMsg: %s", string(msg))
-		cmds = append(cmds, ChangeViewCmd(sessionFoldersView))
+		case common.SpaceChangeMsg:
+			m.ctx.Logger.Infof("UI received SpaceChangeMsg: %s", string(msg))
+			cmds = append(cmds, ChangeViewCmd(sessionFoldersView))
 
-	case common.FolderChangeMsg:
-		m.ctx.Logger.Infof("UI received FolderChangeMsg: %s", string(msg))
-		cmds = append(cmds, ChangeViewCmd(sessionListsView))
+		case common.FolderChangeMsg:
+			m.ctx.Logger.Infof("UI received FolderChangeMsg: %s", string(msg))
+			cmds = append(cmds, ChangeViewCmd(sessionListsView))
 
-	case common.ListChangeMsg:
-		m.ctx.Logger.Infof("UI received ListChangeMsg: %s", string(msg))
-		cmds = append(cmds, ChangeViewCmd(sessionTasksView))
+		case common.ListChangeMsg:
+			m.ctx.Logger.Infof("UI received ListChangeMsg: %s", string(msg))
+			cmds = append(cmds, ChangeViewCmd(sessionTasksView))
 	}
 
 	m.viewSpaces, cmd = m.viewSpaces.Update(msg)
-	cmds = append(cmds, cmd)
-
-	m.viewTasks, cmd = m.viewTasks.Update(msg)
 	cmds = append(cmds, cmd)
 
 	m.viewFolders, cmd = m.viewFolders.Update(msg)
 	cmds = append(cmds, cmd)
 
 	m.viewLists, cmd = m.viewLists.Update(msg)
+	cmds = append(cmds, cmd)
+
+	m.viewTasks, cmd = m.viewTasks.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
@@ -180,7 +177,7 @@ func (m Model) View() string {
 	case sessionFoldersView:
 		return m.viewFolders.View()
 	default:
-		return m.viewTasks.View()
+		return m.viewSpaces.View()
 	}
 }
 

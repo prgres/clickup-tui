@@ -239,7 +239,8 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Info("Initializing component: TabsView")
-	return common.FolderChangeCmd(FOLDER_INITIATIVE)
+	return nil
+	// return common.FolderChangeCmd(FOLDER_INITIATIVE)
 }
 
 func (m Model) getViewsFromSpaceCmd(space string) tea.Cmd {
