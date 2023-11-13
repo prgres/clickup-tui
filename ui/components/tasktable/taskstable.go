@@ -52,6 +52,7 @@ func InitialModel(ctx *context.UserContext) Model {
 		table.WithHeight(0),
 		table.WithWidth(0),
 		table.WithStyles(tablesStyles),
+		table.WithCellsWrap(true),
 	)
 
 	return Model{
