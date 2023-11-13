@@ -51,7 +51,7 @@ func InitialModel(ctx *context.UserContext) Model {
 		componentTaskSidebar: tasksidebar.InitialModel(ctx),
 
 		spinner:     s,
-		showSpinner: true,
+		showSpinner: false,
 	}
 }
 
