@@ -72,6 +72,9 @@ func (m Model) renderTask(task clickup.Task) string {
 	)
 	s.WriteString("--------------------\n")
 	s.WriteString(task.Description)
+	s.WriteString("\n")
+	s.WriteString("--------------------\n")
+	s.WriteString(task.MarkdownDescription)
 	return s.String()
 }
 
