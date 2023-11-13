@@ -43,14 +43,20 @@ func InitialModel(ctx *context.UserContext) Model {
 			Width: 40,
 		},
 	}
+	tablesStyles := table.DefaultStyles()
+	tablesStyles.Cell = tablesStyles.Cell.Copy().
+		PaddingBottom(1)
+
+	t := table.New(
+		table.WithFocused(true),
+		table.WithHeight(0),
+		table.WithWidth(0),
+		table.WithStyles(tablesStyles),
+	)
 
 	return Model{
-		ctx: ctx,
-		table: table.New(
-			table.WithFocused(true),
-			table.WithHeight(0),
-			table.WithWidth(0),
-		),
+		ctx:          ctx,
+		table:        t,
 		columns:      columns,
 		requiredCols: requiredCols,
 		tasks:        map[string][]clickup.Task{},
