@@ -3,19 +3,13 @@ package main
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
+	"github.com/kkyr/fig"
 	"github.com/prgrs/clickup/api"
+	"github.com/prgrs/clickup/internal/config"
 	"github.com/prgrs/clickup/pkg/cache"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui"
 	"github.com/prgrs/clickup/ui/context"
-)
-
-const (
-	TEAM_RAMP_NETWORK   = "24301226"
-	SPACE_SRE           = "48458830"
-	SPACE_SRE_LIST_COOL = "q5kna-61288"
-
-	TOKEN = "pk_42381487_1IES0AC9MGLLQND6XQ2CWIPS4KJZIR34"
 )
 
 func main() {
@@ -29,6 +23,18 @@ func main() {
 
 	logger.Info("Starting up...")
 
+	logger.Info("Initializing config...")
+	var cfg config.Config
+	fig.Load(&cfg,
+		fig.File("config.yaml"),
+		fig.Dirs(
+			".",
+			"/etc/myapp",
+			"/home/user/myapp",
+			"$HOME/.config/clickup-tui",
+		),
+	)
+
 	logger.Info("Initializing cache...")
 	cache := cache.NewCache(logger)
 	defer cache.Dump()
@@ -38,13 +44,13 @@ func main() {
 	}
 
 	logger.Info("Initializing clickup client...")
-	clickup := clickup.NewDefaultClientWithLogger(TOKEN, logger)
+	clickup := clickup.NewDefaultClientWithLogger(cfg.Token, logger)
 
 	logger.Info("Initializing api...")
 	api := api.NewApi(clickup, logger, cache)
 
 	logger.Info("Initializing user context...")
-	ctx := context.NewUserContext(logger, &api)
+	ctx := context.NewUserContext(logger, &api, &cfg)
 
 	logger.Info("Initializing main model...")
 	mainModel := ui.InitialModel(&ctx)
