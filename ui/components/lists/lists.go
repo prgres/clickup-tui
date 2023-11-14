@@ -90,8 +90,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("ListsView received tea.WindowSizeMsg")
-		h, v := docStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h, msg.Height-v)
+		m.list.SetSize(msg.Width, msg.Height)
 
 	case common.FolderChangeMsg:
 		m.ctx.Logger.Infof("ListsView received FolderChangeMsg: %s", string(msg))

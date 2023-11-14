@@ -3,16 +3,9 @@ package tasktable
 import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 )
-
-var docStyle = lipgloss.NewStyle().Margin(1, 2)
-
-var baseStyle = lipgloss.NewStyle().
-	BorderStyle(lipgloss.NormalBorder()).
-	BorderForeground(lipgloss.Color("240"))
 
 func taskListToRows(tasks []clickup.Task, columns []table.Column) []table.Row {
 	rows := make([]table.Row, len(tasks))

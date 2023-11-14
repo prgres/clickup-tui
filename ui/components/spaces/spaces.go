@@ -96,8 +96,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("SpaceView received tea.WindowSizeMsg")
-		h, v := docStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h, msg.Height-v)
+		m.list.SetSize(msg.Width, msg.Height)
 
 	case common.TeamChangeMsg:
 		m.ctx.Logger.Info("SpaceView received TeamChangeMsg")
@@ -139,4 +138,3 @@ func (m Model) getSpacesCmd() tea.Cmd {
 		return SpaceListReloadedMsg(spaces)
 	}
 }
-
