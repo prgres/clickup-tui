@@ -45,7 +45,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("TaskSidebar receive tea.WindowSizeMsg")
-		m.viewport.Width = int(0.3 * float32(m.ctx.WindowSize.Width))
+		m.viewport.Width = int(0.6 * float32(m.ctx.WindowSize.Width))
 		m.viewport.Height = int(0.7 * float32(m.ctx.WindowSize.Height))
 
 	case TaskSelectedMsg:

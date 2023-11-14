@@ -48,10 +48,6 @@ func InitialModel(ctx *context.UserContext) Model {
 			Title: "status",
 			Width: 15,
 		},
-		{
-			Title: "assignee",
-			Width: 40,
-		},
 	}
 
 	size := size{
@@ -138,7 +134,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Infof("TaskTable receive tea.WindowSizeMsg Width: %d Height %d", msg.Width, msg.Height)
-		m.size.Width = int(0.6 * float32(m.ctx.WindowSize.Width))
+		m.size.Width = int(0.4 * float32(m.ctx.WindowSize.Width))
 		m.size.Height = int(0.7 * float32(m.ctx.WindowSize.Height))
 
 		m.ctx.Logger.Infof("TaskTable set width: %d height: %d",

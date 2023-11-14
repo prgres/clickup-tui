@@ -170,12 +170,12 @@ func (m Model) View() string {
 	switch m.state {
 	case sessionSpacesView:
 		return m.viewSpaces.View()
-	case sessionTasksView:
-		return m.viewTasks.View()
-	case sessionListsView:
-		return m.viewLists.View()
 	case sessionFoldersView:
 		return m.viewFolders.View()
+	case sessionListsView:
+		return m.viewLists.View()
+	case sessionTasksView:
+		return m.viewTasks.View()
 	default:
 		return m.viewSpaces.View()
 	}
