@@ -20,7 +20,7 @@ go get -u github.com/prgres/clickup-tui
 ```
 
 Usage
-Once installed, you can run clickup-tui from the terminal:
+Once installed, you can run `clickup-tui` from the terminal:
 
 ```bash
 Copy code
@@ -30,7 +30,7 @@ clickup-tui
 Use the arrow keys, enter, and other relevant keyboard shortcuts to navigate through the TUI and interact with ClickUp.
 
 ## Configuration
-Before using the tool, make sure to set up your ClickUp API key and configure any necessary settings. You can do this by creating a configuration file or using environment variables. Refer to the documentation for details on how to set up your configuration.
+Before using the tool, set up your ClickUp API key and configure any necessary settings. You can do this by creating a configuration file or using environment variables. Please take a look at the documentation for details on how to set up your configuration.
 
 ## Dependencies
 
@@ -38,18 +38,19 @@ Before using the tool, make sure to set up your ClickUp API key and configure an
 - [lipgloss](https://github.com/charmbracelet/lipgloss): Styling for your terminal interfaces.
 - [bubbles](https://github.com/charmbracelet/bubbles): A delightful way to render terminal tables.
 - [bubbletea](https://github.com/charmbracelet/bubbletea): A functional framework for building terminal applications.
+
 ## Contributing
 Contributions are welcome! If you find any bugs or have suggestions for improvement, please open an issue or submit a pull request.
 
-# TODO
-[] async fetch data - sync in schedule
-[] config in file
-[] oauth login
-[] edit status and assignes
-[] polish space/folder/list flow
-[] add team setting
-[] store in the memory or file last selected (team, space itd) 
-[] add team handling
+### TODO
+- [ ] async fetch data - sync in schedule
+- [ ] config in file
+- [ ] oauth login
+- [ ] edit status and assigned
+- [ ] polish space/folder/list flow
+- [ ] add team setting
+- [ ] store in the memory or file last selected (team, space, etc) 
+- [ ] add team handling
 
 License
 This project is licensed under the MIT License - see the LICENSE file for details.
