@@ -139,7 +139,7 @@ func (c *Client) GetTasksFromView(viewId string) ([]Task, error) {
 }
 
 func (c *Client) GetTask(taskId string) (Task, error) {
-	rawData, err := c.requestGet("/task/" + taskId)
+	rawData, err := c.requestGet("/task/"+taskId, "include_markdown_description", "true")
 	if err != nil {
 		return Task{}, err
 	}

@@ -6,7 +6,9 @@ import (
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/mattn/go-runewidth"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
@@ -22,6 +24,7 @@ func InitialModel(ctx *context.UserContext) Model {
 	v := viewport.New(0, 0)
 	v.Style = lipgloss.NewStyle().
 		Height(0)
+
 	return Model{
 		ctx:      ctx,
 		viewport: v,
@@ -67,14 +70,24 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) renderTask(task clickup.Task) string {
 	s := strings.Builder{}
-	s.WriteString(
-		fmt.Sprintf("[#%s] %s\n", task.Id, task.Name),
+
+	header := fmt.Sprintf("[#%s] %s\n", task.Id, task.Name)
+	s.WriteString(header)
+
+	divider := strings.Repeat("-", runewidth.StringWidth(header))
+	s.WriteString(divider)
+
+	r, _ := glamour.NewTermRenderer(
+		glamour.WithAutoStyle(),
+		glamour.WithWordWrap(m.viewport.Width),
 	)
-	s.WriteString("--------------------\n")
-	s.WriteString(task.Description)
-	s.WriteString("\n")
-	s.WriteString("--------------------\n")
-	s.WriteString(task.MarkdownDescription)
+
+	out, err := r.Render(task.MarkdownDescription)
+	if err != nil {
+		return err.Error()
+	}
+	s.WriteString(out)
+
 	return s.String()
 }
 
