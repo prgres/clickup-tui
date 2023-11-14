@@ -3,6 +3,7 @@ package main
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
+	"github.com/prgrs/clickup/api"
 	"github.com/prgrs/clickup/pkg/cache"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui"
@@ -39,11 +40,11 @@ func main() {
 	logger.Info("Initializing clickup client...")
 	clickup := clickup.NewDefaultClientWithLogger(TOKEN, logger)
 
+	logger.Info("Initializing api...")
+	api := api.NewApi(clickup, logger, cache)
+
 	logger.Info("Initializing user context...")
-	ctx := context.NewUserContext(
-		clickup,
-		logger,
-		cache)
+	ctx := context.NewUserContext(logger, &api)
 
 	logger.Info("Initializing main model...")
 	mainModel := ui.InitialModel(&ctx)

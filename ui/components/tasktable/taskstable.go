@@ -145,7 +145,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case FetchTasksForViewMsg:
 		m.ctx.Logger.Infof("TaskTable received FetchViewMsg: %s", string(msg))
 		view := string(msg)
-		tasks, err := m.getTasks(view)
+		tasks, err := m.ctx.Api.GetTasks(view)
 		if err != nil {
 			return m, common.ErrCmd(err)
 		}

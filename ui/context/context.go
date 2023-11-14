@@ -1,20 +1,16 @@
 package context
 
 import (
-	"github.com/prgrs/clickup/pkg/cache"
-	"github.com/prgrs/clickup/pkg/clickup"
+	"github.com/prgrs/clickup/api"
 	"github.com/prgrs/clickup/pkg/logger1"
 	"github.com/prgrs/clickup/ui/theme"
 )
 
 type UserContext struct {
-	Style   theme.Style
-	Logger  logger1.Logger
-	Clickup *clickup.Client
-
+	Style      theme.Style
+	Logger     logger1.Logger
 	WindowSize WindowSize
-
-	Cache *cache.Cache
+	Api        *api.Api
 }
 
 type WindowSize struct {
@@ -22,17 +18,14 @@ type WindowSize struct {
 	Height int
 }
 
-func NewUserContext(clickup *clickup.Client, logger logger1.Logger, cache *cache.Cache) UserContext {
+func NewUserContext(logger logger1.Logger, api *api.Api) UserContext {
 	return UserContext{
-		Style:   theme.NewStyle(*theme.DefaultTheme),
-		Logger:  logger,
-		Clickup: clickup,
-
+		Style:  theme.NewStyle(*theme.DefaultTheme),
+		Logger: logger,
 		WindowSize: WindowSize{
 			Width:  0,
 			Height: 0,
 		},
-
-		Cache: cache,
+		Api: api,
 	}
 }

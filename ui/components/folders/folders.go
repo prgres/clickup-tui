@@ -133,40 +133,11 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) getFoldersCmd(space string) tea.Cmd {
 	return func() tea.Msg {
-		folders, err := m.getFolders(space)
+		folders, err := m.ctx.Api.GetFolders(space)
 		if err != nil {
 			return common.ErrMsg(err)
 		}
 
 		return FoldersListReloadedMsg(folders)
 	}
-}
-
-func (m Model) getFolders(space string) ([]clickup.Folder, error) {
-	m.ctx.Logger.Infof("Getting folders for space: %s", space)
-	client := m.ctx.Clickup
-
-	data, ok := m.ctx.Cache.Get("folders", space)
-	if ok {
-		m.ctx.Logger.Infof("Folders found in cache")
-		var folders []clickup.Folder
-		if err := m.ctx.Cache.ParseData(data, &folders); err != nil {
-			return nil, err
-		}
-
-		return folders, nil
-	}
-	m.ctx.Logger.Infof("Folders not found in cache")
-
-	m.ctx.Logger.Infof("Fetching folders from API")
-	folders, err := client.GetFolders(space)
-	if err != nil {
-		return nil, err
-	}
-	m.ctx.Logger.Infof("Found %d folders for space: %s", len(folders), space)
-
-	m.ctx.Logger.Infof("Caching folders")
-	m.ctx.Cache.Set("folders", space, folders)
-
-	return folders, nil
 }

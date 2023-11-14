@@ -1,8 +1,6 @@
 package lists
 
 import (
-	"encoding/json"
-
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
@@ -135,45 +133,11 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) getListsCmd(folderId string) tea.Cmd {
 	return func() tea.Msg {
-		folders, err := m.getLists(folderId)
+		folders, err := m.ctx.Api.GetLists(folderId)
 		if err != nil {
 			return common.ErrMsg(err)
 		}
 
 		return ListsListReloadedMsg(folders)
 	}
-}
-
-func (m Model) getLists(folderId string) ([]clickup.List, error) {
-	m.ctx.Logger.Infof("Getting lists for folder: %s", folderId)
-	client := m.ctx.Clickup
-
-	data, ok := m.ctx.Cache.Get("lists", folderId)
-	if ok {
-		m.ctx.Logger.Infof("Lists found in cache")
-		var lists []clickup.List
-		if err := m.ctx.Cache.ParseData(data, &lists); err != nil {
-			return nil, err
-		}
-
-		return lists, nil
-	}
-	m.ctx.Logger.Infof("Lists not found in cache")
-
-	m.ctx.Logger.Infof("Fetching lists from API")
-	lists, err := client.GetListsFromFolder(folderId)
-	if err != nil {
-		return nil, err
-	}
-	m.ctx.Logger.Infof("Found %d lists for folder: %s", len(lists), folderId)
-
-	for _, f := range lists {
-		j, _ := json.MarshalIndent(f, "", "  ")
-		m.ctx.Logger.Infof("%s", j)
-	}
-
-	m.ctx.Logger.Infof("Caching lists")
-	m.ctx.Cache.Set("lists", folderId, lists)
-
-	return lists, nil
 }

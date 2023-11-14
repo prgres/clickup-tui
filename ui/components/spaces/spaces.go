@@ -131,7 +131,7 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) getSpacesCmd() tea.Cmd {
 	return func() tea.Msg {
-		spaces, err := m.getSpaces(TEAM_RAMP_NETWORK)
+		spaces, err := m.ctx.Api.GetSpaces(TEAM_RAMP_NETWORK)
 		if err != nil {
 			return common.ErrMsg(err)
 		}
@@ -140,31 +140,3 @@ func (m Model) getSpacesCmd() tea.Cmd {
 	}
 }
 
-func (m Model) getSpaces(team string) ([]clickup.Space, error) {
-	m.ctx.Logger.Infof("Getting spaces for team: %s", team)
-	client := m.ctx.Clickup
-
-	data, ok := m.ctx.Cache.Get("spaces", "spaces")
-	if ok {
-		m.ctx.Logger.Infof("Spaces found in cache")
-		var spaces []clickup.Space
-		if err := m.ctx.Cache.ParseData(data, &spaces); err != nil {
-			return nil, err
-		}
-
-		return spaces, nil
-	}
-	m.ctx.Logger.Infof("Spaces not found in cache")
-
-	m.ctx.Logger.Infof("Fetching spaces from API")
-	spaces, err := client.GetSpaces(team)
-	if err != nil {
-		return nil, err
-	}
-	m.ctx.Logger.Infof("Found %d spaces for team: %s", len(spaces), team)
-
-	m.ctx.Logger.Infof("Caching spaces")
-	m.ctx.Cache.Set("spaces", "spaces", spaces)
-
-	return spaces, nil
-}

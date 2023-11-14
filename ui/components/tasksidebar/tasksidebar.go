@@ -52,7 +52,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		id := string(msg)
 		m.ctx.Logger.Infof("TaskSidebar receive TaskSelectedMsg: %s", id)
 
-		task, err := m.getTask(id)
+		task, err := m.ctx.Api.GetTask(id)
 		if err != nil {
 			return m, common.ErrCmd(err)
 		}
@@ -114,34 +114,4 @@ func (m Model) View() string {
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Info("Initializing component: TaskSidebar")
 	return InitCmd()
-}
-
-func (m Model) getTask(id string) (clickup.Task, error) {
-	m.ctx.Logger.Infof("Getting task: %s", id)
-
-	data, ok := m.ctx.Cache.Get("task", id)
-	if ok {
-		m.ctx.Logger.Infof("Task found in cache")
-		var task clickup.Task
-		if err := m.ctx.Cache.ParseData(data, &task); err != nil {
-			return clickup.Task{}, err
-		}
-
-		return task, nil
-	}
-	m.ctx.Logger.Info("Task not found in cache")
-
-	m.ctx.Logger.Info("Fetching task from API")
-	client := m.ctx.Clickup
-
-	task, err := client.GetTask(id)
-	if err != nil {
-		return clickup.Task{}, err
-	}
-	m.ctx.Logger.Infof("Found tasks %s", id)
-
-	m.ctx.Logger.Info("Caching tasks")
-	m.ctx.Cache.Set("task", id, task)
-
-	return task, nil
 }

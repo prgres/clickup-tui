@@ -109,7 +109,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.ctx.Logger.Infof("ViewsView received ListChangeMsg: %s", string(msg))
 		m.SelectedList = string(msg)
 
-		views, err := m.getViewsFromList(string(msg))
+		views, err := m.ctx.Api.GetViewsFromList(string(msg))
 		if err != nil {
 			return m, common.ErrCmd(err)
 		}
@@ -245,7 +245,7 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) getViewsFromSpaceCmd(space string) tea.Cmd {
 	return func() tea.Msg {
-		views, err := m.getViewsFromSpace(space)
+		views, err := m.ctx.Api.GetViewsFromSpace(space)
 		if err != nil {
 			return common.ErrMsg(err)
 		}
@@ -255,103 +255,10 @@ func (m Model) getViewsFromSpaceCmd(space string) tea.Cmd {
 
 func (m Model) getViewsFromFolderCmd(folder string) tea.Cmd {
 	return func() tea.Msg {
-		views, err := m.getViewsFromFolder(folder)
+		views, err := m.ctx.Api.GetViewsFromFolder(folder)
 		if err != nil {
 			return common.ErrMsg(err)
 		}
 		return ViewsListLoadedMsg(views)
 	}
-}
-
-func (m Model) getViewsFromFolder(folder string) ([]clickup.View, error) {
-	m.ctx.Logger.Infof("Getting views for folder: %s", folder)
-
-	data, ok := m.ctx.Cache.Get("views", folder)
-	if ok {
-		m.ctx.Logger.Infof("Views found in cache")
-		var views []clickup.View
-		if err := m.ctx.Cache.ParseData(data, &views); err != nil {
-			return nil, err
-		}
-
-		return views, nil
-	}
-	m.ctx.Logger.Info("Views not found in cache")
-
-	m.ctx.Logger.Info("Fetching views from API")
-	client := m.ctx.Clickup
-
-	m.ctx.Logger.Infof("Getting views from folder: %s", folder)
-	views, err := client.GetViewsFromFolder(folder)
-	if err != nil {
-		return nil, err
-	}
-	m.ctx.Logger.Infof("Found %d views in folder %s", len(views), folder)
-
-	m.ctx.Logger.Info("Caching views")
-	m.ctx.Cache.Set("views", folder, views)
-
-	return views, nil
-}
-
-func (m Model) getViewsFromList(listId string) ([]clickup.View, error) {
-	m.ctx.Logger.Infof("Getting views for folder: %s", listId)
-
-	data, ok := m.ctx.Cache.Get("views", listId)
-	if ok {
-		m.ctx.Logger.Infof("Views found in cache")
-		var views []clickup.View
-		if err := m.ctx.Cache.ParseData(data, &views); err != nil {
-			return nil, err
-		}
-
-		return views, nil
-	}
-	m.ctx.Logger.Info("Views not found in cache")
-
-	m.ctx.Logger.Info("Fetching views from API")
-	client := m.ctx.Clickup
-
-	m.ctx.Logger.Infof("Getting views from folder: %s", listId)
-	views, err := client.GetViewsFromList(listId)
-	if err != nil {
-		return nil, err
-	}
-	m.ctx.Logger.Infof("Found %d views in folder %s", len(views), listId)
-
-	m.ctx.Logger.Info("Caching views")
-	m.ctx.Cache.Set("views", listId, views)
-
-	return views, nil
-}
-
-func (m Model) getViewsFromSpace(space string) ([]clickup.View, error) {
-	m.ctx.Logger.Infof("Getting views for space: %s", space)
-
-	data, ok := m.ctx.Cache.Get("views", space)
-	if ok {
-		m.ctx.Logger.Infof("Views found in cache")
-		var views []clickup.View
-		if err := m.ctx.Cache.ParseData(data, &views); err != nil {
-			return nil, err
-		}
-
-		return views, nil
-	}
-	m.ctx.Logger.Info("Views not found in cache")
-
-	m.ctx.Logger.Info("Fetching views from API")
-	client := m.ctx.Clickup
-
-	m.ctx.Logger.Infof("Getting views from space: %s", space)
-	views, err := client.GetViewsFromSpace(space)
-	if err != nil {
-		return nil, err
-	}
-	m.ctx.Logger.Infof("Found %d views in space %s", len(views), space)
-
-	m.ctx.Logger.Info("Caching views")
-	m.ctx.Cache.Set("views", space, views)
-
-	return views, nil
 }
