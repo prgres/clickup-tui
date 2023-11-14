@@ -34,7 +34,7 @@ func InitialModel(ctx *context.UserContext) Model {
 	return Model{
 		list:           l,
 		ctx:            ctx,
-		SelectedFolder: FOLDER_INITIATIVE,
+		SelectedFolder: "",
 		SelectedList:   "",
 		lists:          []clickup.List{},
 	}
@@ -44,18 +44,11 @@ func (m *Model) syncList(lists []clickup.List) {
 	m.ctx.Logger.Info("Synchronizing list")
 	m.lists = lists
 
-	sre_index := 0
 	items := listsListToItems(lists)
 	itemsList := itemListToItems(items)
 
-	for i, item := range items {
-		if item.desc == SPACE_SRE {
-			sre_index = i
-		}
-	}
-
 	m.list.SetItems(itemsList)
-	m.list.Select(sre_index)
+	m.list.Select(0)
 }
 
 func itemListToItems(items []item) []list.Item {

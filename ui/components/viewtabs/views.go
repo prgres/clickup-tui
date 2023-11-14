@@ -25,7 +25,7 @@ func InitialModel(ctx *context.UserContext) Model {
 	return Model{
 		ctx:          ctx,
 		views:        map[string][]clickup.View{},
-		SelectedView: SPACE_SRE_LIST_COOL,
+		SelectedView: "", //SPACE_SRE_LIST_COOL,
 		// SelectedSpace: SPACE_SRE,
 	}
 }

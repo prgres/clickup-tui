@@ -76,7 +76,7 @@ func InitialModel(ctx *context.UserContext) Model {
 		columns:      columns,
 		requiredCols: requiredCols,
 		tasks:        map[string][]clickup.Task{},
-		SelectedView: SPACE_SRE_LIST_COOL,
+		SelectedView: "",
 		autoColumns:  false,
 		size:         size,
 	}
