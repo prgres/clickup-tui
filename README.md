@@ -42,15 +42,5 @@ Before using the tool, set up your ClickUp API key and configure any necessary s
 ## Contributing
 Contributions are welcome! If you find any bugs or have suggestions for improvement, please open an issue or submit a pull request.
 
-### TODO
-- [ ] async fetch data - sync in schedule
-- [ ] config in file
-- [ ] oauth login
-- [ ] edit status and assigned
-- [ ] polish space/folder/list flow
-- [ ] add team setting
-- [ ] store in the memory or file last selected (team, space, etc) 
-- [ ] add team handling
-
-License
+# License
 This project is licensed under the MIT License - see the LICENSE file for details.
