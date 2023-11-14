@@ -40,7 +40,7 @@ func (m *Model) syncList(spaces []clickup.Space) {
 	itemsList := listitem.ItemListToBubblesItems(items)
 
 	for i, item := range items {
-		if item.Description() == SPACE_SRE {
+		if item.Description() == m.ctx.Config.DefaultList {
 			sre_index = i
 		}
 	}
@@ -90,12 +90,12 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Infof("Initializing component: spacesList")
-	return common.TeamChangeCmd(TEAM_RAMP_NETWORK)
+	return m.getSpacesCmd()
 }
 
 func (m Model) getSpacesCmd() tea.Cmd {
 	return func() tea.Msg {
-		spaces, err := m.ctx.Api.GetSpaces(TEAM_RAMP_NETWORK)
+		spaces, err := m.ctx.Api.GetSpaces(m.ctx.Config.DefaultTeam)
 		if err != nil {
 			return common.ErrMsg(err)
 		}

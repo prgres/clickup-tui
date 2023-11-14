@@ -5,11 +5,6 @@ import (
 	listitem "github.com/prgrs/clickup/ui/components/list-item"
 )
 
-const (
-	TEAM_RAMP_NETWORK = "24301226"
-	SPACE_SRE         = "48458830"
-)
-
 func spaceListToItems(spaces []clickup.Space) []listitem.Item {
 	items := make([]listitem.Item, len(spaces))
 	for i, space := range spaces {

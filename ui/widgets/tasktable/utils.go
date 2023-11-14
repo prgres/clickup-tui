@@ -22,6 +22,7 @@ func (m Model) getSelectedViewTaskIdByIndex(index int) string {
 func (m Model) getSelectedViewTasks() []clickup.Task {
 	return m.tasks[m.SelectedView]
 }
+
 func taskToRow(task clickup.Task, columns []table.Column) table.Row {
 	values := table.Row{}
 	for _, column := range columns {

@@ -27,7 +27,7 @@ func InitialModel(ctx *context.UserContext) Model {
 		list:           l,
 		ctx:            ctx,
 		SelectedFolder: "",
-		SelectedSpace:  SPACE_SRE,
+		SelectedSpace:  ctx.Config.DefaultSpace,
 		folders:        []clickup.Folder{},
 	}
 }
@@ -41,7 +41,7 @@ func (m *Model) syncList(folders []clickup.Folder) {
 	itemsList := listitem.ItemListToBubblesItems(items)
 
 	for i, item := range items {
-		if item.Description() == SPACE_SRE {
+		if item.Description() == m.ctx.Config.DefaultFolder {
 			sre_index = i
 		}
 	}
