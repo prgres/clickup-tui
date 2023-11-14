@@ -5,6 +5,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
+	listitem "github.com/prgrs/clickup/ui/components/list-item"
 	"github.com/prgrs/clickup/ui/context"
 )
 
@@ -37,10 +38,10 @@ func (m *Model) syncList(folders []clickup.Folder) {
 
 	sre_index := 0
 	items := folderListToItems(folders)
-	itemsList := itemListToItems(items)
+	itemsList := listitem.ItemListToBubblesItems(items)
 
 	for i, item := range items {
-		if item.desc == SPACE_SRE {
+		if item.Description() == SPACE_SRE {
 			sre_index = i
 		}
 	}
@@ -71,7 +72,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
-			selectedFolder := m.list.SelectedItem().(item).desc
+			selectedFolder := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
 			m.ctx.Logger.Infof("Selected folder %s", selectedFolder)
 			m.SelectedFolder = selectedFolder
 			cmds = append(cmds, common.FolderChangeCmd(selectedFolder))

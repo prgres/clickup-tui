@@ -29,14 +29,6 @@ type size struct {
 	Height int
 }
 
-func (m Model) getSelectedViewTaskIdByIndex(index int) string {
-	return m.getSelectedViewTasks()[index].Id
-}
-
-func (m Model) getSelectedViewTasks() []clickup.Task {
-	return m.tasks[m.SelectedView]
-}
-
 func InitialModel(ctx *context.UserContext) Model {
 	columns := []table.Column{}
 	requiredCols := []table.Column{

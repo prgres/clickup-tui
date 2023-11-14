@@ -5,6 +5,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
+	listitem "github.com/prgrs/clickup/ui/components/list-item"
 	"github.com/prgrs/clickup/ui/context"
 )
 
@@ -15,15 +16,6 @@ type Model struct {
 	SelectedList   string
 	SelectedFolder string
 }
-
-type item struct {
-	title string
-	desc  string
-}
-
-func (i item) Title() string       { return i.title }
-func (i item) Description() string { return i.desc }
-func (i item) FilterValue() string { return i.title }
 
 func InitialModel(ctx *context.UserContext) Model {
 	l := list.New([]list.Item{},
@@ -45,37 +37,10 @@ func (m *Model) syncList(lists []clickup.List) {
 	m.lists = lists
 
 	items := listsListToItems(lists)
-	itemsList := itemListToItems(items)
+	itemsList := listitem.ItemListToBubblesItems(items)
 
 	m.list.SetItems(itemsList)
 	m.list.Select(0)
-}
-
-func itemListToItems(items []item) []list.Item {
-	listItems := make([]list.Item, len(items))
-	for i, item := range items {
-		listItems[i] = itemToListItem(item)
-	}
-	return listItems
-}
-
-func itemToListItem(item item) list.Item {
-	return list.Item(item)
-}
-
-func listsListToItems(lists []clickup.List) []item {
-	items := make([]item, len(lists))
-	for i, list := range lists {
-		items[i] = listToItem(list)
-	}
-	return items
-}
-
-func listToItem(list clickup.List) item {
-	return item{
-		list.Name,
-		list.Id,
-	}
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -100,7 +65,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
-			selectedList := m.list.SelectedItem().(item).desc
+			selectedList := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
 			m.ctx.Logger.Infof("Selected list %s", selectedList)
 			m.SelectedList = selectedList
 			cmds = append(cmds, common.ListChangeCmd(m.SelectedList))

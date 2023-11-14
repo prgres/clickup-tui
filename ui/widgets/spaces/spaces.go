@@ -5,6 +5,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
+	listitem "github.com/prgrs/clickup/ui/components/list-item"
 	"github.com/prgrs/clickup/ui/context"
 )
 
@@ -15,15 +16,6 @@ type Model struct {
 	spaces        []clickup.Space
 	SelectedTeam  string
 }
-
-type item struct {
-	title string
-	desc  string
-}
-
-func (i item) Title() string       { return i.title }
-func (i item) Description() string { return i.desc }
-func (i item) FilterValue() string { return i.title }
 
 func InitialModel(ctx *context.UserContext) Model {
 	l := list.New([]list.Item{},
@@ -45,43 +37,16 @@ func (m *Model) syncList(spaces []clickup.Space) {
 
 	sre_index := 0
 	items := spaceListToItems(spaces)
-	itemsList := itemListToItems(items)
+	itemsList := listitem.ItemListToBubblesItems(items)
 
 	for i, item := range items {
-		if item.desc == SPACE_SRE {
+		if item.Description() == SPACE_SRE {
 			sre_index = i
 		}
 	}
 
 	m.list.SetItems(itemsList)
 	m.list.Select(sre_index)
-}
-
-func itemListToItems(items []item) []list.Item {
-	listItems := make([]list.Item, len(items))
-	for i, item := range items {
-		listItems[i] = itemToListItem(item)
-	}
-	return listItems
-}
-
-func itemToListItem(item item) list.Item {
-	return list.Item(item)
-}
-
-func spaceListToItems(spaces []clickup.Space) []item {
-	items := make([]item, len(spaces))
-	for i, space := range spaces {
-		items[i] = spaceToItem(space)
-	}
-	return items
-}
-
-func spaceToItem(space clickup.Space) item {
-	return item{
-		space.Name,
-		space.Id,
-	}
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -106,7 +71,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
-			selectedSpace := m.list.SelectedItem().(item).desc
+			selectedSpace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
 			m.ctx.Logger.Infof("Selected space %s", selectedSpace)
 			m.SelectedSpace = selectedSpace
 			cmds = append(cmds, common.SpaceChangeCmd(selectedSpace))
