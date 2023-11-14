@@ -7,8 +7,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/ui/common"
-	"github.com/prgrs/clickup/ui/components/spaces"
 	"github.com/prgrs/clickup/ui/context"
+	"github.com/prgrs/clickup/ui/widgets/spaces"
 )
 
 type SpacesState uint
@@ -22,7 +22,7 @@ type Model struct {
 	ctx   *context.UserContext
 	state SpacesState
 
-	componentSpaceList spaces.Model
+	widgetSpaceList spaces.Model
 
 	spinner     spinner.Model
 	showSpinner bool
@@ -33,9 +33,9 @@ func InitialModel(ctx *context.UserContext) Model {
 	s.Spinner = spinner.Pulse
 
 	return Model{
-		ctx:                ctx,
-		componentSpaceList: spaces.InitialModel(ctx),
-		state:              SpacesStateList,
+		ctx:             ctx,
+		widgetSpaceList: spaces.InitialModel(ctx),
+		state:           SpacesStateList,
 
 		spinner:     s,
 		showSpinner: false,
@@ -70,7 +70,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.showSpinner = false
 	}
 
-	m.componentSpaceList, cmd = m.componentSpaceList.Update(msg)
+	m.widgetSpaceList, cmd = m.widgetSpaceList.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
@@ -86,10 +86,10 @@ func (m Model) View() string {
 		)
 	}
 
-	return m.componentSpaceList.View()
+	return m.widgetSpaceList.View()
 }
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Info("Initializing view: Spaces")
-	return m.componentSpaceList.Init()
+	return m.widgetSpaceList.Init()
 }

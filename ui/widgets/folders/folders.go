@@ -16,15 +16,6 @@ type Model struct {
 	SelectedFolder string
 }
 
-type item struct {
-	title string
-	desc  string
-}
-
-func (i item) Title() string       { return i.title }
-func (i item) Description() string { return i.desc }
-func (i item) FilterValue() string { return i.title }
-
 func InitialModel(ctx *context.UserContext) Model {
 	l := list.New([]list.Item{},
 		list.NewDefaultDelegate(),
@@ -56,33 +47,6 @@ func (m *Model) syncList(folders []clickup.Folder) {
 
 	m.list.SetItems(itemsList)
 	m.list.Select(sre_index)
-}
-
-func itemListToItems(items []item) []list.Item {
-	listItems := make([]list.Item, len(items))
-	for i, item := range items {
-		listItems[i] = itemToListItem(item)
-	}
-	return listItems
-}
-
-func itemToListItem(item item) list.Item {
-	return list.Item(item)
-}
-
-func folderListToItems(folders []clickup.Folder) []item {
-	items := make([]item, len(folders))
-	for i, folder := range folders {
-		items[i] = folderToItem(folder)
-	}
-	return items
-}
-
-func folderToItem(folder clickup.Folder) item {
-	return item{
-		folder.Name,
-		folder.Id,
-	}
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -127,16 +91,4 @@ func (m Model) View() string {
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Infof("Initializing component: foldersList")
 	return nil
-	// return common.SpaceChangeCmd(SPACE_SRE)
-}
-
-func (m Model) getFoldersCmd(space string) tea.Cmd {
-	return func() tea.Msg {
-		folders, err := m.ctx.Api.GetFolders(space)
-		if err != nil {
-			return common.ErrMsg(err)
-		}
-
-		return FoldersListReloadedMsg(folders)
-	}
 }

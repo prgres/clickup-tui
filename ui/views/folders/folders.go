@@ -7,8 +7,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/ui/common"
-	"github.com/prgrs/clickup/ui/components/folders"
 	"github.com/prgrs/clickup/ui/context"
+	"github.com/prgrs/clickup/ui/widgets/folders"
 )
 
 type FoldersState uint
@@ -22,7 +22,7 @@ type Model struct {
 	ctx   *context.UserContext
 	state FoldersState
 
-	componentFoldersList folders.Model
+	widgetFoldersList folders.Model
 
 	spinner     spinner.Model
 	showSpinner bool
@@ -33,9 +33,9 @@ func InitialModel(ctx *context.UserContext) Model {
 	s.Spinner = spinner.Pulse
 
 	return Model{
-		ctx:                  ctx,
-		componentFoldersList: folders.InitialModel(ctx),
-		state:                FoldersStateList,
+		ctx:               ctx,
+		widgetFoldersList: folders.InitialModel(ctx),
+		state:             FoldersStateList,
 
 		spinner:     s,
 		showSpinner: false,
@@ -70,7 +70,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.showSpinner = false
 	}
 
-	m.componentFoldersList, cmd = m.componentFoldersList.Update(msg)
+	m.widgetFoldersList, cmd = m.widgetFoldersList.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
@@ -86,10 +86,10 @@ func (m Model) View() string {
 		)
 	}
 
-	return m.componentFoldersList.View()
+	return m.widgetFoldersList.View()
 }
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Info("Initializing view: Folders")
-	return m.componentFoldersList.Init()
+	return m.widgetFoldersList.Init()
 }

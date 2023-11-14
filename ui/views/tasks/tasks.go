@@ -7,10 +7,10 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/prgrs/clickup/ui/components/tasksidebar"
-	"github.com/prgrs/clickup/ui/components/tasktable"
-	"github.com/prgrs/clickup/ui/components/viewtabs"
 	"github.com/prgrs/clickup/ui/context"
+	"github.com/prgrs/clickup/ui/widgets/tasksidebar"
+	"github.com/prgrs/clickup/ui/widgets/tasktable"
+	"github.com/prgrs/clickup/ui/widgets/viewtabs"
 )
 
 type TasksState uint
@@ -26,9 +26,9 @@ type Model struct {
 	ctx   *context.UserContext
 	state TasksState
 
-	componentViewsTabs   viewtabs.Model
-	componentTasksTable  tasktable.Model
-	componentTaskSidebar tasksidebar.Model
+	widgetViewsTabs   viewtabs.Model
+	widgetTasksTable  tasktable.Model
+	widgetTaskSidebar tasksidebar.Model
 
 	spinner     spinner.Model
 	showSpinner bool
@@ -42,9 +42,9 @@ func InitialModel(ctx *context.UserContext) Model {
 		ctx:   ctx,
 		state: TasksStateTasksTable,
 
-		componentViewsTabs:   viewtabs.InitialModel(ctx),
-		componentTasksTable:  tasktable.InitialModel(ctx),
-		componentTaskSidebar: tasksidebar.InitialModel(ctx),
+		widgetViewsTabs:   viewtabs.InitialModel(ctx),
+		widgetTasksTable:  tasktable.InitialModel(ctx),
+		widgetTaskSidebar: tasksidebar.InitialModel(ctx),
 
 		spinner:     s,
 		showSpinner: false,
@@ -67,38 +67,38 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			switch m.state {
 			case TasksStateTasksTable:
 				m.state = TasksStateViewsTabs
-				m.componentTasksTable.Focused = false
-				m.componentViewsTabs.Focused = true
+				m.widgetTasksTable.Focused = false
+				m.widgetViewsTabs.Focused = true
 				return m, tea.Batch(cmds...)
 
 			case TasksStateViewsTabs:
 				m.state = TasksStateTasksTable
-				m.componentTasksTable.Focused = true
-				m.componentViewsTabs.Focused = false
+				m.widgetTasksTable.Focused = true
+				m.widgetViewsTabs.Focused = false
 				return m, tea.Batch(cmds...)
 			}
 
 		case "esc":
 			m.state = TasksStateTasksTable
-			m.componentTasksTable.Focused = true
-			m.componentTaskSidebar.Focused = false
-			m.componentViewsTabs.Focused = false
+			m.widgetTasksTable.Focused = true
+			m.widgetTaskSidebar.Focused = false
+			m.widgetViewsTabs.Focused = false
 			return m, tea.Batch(cmds...)
 
 		default:
 			switch m.state {
 			case TasksStateTasksTable:
-				m.componentTasksTable, cmd = m.componentTasksTable.Update(msg)
+				m.widgetTasksTable, cmd = m.widgetTasksTable.Update(msg)
 				cmds = append(cmds, cmd)
 				return m, tea.Batch(cmds...)
 
 			case TasksStateTaskSidebar:
-				m.componentTaskSidebar, cmd = m.componentTaskSidebar.Update(msg)
+				m.widgetTaskSidebar, cmd = m.widgetTaskSidebar.Update(msg)
 				cmds = append(cmds, cmd)
 				return m, tea.Batch(cmds...)
 
 			case TasksStateViewsTabs:
-				m.componentViewsTabs, cmd = m.componentViewsTabs.Update(msg)
+				m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
 				cmds = append(cmds, cmd)
 				return m, tea.Batch(cmds...)
 			}
@@ -123,7 +123,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmd = tasktable.ViewChangedCmd(string(msg))
 		cmds = append(cmds, cmd)
 
-		m.componentViewsTabs, cmd = m.componentViewsTabs.Update(msg)
+		m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
 		cmds = append(cmds, cmd)
 
 	case tasktable.TasksListReadyMsg:
@@ -143,18 +143,18 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		id := string(msg)
 		m.ctx.Logger.Infof("ViewTask receive tasktable.TaskSelectedMsg: %s", id)
 		m.state = TasksStateTaskSidebar
-		m.componentTasksTable.Focused = false
-		m.componentTaskSidebar.Focused = true
+		m.widgetTasksTable.Focused = false
+		m.widgetTaskSidebar.Focused = true
 		cmds = append(cmds, tasksidebar.TaskSelectedCmd(id))
 	}
 
-	m.componentViewsTabs, cmd = m.componentViewsTabs.Update(msg)
+	m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
 	cmds = append(cmds, cmd)
 
-	m.componentTasksTable, cmd = m.componentTasksTable.Update(msg)
+	m.widgetTasksTable, cmd = m.widgetTasksTable.Update(msg)
 	cmds = append(cmds, cmd)
 
-	m.componentTaskSidebar, cmd = m.componentTaskSidebar.Update(msg)
+	m.widgetTaskSidebar, cmd = m.widgetTaskSidebar.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
@@ -178,11 +178,11 @@ func (m Model) View() string {
 		BorderLeft(true).
 		Render(lipgloss.JoinVertical(
 			lipgloss.Top,
-			m.componentViewsTabs.View(),
+			m.widgetViewsTabs.View(),
 			lipgloss.JoinHorizontal(
 				lipgloss.Top,
-				m.componentTasksTable.View(),
-				m.componentTaskSidebar.View(),
+				m.widgetTasksTable.View(),
+				m.widgetTaskSidebar.View(),
 			),
 		))
 }
@@ -190,9 +190,9 @@ func (m Model) View() string {
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Infof("Initializing view: Tasks")
 	return tea.Batch(
-		m.componentViewsTabs.Init(),
-		m.componentTasksTable.Init(),
-		m.componentTaskSidebar.Init(),
+		m.widgetViewsTabs.Init(),
+		m.widgetTasksTable.Init(),
+		m.widgetTaskSidebar.Init(),
 		m.spinner.Tick,
 	)
 }
