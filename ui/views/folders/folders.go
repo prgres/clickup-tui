@@ -19,13 +19,12 @@ const (
 )
 
 type Model struct {
-	ctx   *context.UserContext
-	state FoldersState
-
+	ViewId            common.ViewId
+	ctx               *context.UserContext
+	state             FoldersState
 	widgetFoldersList folders.Model
-
-	spinner     spinner.Model
-	showSpinner bool
+	spinner           spinner.Model
+	showSpinner       bool
 }
 
 func InitialModel(ctx *context.UserContext) Model {
@@ -33,12 +32,12 @@ func InitialModel(ctx *context.UserContext) Model {
 	s.Spinner = spinner.Pulse
 
 	return Model{
+		ViewId:            "viewFolders",
 		ctx:               ctx,
 		widgetFoldersList: folders.InitialModel(ctx),
 		state:             FoldersStateList,
-
-		spinner:     s,
-		showSpinner: false,
+		spinner:           s,
+		showSpinner:       false,
 	}
 }
 
@@ -50,8 +49,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "esc":
-			m.ctx.Logger.Info("Hiding folders view")
-			cmds = append(cmds, HideFolderViewCmd())
+			m.ctx.Logger.Info("ViewFolders: Go to previous view")
+			cmds = append(cmds, common.BackToPreviousViewCmd(m.ViewId))
 		}
 
 	case spinner.TickMsg:

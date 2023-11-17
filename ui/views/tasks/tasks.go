@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
 	"github.com/prgrs/clickup/ui/widgets/tasksidebar"
 	"github.com/prgrs/clickup/ui/widgets/tasktable"
@@ -23,15 +24,14 @@ const (
 )
 
 type Model struct {
-	ctx   *context.UserContext
-	state TasksState
-
+	ViewId            common.ViewId
+	ctx               *context.UserContext
+	state             TasksState
 	widgetViewsTabs   viewtabs.Model
 	widgetTasksTable  tasktable.Model
 	widgetTaskSidebar tasksidebar.Model
-
-	spinner     spinner.Model
-	showSpinner bool
+	spinner           spinner.Model
+	showSpinner       bool
 }
 
 func InitialModel(ctx *context.UserContext) Model {
@@ -39,26 +39,20 @@ func InitialModel(ctx *context.UserContext) Model {
 	s.Spinner = spinner.Pulse
 
 	return Model{
-		ctx:   ctx,
-		state: TasksStateTasksTable,
-
+		ViewId:            "viewTasks",
+		ctx:               ctx,
+		state:             TasksStateTasksTable,
 		widgetViewsTabs:   viewtabs.InitialModel(ctx),
 		widgetTasksTable:  tasktable.InitialModel(ctx),
 		widgetTaskSidebar: tasksidebar.InitialModel(ctx),
-
-		spinner:     s,
-		showSpinner: false,
+		spinner:           s,
+		showSpinner:       false,
 	}
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
-
-	// if m.showSpinner {
-	// 	m.spinner, cmd = m.spinner.Update(msg)
-	// 	cmds = append(cmds, cmd)
-	// }
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -79,12 +73,24 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			}
 
 		case "esc":
-			m.state = TasksStateTasksTable
-			m.widgetTasksTable.Focused = true
-			m.widgetTaskSidebar.Focused = false
-			m.widgetViewsTabs.Focused = false
-			return m, tea.Batch(cmds...)
+			switch m.state {
+			case TasksStateTaskSidebar:
+				m.state = TasksStateTasksTable
+				m.widgetTasksTable.Focused = true
+				m.widgetTaskSidebar.Focused = false
+				m.widgetViewsTabs.Focused = false
 
+			case TasksStateViewsTabs:
+				m.state = TasksStateTasksTable
+				m.widgetTasksTable.Focused = true
+				m.widgetTaskSidebar.Focused = false
+				m.widgetViewsTabs.Focused = false
+
+			case TasksStateTasksTable:
+				m.state = TasksStateTasksTable
+				m.ctx.Logger.Info("ViewTasks: Go to previous view")
+				cmds = append(cmds, common.BackToPreviousViewCmd(m.ViewId))
+			}
 		default:
 			switch m.state {
 			case TasksStateTasksTable:

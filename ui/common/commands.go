@@ -52,3 +52,11 @@ func ViewLoadedCmd(view clickup.View) tea.Cmd {
 		return ViewLoadedMsg(view)
 	}
 }
+
+type BackToPreviousViewMsg ViewId
+
+func BackToPreviousViewCmd(currentView ViewId) tea.Cmd {
+	return func() tea.Msg {
+		return BackToPreviousViewMsg(currentView)
+	}
+}
