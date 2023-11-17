@@ -65,8 +65,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
+			if m.list.SelectedItem() == nil {
+				m.ctx.Logger.Info("ListsView: list is empty")
+				break
+			}
 			selectedList := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.ctx.Logger.Infof("Selected list %s", selectedList)
+			m.ctx.Logger.Infof("ListsView: Selected list %s", selectedList)
 			m.SelectedList = selectedList
 			cmds = append(cmds, common.ListChangeCmd(m.SelectedList))
 		}
@@ -85,7 +89,6 @@ func (m Model) View() string {
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Infof("Initializing component: listsList")
 	return nil
-	// return common.FolderChangeCmd(m.SelectedFolder)
 }
 
 func (m Model) getListsCmd(folderId string) tea.Cmd {

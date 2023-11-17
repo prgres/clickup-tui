@@ -40,7 +40,7 @@ func (m *Model) syncList(spaces []clickup.Space) {
 	itemsList := listitem.ItemListToBubblesItems(items)
 
 	for i, item := range items {
-		if item.Description() == m.ctx.Config.DefaultList {
+		if item.Description() == m.ctx.Config.DefaultSpace {
 			sre_index = i
 		}
 	}
@@ -71,8 +71,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
+			if m.list.SelectedItem() == nil {
+				m.ctx.Logger.Info("SpaceView: list is empty")
+				break
+			}
 			selectedSpace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.ctx.Logger.Infof("Selected space %s", selectedSpace)
+			m.ctx.Logger.Infof("SpaceView: Selected space %s", selectedSpace)
 			m.SelectedSpace = selectedSpace
 			cmds = append(cmds, common.SpaceChangeCmd(selectedSpace))
 		}
@@ -91,15 +95,4 @@ func (m Model) View() string {
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Infof("Initializing component: spacesList")
 	return m.getSpacesCmd()
-}
-
-func (m Model) getSpacesCmd() tea.Cmd {
-	return func() tea.Msg {
-		spaces, err := m.ctx.Api.GetSpaces(m.ctx.Config.DefaultTeam)
-		if err != nil {
-			return common.ErrMsg(err)
-		}
-
-		return SpaceListReloadedMsg(spaces)
-	}
 }
