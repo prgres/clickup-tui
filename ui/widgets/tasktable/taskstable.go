@@ -10,18 +10,16 @@ import (
 )
 
 type Model struct {
-	ctx          *context.UserContext
-	table        table.Model
-	columns      []table.Column
-	requiredCols []table.Column
-	tasks        map[string][]clickup.Task
-
+	ctx               *context.UserContext
+	table             table.Model
+	columns           []table.Column
+	requiredCols      []table.Column
+	tasks             map[string][]clickup.Task
 	SelectedView      string
 	SelectedTaskIndex int
-
-	Focused     bool
-	autoColumns bool
-	size        size
+	Focused           bool
+	autoColumns       bool
+	size              size
 }
 
 type size struct {
@@ -71,6 +69,7 @@ func InitialModel(ctx *context.UserContext) Model {
 		SelectedView: "",
 		autoColumns:  false,
 		size:         size,
+		Focused:      true,
 	}
 }
 
@@ -121,8 +120,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		taskId := m.getSelectedViewTaskIdByIndex(m.SelectedTaskIndex)
 
 		cmds = append(cmds, cmd, TasksListReadyCmd(taskId))
-		// cmds = append(cmds, cmd, TasksListReadyCmd())
-		// cmds = append(cmds, cmd, TasksListReadyCmd(), TaskSelectedCmd(taskId))
 
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Infof("TaskTable receive tea.WindowSizeMsg Width: %d Height %d", msg.Width, msg.Height)
