@@ -142,11 +142,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 
 	case tasktable.TasksListReadyMsg:
-		id := string(msg)
-		m.ctx.Logger.Infof("ViewTasks received TasksListReady: %s", id)
+		m.ctx.Logger.Info("ViewTasks received TasksListReady")
 		m.showSpinner = false
 		cmds = append(cmds,
-			tasksidebar.TaskSelectedCmd(id), m.spinner.Tick)
+			m.spinner.Tick,
+		)
 
 	case spinner.TickMsg:
 		m.ctx.Logger.Info("ViewTask receive spinner.TickMsg")

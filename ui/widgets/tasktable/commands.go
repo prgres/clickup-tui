@@ -13,14 +13,11 @@ func TaskSelectedCmd(task string) tea.Cmd {
 	}
 }
 
-type TasksListReadyMsg string
+type TasksListReadyMsg bool
 
-// type TasksListReadyMsg bool
-
-func TasksListReadyCmd(task string) tea.Cmd {
-	// func TasksListReadyCmd() tea.Cmd {
+func TasksListReadyCmd() tea.Cmd {
 	return func() tea.Msg {
-		return TasksListReadyMsg(task)
+		return TasksListReadyMsg(true)
 	}
 }
 
