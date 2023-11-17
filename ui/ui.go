@@ -10,27 +10,9 @@ import (
 	"github.com/prgrs/clickup/ui/views/tasks"
 )
 
-type ChangeViewMsg sessionState
-
-func ChangeViewCmd(view sessionState) tea.Cmd {
-	return func() tea.Msg {
-		return ChangeViewMsg(view)
-	}
-}
-
-type sessionState uint
-
-const (
-	sessionSpacesView sessionState = iota
-	sessionFoldersView
-	sessionListsView
-	sessionTasksView
-)
-
 type Model struct {
-	ctx   *context.UserContext
-	state sessionState
-
+	ctx         *context.UserContext
+	state       common.ViewId
 	viewSpaces  spaces.Model
 	viewTasks   tasks.Model
 	viewLists   lists.Model
@@ -38,14 +20,18 @@ type Model struct {
 }
 
 func InitialModel(ctx *context.UserContext) Model {
-	return Model{
-		ctx:   ctx,
-		state: sessionSpacesView,
+	viewSpaces := spaces.InitialModel(ctx)
+	viewTasks := tasks.InitialModel(ctx)
+	viewLists := lists.InitialModel(ctx)
+	viewFolders := folders.InitialModel(ctx)
 
-		viewSpaces:  spaces.InitialModel(ctx),
-		viewTasks:   tasks.InitialModel(ctx),
-		viewLists:   lists.InitialModel(ctx),
-		viewFolders: folders.InitialModel(ctx),
+	return Model{
+		ctx:         ctx,
+		state:       viewSpaces.ViewId,
+		viewSpaces:  viewSpaces,
+		viewTasks:   viewTasks,
+		viewLists:   viewLists,
+		viewFolders: viewFolders,
 	}
 }
 
@@ -63,44 +49,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 
-		// case "1":
-		// 	return m, ChangeViewCmd(sessionSpacesView)
-
-		// case "2":
-		// 	return m, ChangeViewCmd(sessionFoldersView)
-
-		// case "3":
-		// 	return m, ChangeViewCmd(sessionListsView)
-
-		// case "4":
-		// 	return m, ChangeViewCmd(sessionTasksView)
-
-		// case "esc":
-		// 	switch m.state {
-		// 	case sessionFoldersView:
-		// 		return m, ChangeViewCmd(sessionSpacesView)
-
-		// 	case sessionListsView:
-		// 		return m, ChangeViewCmd(sessionFoldersView)
-		// 	}
-
 		default:
 			switch m.state {
-			case sessionSpacesView:
+			case m.viewSpaces.ViewId:
 				m.viewSpaces, cmd = m.viewSpaces.Update(msg)
 				return m, cmd
 
-			case sessionTasksView:
-				m.viewTasks, cmd = m.viewTasks.Update(msg)
-				return m, cmd
-
-			case sessionFoldersView:
+			case m.viewFolders.ViewId:
 				m.viewFolders, cmd = m.viewFolders.Update(msg)
 				return m, cmd
 
-			case sessionListsView:
+			case m.viewLists.ViewId:
 				m.viewLists, cmd = m.viewLists.Update(msg)
 				return m, cmd
+
+			case m.viewTasks.ViewId:
+				m.viewTasks, cmd = m.viewTasks.Update(msg)
+				return m, cmd
+
+			default:
+				return m, nil
 			}
 		}
 
@@ -109,46 +77,28 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ctx.WindowSize.Width = msg.Width
 		m.ctx.WindowSize.Height = msg.Height
 
-	case ChangeViewMsg: // maybe ChangeScreenMsg
-		m.ctx.Logger.Infof("UI received ChangeViewMsg: %d", msg)
+	case common.SpaceChangeMsg:
+		m.ctx.Logger.Infof("UI received SpaceChangeMsg: %s", string(msg))
+		m.state = m.viewFolders.ViewId
 
-		switch sessionState(msg) {
-		case sessionSpacesView:
-			m.state = sessionSpacesView
-			m.viewSpaces, cmd = m.viewSpaces.Update(common.FocusMsg(true))
-			return m, cmd
+	case common.FolderChangeMsg:
+		m.ctx.Logger.Infof("UI received FolderChangeMsg: %s", string(msg))
+		m.state = m.viewLists.ViewId
 
-		case sessionFoldersView:
-			m.state = sessionFoldersView
-			m.viewFolders, cmd = m.viewFolders.Update(common.FocusMsg(true))
-			return m, cmd
+	case common.ListChangeMsg:
+		m.ctx.Logger.Infof("UI received ListChangeMsg: %s", string(msg))
+		m.state = m.viewTasks.ViewId
 
-		case sessionListsView:
-			m.state = sessionListsView
-			m.viewLists, cmd = m.viewLists.Update(common.FocusMsg(true))
-			return m, cmd
-
-		case sessionTasksView:
-			m.state = sessionTasksView
-			m.viewTasks, cmd = m.viewTasks.Update(common.FocusMsg(true))
-			return m, cmd
+	case common.BackToPreviousViewMsg:
+		m.ctx.Logger.Infof("UI received BackToPreviousViewMsg")
+		switch m.state {
+		case m.viewFolders.ViewId:
+			m.state = m.viewSpaces.ViewId
+		case m.viewLists.ViewId:
+			m.state = m.viewFolders.ViewId
+		case m.viewTasks.ViewId:
+			m.state = m.viewLists.ViewId
 		}
-
-		// case spaces.HideSpaceViewMsg:
-		// 	m.ctx.Logger.Info("UI received HideSpaceViewMsg")
-		// 	return m, ChangeViewCmd(sessionTasksView)
-
-		case common.SpaceChangeMsg:
-			m.ctx.Logger.Infof("UI received SpaceChangeMsg: %s", string(msg))
-			cmds = append(cmds, ChangeViewCmd(sessionFoldersView))
-
-		case common.FolderChangeMsg:
-			m.ctx.Logger.Infof("UI received FolderChangeMsg: %s", string(msg))
-			cmds = append(cmds, ChangeViewCmd(sessionListsView))
-
-		case common.ListChangeMsg:
-			m.ctx.Logger.Infof("UI received ListChangeMsg: %s", string(msg))
-			cmds = append(cmds, ChangeViewCmd(sessionTasksView))
 	}
 
 	m.viewSpaces, cmd = m.viewSpaces.Update(msg)
@@ -168,13 +118,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	switch m.state {
-	case sessionSpacesView:
+	case m.viewSpaces.ViewId:
 		return m.viewSpaces.View()
-	case sessionFoldersView:
+	case m.viewFolders.ViewId:
 		return m.viewFolders.View()
-	case sessionListsView:
+	case m.viewLists.ViewId:
 		return m.viewLists.View()
-	case sessionTasksView:
+	case m.viewTasks.ViewId:
 		return m.viewTasks.View()
 	default:
 		return m.viewSpaces.View()
