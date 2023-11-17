@@ -46,7 +46,7 @@ func InitialModel(ctx *context.UserContext) Model {
 		widgetTasksTable:  tasktable.InitialModel(ctx),
 		widgetTaskSidebar: tasksidebar.InitialModel(ctx),
 		spinner:           s,
-		showSpinner:       false,
+		showSpinner:       true,
 	}
 }
 
@@ -145,7 +145,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		id := string(msg)
 		m.ctx.Logger.Infof("ViewTasks received TasksListReady: %s", id)
 		m.showSpinner = false
-		cmds = append(cmds, tasksidebar.TaskSelectedCmd(id))
+		cmds = append(cmds,
+			tasksidebar.TaskSelectedCmd(id), m.spinner.Tick)
 
 	case spinner.TickMsg:
 		m.ctx.Logger.Info("ViewTask receive spinner.TickMsg")
