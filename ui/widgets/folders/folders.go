@@ -72,8 +72,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
+			if m.list.SelectedItem() == nil {
+				m.ctx.Logger.Info("FolderView: list is empty")
+				break
+			}
 			selectedFolder := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.ctx.Logger.Infof("Selected folder %s", selectedFolder)
+			m.ctx.Logger.Infof("FolderView: Selected folder %s", selectedFolder)
 			m.SelectedFolder = selectedFolder
 			cmds = append(cmds, common.FolderChangeCmd(selectedFolder))
 		}
