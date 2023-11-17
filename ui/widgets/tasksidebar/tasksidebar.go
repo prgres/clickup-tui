@@ -28,6 +28,7 @@ func InitialModel(ctx *context.UserContext) Model {
 	return Model{
 		ctx:      ctx,
 		viewport: v,
+		Focused:  false,
 	}
 }
 
