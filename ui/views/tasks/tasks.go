@@ -57,20 +57,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		case "tab":
-			switch m.state {
-			case TasksStateTasksTable:
-				m.state = TasksStateViewsTabs
-				m.widgetTasksTable.Focused = false
-				m.widgetViewsTabs.Focused = true
-				return m, tea.Batch(cmds...)
-
-			case TasksStateViewsTabs:
-				m.state = TasksStateTasksTable
-				m.widgetTasksTable.Focused = true
-				m.widgetViewsTabs.Focused = false
-				return m, tea.Batch(cmds...)
-			}
 
 		case "esc":
 			switch m.state {
@@ -91,7 +77,26 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.ctx.Logger.Info("ViewTasks: Go to previous view")
 				cmds = append(cmds, common.BackToPreviousViewCmd(m.ViewId))
 			}
+
 		default:
+			switch keypress {
+			case "h", "left", "l", "right":
+				if m.state == TasksStateTasksTable {
+					m.state = TasksStateViewsTabs
+					m.widgetTasksTable.Focused = false
+					m.widgetTaskSidebar.Focused = false
+					m.widgetViewsTabs.Focused = true
+				}
+
+			case "j", "down", "k", "up":
+				if m.state == TasksStateViewsTabs {
+					m.state = TasksStateTasksTable
+					m.widgetTasksTable.Focused = true
+					m.widgetTaskSidebar.Focused = false
+					m.widgetViewsTabs.Focused = false
+				}
+			}
+
 			switch m.state {
 			case TasksStateTasksTable:
 				m.widgetTasksTable, cmd = m.widgetTasksTable.Update(msg)
@@ -107,6 +112,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
 				cmds = append(cmds, cmd)
 				return m, tea.Batch(cmds...)
+
+			default:
+				m.ctx.Logger.Infof("ViewTasks received unhandled keypress: %s", keypress)
+				return m, nil
 			}
 		}
 
