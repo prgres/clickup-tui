@@ -10,11 +10,11 @@ import (
 )
 
 type Model struct {
-	ctx           *context.UserContext
-	list          list.Model
-	SelectedSpace string
-	spaces        []clickup.Space
-	SelectedTeam  string
+	ctx               *context.UserContext
+	list              list.Model
+	SelectedSpace     string
+	spaces            []clickup.Space
+	SelectedWorkspace string
 }
 
 func InitialModel(ctx *context.UserContext) Model {
@@ -63,10 +63,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.ctx.Logger.Info("SpaceView received tea.WindowSizeMsg")
 		m.list.SetSize(msg.Width, msg.Height)
 
-	case common.TeamChangeMsg:
-		m.ctx.Logger.Info("SpaceView received TeamChangeMsg")
-		m.SelectedTeam = string(msg)
-		cmds = append(cmds, m.getSpacesCmd())
+	case common.WorkspaceChangeMsg:
+		workspace := string(msg)
+		m.ctx.Logger.Infof("SpaceView received WorkspaceChangeMsg: %s", workspace)
+		m.SelectedWorkspace = workspace
+		cmds = append(cmds, m.getSpacesCmd(workspace))
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
@@ -94,5 +95,5 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Infof("Initializing component: spacesList")
-	return m.getSpacesCmd()
+	return m.getSpacesCmd(m.ctx.Config.DefaultWorkspace)
 }

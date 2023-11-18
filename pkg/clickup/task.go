@@ -138,6 +138,26 @@ func (c *Client) GetTasksFromView(viewId string) ([]Task, error) {
 	return objmap.Tasks, nil
 }
 
+func (c *Client) GetTasksFromList(listId string) ([]Task, error) {
+	rawData, err := c.requestGet("/list/" + listId + "/task")
+	if err != nil {
+		return nil, err
+	}
+	var objmap RequestGetTasks
+
+	if err := json.Unmarshal(rawData, &objmap); err != nil {
+		return nil, err
+	}
+
+	if objmap.Err != "" {
+		return nil, fmt.Errorf(
+			"Error occurs while getting tasks from list: %s. API response: %s",
+			listId, string(rawData))
+	}
+
+	return objmap.Tasks, nil
+}
+
 func (c *Client) GetTask(taskId string) (Task, error) {
 	rawData, err := c.requestGet("/task/"+taskId, "include_markdown_description", "true")
 	if err != nil {
