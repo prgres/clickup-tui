@@ -123,24 +123,23 @@ func (m Model) View() string {
 		return s.String()
 	}
 
-	s.WriteString("Views | ")
-	// if m.SelectedList == m.SelectedView {
-	// 	s.WriteString(activeTabStyle.Render(m.SelectedList))
-	// } else {
-	// 	s.WriteString(inactiveTabStyle.Render(m.SelectedList))
-	// }
+	s.WriteString(" Views |")
+	if len(m.tabs[m.SelectedList]) == 0 {
+		s.WriteString(" ")
+	}
 
-	s.WriteString(" | ")
-
-	for _, tab := range m.tabs[m.SelectedList] {
+	for i, tab := range m.tabs[m.SelectedList] {
 		t := ""
 		if tab.Active {
 			t = activeTabStyle.Render(tab.Name)
 		} else {
 			t = inactiveTabStyle.Render(tab.Name)
 		}
-		s.WriteString(" | ")
-		s.WriteString(t)
+		s.WriteString(" " + t + " ")
+
+		if i != len(m.tabs[m.SelectedList])-1 {
+			s.WriteString("|")
+		}
 	}
 
 	bColor := lipgloss.Color("#FFF")
