@@ -33,6 +33,10 @@ type Model struct {
 	showSpinner       bool
 }
 
+func (m Model) Ready() bool {
+	return !m.showSpinner
+}
+
 func InitialModel(ctx *context.UserContext) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse

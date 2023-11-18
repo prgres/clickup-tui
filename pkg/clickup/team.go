@@ -2,6 +2,8 @@ package clickup
 
 import "encoding/json"
 
+type Workspace = Team
+
 type Team struct {
 	Id      string
 	Name    string

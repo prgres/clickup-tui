@@ -16,9 +16,9 @@ func SpaceListReadyCmd() tea.Cmd {
 	}
 }
 
-func (m Model) getSpacesCmd() tea.Cmd {
+func (m Model) getSpacesCmd(workspaceId string) tea.Cmd {
 	return func() tea.Msg {
-		spaces, err := m.ctx.Api.GetSpaces(m.ctx.Config.DefaultTeam)
+		spaces, err := m.ctx.Api.GetSpaces(workspaceId)
 		if err != nil {
 			return common.ErrMsg(err)
 		}

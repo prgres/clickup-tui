@@ -36,11 +36,11 @@ func ListChangeCmd(space string) tea.Cmd {
 	}
 }
 
-type TeamChangeMsg string
+type WorkspaceChangeMsg string
 
-func TeamChangeCmd(team string) tea.Cmd {
+func WorkspaceChangeCmd(workspace string) tea.Cmd {
 	return func() tea.Msg {
-		return TeamChangeMsg(team)
+		return WorkspaceChangeMsg(workspace)
 	}
 }
 

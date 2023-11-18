@@ -27,6 +27,10 @@ type Model struct {
 	showSpinner     bool
 }
 
+func (m Model) Ready() bool {
+	return !m.showSpinner
+}
+
 func InitialModel(ctx *context.UserContext) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
@@ -60,8 +64,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 		}
 
-	case common.TeamChangeMsg:
-		m.ctx.Logger.Infof("ViewSpaces receive TeamChangeMsg")
+	case common.WorkspaceChangeMsg:
+		m.ctx.Logger.Infof("ViewSpaces receive WorkspaceChangeMsg")
 		m.showSpinner = true
 		cmds = append(cmds, m.spinner.Tick)
 

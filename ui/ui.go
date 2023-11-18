@@ -8,15 +8,17 @@ import (
 	"github.com/prgrs/clickup/ui/views/lists"
 	"github.com/prgrs/clickup/ui/views/spaces"
 	"github.com/prgrs/clickup/ui/views/tasks"
+	"github.com/prgrs/clickup/ui/views/workspaces"
 )
 
 type Model struct {
-	ctx         *context.UserContext
-	state       common.ViewId
-	viewSpaces  spaces.Model
-	viewTasks   tasks.Model
-	viewLists   lists.Model
-	viewFolders folders.Model
+	ctx            *context.UserContext
+	state          common.ViewId
+	viewSpaces     spaces.Model
+	viewTasks      tasks.Model
+	viewLists      lists.Model
+	viewFolders    folders.Model
+	viewWorkspaces workspaces.Model
 }
 
 func InitialModel(ctx *context.UserContext) Model {
@@ -24,14 +26,16 @@ func InitialModel(ctx *context.UserContext) Model {
 	viewTasks := tasks.InitialModel(ctx)
 	viewLists := lists.InitialModel(ctx)
 	viewFolders := folders.InitialModel(ctx)
+	viewWorkspaces := workspaces.InitialModel(ctx)
 
 	return Model{
-		ctx:         ctx,
-		state:       viewSpaces.ViewId,
-		viewSpaces:  viewSpaces,
-		viewTasks:   viewTasks,
-		viewLists:   viewLists,
-		viewFolders: viewFolders,
+		ctx:            ctx,
+		state:          viewSpaces.ViewId,
+		viewSpaces:     viewSpaces,
+		viewTasks:      viewTasks,
+		viewLists:      viewLists,
+		viewFolders:    viewFolders,
+		viewWorkspaces: viewWorkspaces,
 	}
 }
 
@@ -48,6 +52,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c", "q":
 			return m, tea.Quit
+
+		case "1":
+			if m.viewWorkspaces.Ready() {
+				m.state = m.viewWorkspaces.ViewId
+			}
+		case "2":
+			if m.viewSpaces.Ready() {
+				m.state = m.viewSpaces.ViewId
+			}
+		case "3":
+			if m.viewFolders.Ready() {
+				m.state = m.viewFolders.ViewId
+			}
+		case "4":
+			if m.viewLists.Ready() {
+				m.state = m.viewLists.ViewId
+			}
+		case "5":
+			if m.viewTasks.Ready() {
+				m.state = m.viewTasks.ViewId
+			}
 
 		default:
 			switch m.state {
@@ -67,6 +92,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.viewTasks, cmd = m.viewTasks.Update(msg)
 				return m, cmd
 
+			case m.viewWorkspaces.ViewId:
+				m.viewWorkspaces, cmd = m.viewWorkspaces.Update(msg)
+				return m, cmd
+
 			default:
 				return m, nil
 			}
@@ -76,6 +105,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ctx.Logger.Infof("UI received tea.WindowSizeMsg. Width: %d Height %d", msg.Width, msg.Height)
 		m.ctx.WindowSize.Width = msg.Width
 		m.ctx.WindowSize.Height = msg.Height
+
+	case common.WorkspaceChangeMsg:
+		workspace := string(msg)
+		m.ctx.Logger.Infof("UI received WorkspaceChangeMsg: %s", workspace)
+		m.state = m.viewSpaces.ViewId
 
 	case common.SpaceChangeMsg:
 		m.ctx.Logger.Infof("UI received SpaceChangeMsg: %s", string(msg))
@@ -100,6 +134,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.state = m.viewLists.ViewId
 		}
 	}
+
+	m.viewWorkspaces, cmd = m.viewWorkspaces.Update(msg)
+	cmds = append(cmds, cmd)
 
 	m.viewSpaces, cmd = m.viewSpaces.Update(msg)
 	cmds = append(cmds, cmd)
@@ -126,6 +163,8 @@ func (m Model) View() string {
 		return m.viewLists.View()
 	case m.viewTasks.ViewId:
 		return m.viewTasks.View()
+	case m.viewWorkspaces.ViewId:
+		return m.viewWorkspaces.View()
 	default:
 		return m.viewSpaces.View()
 	}
@@ -138,5 +177,6 @@ func (m Model) Init() tea.Cmd {
 		m.viewTasks.Init(),
 		m.viewLists.Init(),
 		m.viewFolders.Init(),
+		m.viewWorkspaces.Init(),
 	)
 }

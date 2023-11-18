@@ -1,4 +1,4 @@
-package folders
+package workspaces
 
 import (
 	"fmt"
@@ -8,23 +8,15 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
-	"github.com/prgrs/clickup/ui/widgets/folders"
-)
-
-type FoldersState uint
-
-const (
-	FoldersStateLoading FoldersState = iota
-	FoldersStateList
+	"github.com/prgrs/clickup/ui/widgets/workspaces-list"
 )
 
 type Model struct {
-	ViewId            common.ViewId
-	ctx               *context.UserContext
-	state             FoldersState
-	widgetFoldersList folders.Model
-	spinner           spinner.Model
-	showSpinner       bool
+	ViewId               common.ViewId
+	ctx                  *context.UserContext
+	widgetWorkspacesList workspaceslist.Model
+	spinner              spinner.Model
+	showSpinner          bool
 }
 
 func (m Model) Ready() bool {
@@ -36,12 +28,11 @@ func InitialModel(ctx *context.UserContext) Model {
 	s.Spinner = spinner.Pulse
 
 	return Model{
-		ViewId:            "viewFolders",
-		ctx:               ctx,
-		widgetFoldersList: folders.InitialModel(ctx),
-		state:             FoldersStateList,
-		spinner:           s,
-		showSpinner:       true,
+		ViewId:               "viewWorkspaces",
+		ctx:                  ctx,
+		widgetWorkspacesList: workspaceslist.InitialModel(ctx),
+		spinner:              s,
+		showSpinner:          true,
 	}
 }
 
@@ -53,28 +44,28 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "esc":
-			m.ctx.Logger.Info("ViewFolders: Go to previous view")
+			m.ctx.Logger.Info("ViewWorkspaces: Go to previous view")
 			cmds = append(cmds, common.BackToPreviousViewCmd(m.ViewId))
 		}
 
 	case spinner.TickMsg:
-		// m.ctx.Logger.Info("ViewFolders receive spinner.TickMsg")
+		// m.ctx.Logger.Info("ViewWorkspaces receive spinner.TickMsg")
 		if m.showSpinner {
 			m.spinner, cmd = m.spinner.Update(msg)
 			cmds = append(cmds, cmd)
 		}
 
-	case common.SpaceChangeMsg:
-		m.ctx.Logger.Infof("ViewFolders received SpaceChangeMsg: %s", string(msg))
+	case common.WorkspaceChangeMsg:
+		m.ctx.Logger.Infof("ViewWorkspaces receive WorkspaceChangeMsg")
 		m.showSpinner = true
 		cmds = append(cmds, m.spinner.Tick)
 
-	case folders.FoldersListReadyMsg:
-		m.ctx.Logger.Infof("ViewFolders receive FoldersListReadyMsg")
+	case workspaceslist.WorkspaceListReadyMsg:
+		m.ctx.Logger.Infof("ViewWorkspaces receive WorkspaceListReadyMsg")
 		m.showSpinner = false
 	}
 
-	m.widgetFoldersList, cmd = m.widgetFoldersList.Update(msg)
+	m.widgetWorkspacesList, cmd = m.widgetWorkspacesList.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
@@ -86,17 +77,18 @@ func (m Model) View() string {
 			m.ctx.WindowSize.Width, m.ctx.WindowSize.Height,
 			lipgloss.Center,
 			lipgloss.Center,
-			fmt.Sprintf("%s Loading folders...", m.spinner.View()),
+			fmt.Sprintf("%s Loading workspaces...", m.spinner.View()),
 		)
 	}
 
-	return m.widgetFoldersList.View()
+	return m.widgetWorkspacesList.View()
 }
 
 func (m Model) Init() tea.Cmd {
-	m.ctx.Logger.Info("Initializing view: Folders")
+	m.ctx.Logger.Info("Initializing view: Workspaces")
 	return tea.Batch(
 		m.spinner.Tick,
-		m.widgetFoldersList.Init(),
+		m.widgetWorkspacesList.Init(),
 	)
+
 }
