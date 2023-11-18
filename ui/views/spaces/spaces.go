@@ -54,7 +54,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 	case spinner.TickMsg:
-		m.ctx.Logger.Info("ViewSpaces receive spinner.TickMsg")
+		// m.ctx.Logger.Info("ViewSpaces receive spinner.TickMsg")
 		if m.showSpinner {
 			m.spinner, cmd = m.spinner.Update(msg)
 			cmds = append(cmds, cmd)
