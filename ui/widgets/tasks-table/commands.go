@@ -1,8 +1,9 @@
-package tasktable
+package taskstable
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
+	"github.com/prgrs/clickup/ui/widgets/tasks-tabs"
 )
 
 type TaskSelectedMsg string
@@ -13,14 +14,11 @@ func TaskSelectedCmd(task string) tea.Cmd {
 	}
 }
 
-type TasksListReadyMsg string
+type TasksListReadyMsg bool
 
-// type TasksListReadyMsg bool
-
-func TasksListReadyCmd(task string) tea.Cmd {
-	// func TasksListReadyCmd() tea.Cmd {
+func TasksListReadyCmd() tea.Cmd {
 	return func() tea.Msg {
-		return TasksListReadyMsg(task)
+		return TasksListReadyMsg(true)
 	}
 }
 
@@ -32,11 +30,19 @@ func TasksListReloadedCmd(tasks []clickup.Task) tea.Cmd {
 	}
 }
 
-type ViewChangedMsg string
+type TabChangedMsg taskstabs.Tab
 
-func ViewChangedCmd(space string) tea.Cmd {
+func TabChangedCmd(tab taskstabs.Tab) tea.Cmd {
 	return func() tea.Msg {
-		return ViewChangedMsg(space)
+		return TabChangedMsg(tab)
+	}
+}
+
+type HideTableMsg bool
+
+func HideTableCmd() tea.Cmd {
+	return func() tea.Msg {
+		return HideTableMsg(true)
 	}
 }
 
@@ -45,5 +51,13 @@ type FetchTasksForViewMsg string
 func FetchTasksForViewCmd(view string) tea.Cmd {
 	return func() tea.Msg {
 		return FetchTasksForViewMsg(view)
+	}
+}
+
+type FetchTasksForListMsg string
+
+func FetchTasksForListCmd(list string) tea.Cmd {
+	return func() tea.Msg {
+		return FetchTasksForListMsg(list)
 	}
 }

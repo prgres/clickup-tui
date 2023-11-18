@@ -2,16 +2,15 @@ package tasks
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
-	"github.com/prgrs/clickup/ui/widgets/tasksidebar"
-	"github.com/prgrs/clickup/ui/widgets/tasktable"
-	"github.com/prgrs/clickup/ui/widgets/viewtabs"
+	"github.com/prgrs/clickup/ui/widgets/tasks-sidebar"
+	"github.com/prgrs/clickup/ui/widgets/tasks-table"
+	"github.com/prgrs/clickup/ui/widgets/tasks-tabs"
 )
 
 type TasksState uint
@@ -27,9 +26,9 @@ type Model struct {
 	ViewId            common.ViewId
 	ctx               *context.UserContext
 	state             TasksState
-	widgetViewsTabs   viewtabs.Model
-	widgetTasksTable  tasktable.Model
-	widgetTaskSidebar tasksidebar.Model
+	widgetViewsTabs   taskstabs.Model
+	widgetTasksTable  taskstable.Model
+	widgetTaskSidebar taskssidebar.Model
 	spinner           spinner.Model
 	showSpinner       bool
 }
@@ -42,11 +41,11 @@ func InitialModel(ctx *context.UserContext) Model {
 		ViewId:            "viewTasks",
 		ctx:               ctx,
 		state:             TasksStateTasksTable,
-		widgetViewsTabs:   viewtabs.InitialModel(ctx),
-		widgetTasksTable:  tasktable.InitialModel(ctx),
-		widgetTaskSidebar: tasksidebar.InitialModel(ctx),
+		widgetViewsTabs:   taskstabs.InitialModel(ctx),
+		widgetTasksTable:  taskstable.InitialModel(ctx),
+		widgetTaskSidebar: taskssidebar.InitialModel(ctx),
 		spinner:           s,
-		showSpinner:       false,
+		showSpinner:       true,
 	}
 }
 
@@ -119,48 +118,40 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			}
 		}
 
-	case viewtabs.FetchViewsMsg:
-		m.ctx.Logger.Infof("ViewTasks received FetchViewsMsg: %s",
-			strings.Join(msg, ", "))
-
-		var cmds []tea.Cmd
-		for _, viewID := range msg {
-			cmds = append(cmds, tasktable.FetchTasksForViewCmd(viewID))
-		}
-
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("ViewTasks receive tea.WindowSizeMsg")
 
-	case viewtabs.ViewChangedMsg:
-		m.ctx.Logger.Info("ViewTasks received ViewChangedMsg")
+	case taskstabs.TabChangedMsg:
+		tab := taskstabs.Tab(msg)
+		m.ctx.Logger.Infof("ViewTasks received TabChangedMsg: name=%s id=%s", tab.Name, tab.Id)
 		m.showSpinner = true
 
-		cmd = tasktable.ViewChangedCmd(string(msg))
-		cmds = append(cmds, cmd)
+		cmds = append(cmds, taskstable.TabChangedCmd(tab))
 
 		m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
 		cmds = append(cmds, cmd)
 
-	case tasktable.TasksListReadyMsg:
-		id := string(msg)
-		m.ctx.Logger.Infof("ViewTasks received TasksListReady: %s", id)
+	case taskstable.TasksListReadyMsg:
+		m.ctx.Logger.Info("ViewTasks received TasksListReady")
 		m.showSpinner = false
-		cmds = append(cmds, tasksidebar.TaskSelectedCmd(id))
+		cmds = append(cmds,
+			m.spinner.Tick,
+		)
 
 	case spinner.TickMsg:
-		m.ctx.Logger.Info("ViewTask receive spinner.TickMsg")
+		// m.ctx.Logger.Info("ViewTask receive spinner.TickMsg")
 		if m.showSpinner {
 			m.spinner, cmd = m.spinner.Update(msg)
 			cmds = append(cmds, cmd)
 		}
 
-	case tasktable.TaskSelectedMsg:
+	case taskstable.TaskSelectedMsg:
 		id := string(msg)
-		m.ctx.Logger.Infof("ViewTask receive tasktable.TaskSelectedMsg: %s", id)
+		m.ctx.Logger.Infof("ViewTask receive taskstable.TaskSelectedMsg: %s", id)
 		m.state = TasksStateTaskSidebar
 		m.widgetTasksTable.Focused = false
 		m.widgetTaskSidebar.Focused = true
-		cmds = append(cmds, tasksidebar.TaskSelectedCmd(id))
+		cmds = append(cmds, taskssidebar.TaskSelectedCmd(id))
 	}
 
 	m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
@@ -185,6 +176,22 @@ func (m Model) View() string {
 		)
 	}
 
+	tableAndSidebar := ""
+	if m.widgetTasksTable.Hidden {
+		tableAndSidebar = lipgloss.Place(
+			int(0.9*float32(m.ctx.WindowSize.Width)),
+			int(0.7*float32(m.ctx.WindowSize.Height)),
+			lipgloss.Center, lipgloss.Center,
+			"No tasks founds",
+		)
+
+	} else {
+		tableAndSidebar = lipgloss.JoinHorizontal(
+			lipgloss.Left,
+			m.widgetTasksTable.View(),
+			m.widgetTaskSidebar.View(),
+		)
+	}
 	return lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderRight(true).
@@ -194,11 +201,7 @@ func (m Model) View() string {
 		Render(lipgloss.JoinVertical(
 			lipgloss.Top,
 			m.widgetViewsTabs.View(),
-			lipgloss.JoinHorizontal(
-				lipgloss.Top,
-				m.widgetTasksTable.View(),
-				m.widgetTaskSidebar.View(),
-			),
+			tableAndSidebar,
 		))
 }
 

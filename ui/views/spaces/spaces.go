@@ -37,7 +37,7 @@ func InitialModel(ctx *context.UserContext) Model {
 		widgetSpaceList: spaces.InitialModel(ctx),
 		state:           SpacesStateList,
 		spinner:         s,
-		showSpinner:     false,
+		showSpinner:     true,
 	}
 }
 
@@ -54,7 +54,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 	case spinner.TickMsg:
-		m.ctx.Logger.Info("ViewSpaces receive spinner.TickMsg")
+		// m.ctx.Logger.Info("ViewSpaces receive spinner.TickMsg")
 		if m.showSpinner {
 			m.spinner, cmd = m.spinner.Update(msg)
 			cmds = append(cmds, cmd)
@@ -63,6 +63,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case common.TeamChangeMsg:
 		m.ctx.Logger.Infof("ViewSpaces receive TeamChangeMsg")
 		m.showSpinner = true
+		cmds = append(cmds, m.spinner.Tick)
 
 	case spaces.SpaceListReadyMsg:
 		m.ctx.Logger.Infof("ViewSpaces receive SpaceListReadyMsg")
@@ -90,5 +91,8 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Info("Initializing view: Spaces")
-	return m.widgetSpaceList.Init()
+	return tea.Batch(
+		m.spinner.Tick,
+		m.widgetSpaceList.Init(),
+	)
 }

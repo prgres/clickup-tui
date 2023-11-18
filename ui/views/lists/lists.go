@@ -37,7 +37,7 @@ func InitialModel(ctx *context.UserContext) Model {
 		widgetListsList: lists.InitialModel(ctx),
 		state:           ListsStateList,
 		spinner:         s,
-		showSpinner:     false,
+		showSpinner:     true,
 	}
 }
 
@@ -54,7 +54,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 	case spinner.TickMsg:
-		m.ctx.Logger.Info("ViewLists receive spinner.TickMsg")
+		// m.ctx.Logger.Info("ViewLists receive spinner.TickMsg")
 		if m.showSpinner {
 			m.spinner, cmd = m.spinner.Update(msg)
 			cmds = append(cmds, cmd)
@@ -63,6 +63,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case common.FolderChangeMsg:
 		m.ctx.Logger.Infof("ViewLists receive FolderChangeMsg")
 		m.showSpinner = true
+		cmds = append(cmds, m.spinner.Tick)
 
 	case lists.ListsListReadyMsg:
 		m.ctx.Logger.Infof("ViewLists receive ListsListReadyMsg")
@@ -90,5 +91,8 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Info("Initializing view: Lists")
-	return m.widgetListsList.Init()
+	return tea.Batch(
+		m.spinner.Tick,
+		m.widgetListsList.Init(),
+	)
 }

@@ -1,10 +1,8 @@
-package viewtabs
+package taskstabs
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/pkg/clickup"
-	"github.com/prgrs/clickup/ui/common"
 )
 
 var (
@@ -12,26 +10,6 @@ var (
 	activeTabStyle   = lipgloss.NewStyle().Background(highlightColor)
 	inactiveTabStyle = lipgloss.NewStyle().Background(lipgloss.Color("0"))
 )
-
-func (m Model) getViewsFromSpaceCmd(space string) tea.Cmd {
-	return func() tea.Msg {
-		views, err := m.ctx.Api.GetViewsFromSpace(space)
-		if err != nil {
-			return common.ErrMsg(err)
-		}
-		return ViewsListLoadedMsg(views)
-	}
-}
-
-func (m Model) getViewsFromFolderCmd(folder string) tea.Cmd {
-	return func() tea.Msg {
-		views, err := m.ctx.Api.GetViewsFromFolder(folder)
-		if err != nil {
-			return common.ErrMsg(err)
-		}
-		return ViewsListLoadedMsg(views)
-	}
-}
 
 func removeView(views []clickup.View, s int) []clickup.View {
 	return append(views[:s], views[s+1:]...)

@@ -2,7 +2,6 @@ package common
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/prgrs/clickup/pkg/clickup"
 )
 
 type FocusMsg bool
@@ -42,14 +41,6 @@ type TeamChangeMsg string
 func TeamChangeCmd(team string) tea.Cmd {
 	return func() tea.Msg {
 		return TeamChangeMsg(team)
-	}
-}
-
-type ViewLoadedMsg clickup.View
-
-func ViewLoadedCmd(view clickup.View) tea.Cmd {
-	return func() tea.Msg {
-		return ViewLoadedMsg(view)
 	}
 }
 

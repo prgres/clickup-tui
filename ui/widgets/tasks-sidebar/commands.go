@@ -1,4 +1,4 @@
-package tasksidebar
+package taskssidebar
 
 import tea "github.com/charmbracelet/bubbletea"
 
