@@ -8,9 +8,9 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
-	"github.com/prgrs/clickup/ui/widgets/tasksidebar"
-	"github.com/prgrs/clickup/ui/widgets/tasktable"
-	"github.com/prgrs/clickup/ui/widgets/viewtabs"
+	"github.com/prgrs/clickup/ui/widgets/tasks-sidebar"
+	"github.com/prgrs/clickup/ui/widgets/tasks-table"
+	"github.com/prgrs/clickup/ui/widgets/tasks-tabs"
 )
 
 type TasksState uint
@@ -26,9 +26,9 @@ type Model struct {
 	ViewId            common.ViewId
 	ctx               *context.UserContext
 	state             TasksState
-	widgetViewsTabs   viewtabs.Model
-	widgetTasksTable  tasktable.Model
-	widgetTaskSidebar tasksidebar.Model
+	widgetViewsTabs   taskstabs.Model
+	widgetTasksTable  taskstable.Model
+	widgetTaskSidebar taskssidebar.Model
 	spinner           spinner.Model
 	showSpinner       bool
 }
@@ -41,9 +41,9 @@ func InitialModel(ctx *context.UserContext) Model {
 		ViewId:            "viewTasks",
 		ctx:               ctx,
 		state:             TasksStateTasksTable,
-		widgetViewsTabs:   viewtabs.InitialModel(ctx),
-		widgetTasksTable:  tasktable.InitialModel(ctx),
-		widgetTaskSidebar: tasksidebar.InitialModel(ctx),
+		widgetViewsTabs:   taskstabs.InitialModel(ctx),
+		widgetTasksTable:  taskstable.InitialModel(ctx),
+		widgetTaskSidebar: taskssidebar.InitialModel(ctx),
 		spinner:           s,
 		showSpinner:       true,
 	}
@@ -121,17 +121,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("ViewTasks receive tea.WindowSizeMsg")
 
-	case viewtabs.TabChangedMsg:
-		tab := viewtabs.Tab(msg)
+	case taskstabs.TabChangedMsg:
+		tab := taskstabs.Tab(msg)
 		m.ctx.Logger.Infof("ViewTasks received TabChangedMsg: name=%s id=%s", tab.Name, tab.Id)
 		m.showSpinner = true
 
-		cmds = append(cmds, tasktable.TabChangedCmd(tab))
+		cmds = append(cmds, taskstable.TabChangedCmd(tab))
 
 		m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
 		cmds = append(cmds, cmd)
 
-	case tasktable.TasksListReadyMsg:
+	case taskstable.TasksListReadyMsg:
 		m.ctx.Logger.Info("ViewTasks received TasksListReady")
 		m.showSpinner = false
 		cmds = append(cmds,
@@ -145,13 +145,13 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 		}
 
-	case tasktable.TaskSelectedMsg:
+	case taskstable.TaskSelectedMsg:
 		id := string(msg)
-		m.ctx.Logger.Infof("ViewTask receive tasktable.TaskSelectedMsg: %s", id)
+		m.ctx.Logger.Infof("ViewTask receive taskstable.TaskSelectedMsg: %s", id)
 		m.state = TasksStateTaskSidebar
 		m.widgetTasksTable.Focused = false
 		m.widgetTaskSidebar.Focused = true
-		cmds = append(cmds, tasksidebar.TaskSelectedCmd(id))
+		cmds = append(cmds, taskssidebar.TaskSelectedCmd(id))
 	}
 
 	m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)

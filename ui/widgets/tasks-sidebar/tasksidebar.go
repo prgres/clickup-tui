@@ -1,4 +1,4 @@
-package tasksidebar
+package taskssidebar
 
 import (
 	"fmt"

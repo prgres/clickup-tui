@@ -1,4 +1,4 @@
-package tasktable
+package taskstable
 
 import (
 	"github.com/charmbracelet/bubbles/table"

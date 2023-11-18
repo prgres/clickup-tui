@@ -1,4 +1,4 @@
-package viewtabs
+package taskstabs
 
 import (
 	"github.com/charmbracelet/lipgloss"

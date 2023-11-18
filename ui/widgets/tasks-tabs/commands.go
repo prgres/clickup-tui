@@ -1,4 +1,4 @@
-package viewtabs
+package taskstabs
 
 import (
 	tea "github.com/charmbracelet/bubbletea"

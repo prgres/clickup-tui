@@ -1,4 +1,4 @@
-package tasktable
+package taskstable
 
 import (
 	"github.com/charmbracelet/bubbles/table"
@@ -7,7 +7,7 @@ import (
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
-	"github.com/prgrs/clickup/ui/widgets/viewtabs"
+	"github.com/prgrs/clickup/ui/widgets/tasks-tabs"
 )
 
 type Model struct {
@@ -16,7 +16,7 @@ type Model struct {
 	columns           []table.Column
 	requiredCols      []table.Column
 	tasks             map[string][]clickup.Task
-	SelectedTab       viewtabs.Tab // TODO: make it SelectedTabId
+	SelectedTab       taskstabs.Tab // TODO: make it SelectedTabId
 	SelectedTaskIndex int
 	Focused           bool
 	autoColumns       bool
@@ -118,7 +118,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 	case TabChangedMsg:
-		tab := viewtabs.Tab(msg)
+		tab := taskstabs.Tab(msg)
 		m.ctx.Logger.Infof("TaskTable receive TabChangedMsg: %s", tab.Name)
 
 		columns := []table.Column{}
@@ -168,9 +168,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmd := m.refreshTable()
 		cmds = append(cmds, cmd)
 
-	case viewtabs.FetchTasksForTabsMsg:
+	case taskstabs.FetchTasksForTabsMsg:
 		m.ctx.Logger.Infof("TaskTable receive viewtabs.FetchTasksForTabsMsg")
-		tabs := []viewtabs.Tab(msg)
+		tabs := []taskstabs.Tab(msg)
 		for _, tab := range tabs {
 			m.ctx.Logger.Infof("TaskTable received FetchTasksForTabsMsg: type %v", tab.Type)
 			switch tab.Type {
