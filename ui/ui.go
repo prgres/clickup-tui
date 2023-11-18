@@ -49,6 +49,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 
+		case "2":
+			if m.viewSpaces.Ready() {
+				m.state = m.viewSpaces.ViewId
+			}
+		case "3":
+			if m.viewFolders.Ready() {
+				m.state = m.viewFolders.ViewId
+			}
+		case "4":
+			if m.viewLists.Ready() {
+				m.state = m.viewLists.ViewId
+			}
+		case "5":
+			if m.viewTasks.Ready() {
+				m.state = m.viewTasks.ViewId
+			}
+
 		default:
 			switch m.state {
 			case m.viewSpaces.ViewId:
