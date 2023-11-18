@@ -21,6 +21,7 @@ type Model struct {
 	Focused           bool
 	autoColumns       bool
 	size              size
+	Hidden            bool
 }
 
 type size struct {
@@ -71,20 +72,29 @@ func InitialModel(ctx *context.UserContext) Model {
 		autoColumns: false,
 		size:        size,
 		Focused:     true,
+		Hidden:      false,
 	}
 }
 
-func (m *Model) refreshTable() {
+func (m *Model) refreshTable() tea.Cmd {
 	m.ctx.Logger.Info("Synchonizing table")
 	tasks := m.getSelectedViewTasks()
 	items := taskListToRows(tasks, m.columns)
 
-	m.table.SetColumns(m.columns)
 	m.table.SetRows(items)
+	m.table.SetColumns(m.columns)
 	m.SelectedTaskIndex = m.table.Cursor()
 
 	m.table.SetWidth(m.size.Width)
 	m.table.SetHeight(m.size.Height)
+
+	m.Hidden = false
+	if len(items) == 0 {
+		m.Hidden = true
+		return HideTableCmd()
+	}
+
+	return nil
 }
 
 func (m *Model) loadTasks(tasks []clickup.Task) {
@@ -137,7 +147,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		// m.ctx.Logger.Infof("TaskTable receive TasksListReloadedMsg: %d", len(msg))
 		// tasks := msg
 		m.loadTasks(tasks)
-		m.refreshTable()
+		cmd = m.refreshTable()
+		cmds = append(cmds, cmd)
 
 		if len(m.tasks[m.SelectedTab.Id]) != 0 { //TODO: store tasks list in var
 			taskId := m.getSelectedViewTaskIdByIndex(m.SelectedTaskIndex)
@@ -154,7 +165,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.ctx.Logger.Infof("TaskTable set width: %d height: %d",
 			m.size.Width, m.size.Height)
 
-		m.refreshTable()
+		cmd := m.refreshTable()
+		cmds = append(cmds, cmd)
 
 	case viewtabs.FetchTasksForTabsMsg:
 		m.ctx.Logger.Infof("TaskTable receive viewtabs.FetchTasksForTabsMsg")
@@ -172,7 +184,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				}
 			}
 		}
-		m.refreshTable()
+		cmd = m.refreshTable()
+		cmds = append(cmds, cmd)
 	}
 
 	m.table, cmd = m.table.Update(msg)
@@ -201,8 +214,8 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Info("Initializing component: TaskTable")
-	m.refreshTable()
-	return nil
+	return m.refreshTable()
+	// return nil
 }
 
 func (m *Model) fetchTasksForViewId(viewId string) error {

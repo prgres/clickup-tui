@@ -176,6 +176,22 @@ func (m Model) View() string {
 		)
 	}
 
+	tableAndSidebar := ""
+	if m.widgetTasksTable.Hidden {
+		tableAndSidebar = lipgloss.Place(
+			int(0.9*float32(m.ctx.WindowSize.Width)),
+			int(0.7*float32(m.ctx.WindowSize.Height)),
+			lipgloss.Center, lipgloss.Center,
+			"No tasks founds",
+		)
+
+	} else {
+		tableAndSidebar = lipgloss.JoinHorizontal(
+			lipgloss.Left,
+			m.widgetTasksTable.View(),
+			m.widgetTaskSidebar.View(),
+		)
+	}
 	return lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderRight(true).
@@ -185,11 +201,7 @@ func (m Model) View() string {
 		Render(lipgloss.JoinVertical(
 			lipgloss.Top,
 			m.widgetViewsTabs.View(),
-			lipgloss.JoinHorizontal(
-				lipgloss.Top,
-				m.widgetTasksTable.View(),
-				m.widgetTaskSidebar.View(),
-			),
+			tableAndSidebar,
 		))
 }
 

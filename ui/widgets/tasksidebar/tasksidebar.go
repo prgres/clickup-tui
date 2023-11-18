@@ -18,6 +18,7 @@ type Model struct {
 	ctx      *context.UserContext
 	viewport viewport.Model
 	Focused  bool
+	Hidden   bool
 }
 
 func InitialModel(ctx *context.UserContext) Model {
@@ -29,6 +30,7 @@ func InitialModel(ctx *context.UserContext) Model {
 		ctx:      ctx,
 		viewport: v,
 		Focused:  false,
+		Hidden:   false,
 	}
 }
 

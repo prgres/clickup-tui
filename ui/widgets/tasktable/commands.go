@@ -38,6 +38,14 @@ func TabChangedCmd(tab viewtabs.Tab) tea.Cmd {
 	}
 }
 
+type HideTableMsg bool
+
+func HideTableCmd() tea.Cmd {
+	return func() tea.Msg {
+		return HideTableMsg(true)
+	}
+}
+
 type FetchTasksForViewMsg string
 
 func FetchTasksForViewCmd(view string) tea.Cmd {
