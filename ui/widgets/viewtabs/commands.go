@@ -2,23 +2,20 @@ package viewtabs
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/prgrs/clickup/pkg/clickup"
 )
 
-type ViewsListLoadedMsg []clickup.View
+type FetchTasksForTabsMsg []Tab
 
-type FetchViewsMsg []string
-
-func FetchViewsCmd(spaces []string) tea.Cmd {
+func FetchTasksForTabsCmd(tabs []Tab) tea.Cmd {
 	return func() tea.Msg {
-		return FetchViewsMsg(spaces)
+		return FetchTasksForTabsMsg(tabs)
 	}
 }
 
-type ViewChangedMsg string
+type TabChangedMsg Tab
 
-func ViewChangedCmd(view string) tea.Cmd {
+func TabChangedCmd(tab Tab) tea.Cmd {
 	return func() tea.Msg {
-		return ViewChangedMsg(view)
+		return TabChangedMsg(tab)
 	}
 }

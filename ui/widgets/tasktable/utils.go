@@ -2,9 +2,7 @@ package tasktable
 
 import (
 	"github.com/charmbracelet/bubbles/table"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
-	"github.com/prgrs/clickup/ui/common"
 )
 
 func taskListToRows(tasks []clickup.Task, columns []table.Column) []table.Row {
@@ -20,7 +18,7 @@ func (m Model) getSelectedViewTaskIdByIndex(index int) string {
 }
 
 func (m Model) getSelectedViewTasks() []clickup.Task {
-	return m.tasks[m.SelectedView]
+	return m.tasks[m.SelectedTab.Id]
 }
 
 func taskToRow(task clickup.Task, columns []table.Column) table.Row {
@@ -51,15 +49,4 @@ func taskToRow(task clickup.Task, columns []table.Column) table.Row {
 	}
 
 	return values
-}
-
-func (m Model) getTasksCmd(view string) tea.Cmd {
-	return func() tea.Msg {
-		tasks, err := m.ctx.Api.GetTasks(view)
-		if err != nil {
-			return common.ErrMsg(err)
-		}
-
-		return TasksListReloadedMsg(tasks)
-	}
 }

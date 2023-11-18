@@ -5,25 +5,30 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
 )
 
+type Tab struct {
+	Name   string
+	Active bool
+	Type   string
+	Id     string
+}
+
 type Model struct {
-	ctx                *context.UserContext
-	views              map[string][]clickup.View
-	SelectedView       string
-	SelectedViewStruct clickup.View
-	SelectedList       string
-	Focused            bool
+	ctx          *context.UserContext
+	tabs         map[string][]Tab
+	SelectedTab  Tab
+	SelectedList string
+	Focused      bool
 }
 
 func InitialModel(ctx *context.UserContext) Model {
 	return Model{
-		ctx:          ctx,
-		views:        map[string][]clickup.View{},
-		SelectedView: "",
+		ctx:  ctx,
+		tabs: map[string][]Tab{},
+		// SelectedTab: nil,
 	}
 }
 
@@ -36,64 +41,75 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		case "h", "left":
-			m.SelectedView = prevView(m.views[m.SelectedList], m.SelectedView)
-			return m, ViewChangedCmd(m.SelectedView)
-		case "l", "right":
-			m.SelectedView = nextView(m.views[m.SelectedList], m.SelectedView)
-			return m, ViewChangedCmd(m.SelectedView)
+		// case "h", "left":
+		// 	m.SelectedView = prevView(m.views[m.SelectedList], m.SelectedView)
+		// 	return m, ViewChangedCmd(m.SelectedView)
+		// case "l", "right":
+		// 	m.SelectedView = nextView(m.views[m.SelectedList], m.SelectedView)
+		// 	return m, ViewChangedCmd(m.SelectedView)
 
 		default:
 			return m, nil
 		}
 
 	case common.ListChangeMsg:
-		m.ctx.Logger.Infof("ViewsView received ListChangeMsg: %s", string(msg))
+		var cmds []tea.Cmd
+		var tabs []Tab
+
+		listName := string(msg)
+		m.ctx.Logger.Infof("ViewsView received ListChangeMsg: %s", listName)
+
+		tabList := Tab{
+			Name:   listName,
+			Type:   "list",
+			Id:     listName,
+			Active: true,
+		}
+		tabs = append(tabs, tabList)
+
 		m.SelectedList = string(msg)
+		m.SelectedTab = tabList
 
 		views, err := m.ctx.Api.GetViewsFromList(string(msg))
 		if err != nil {
 			return m, common.ErrCmd(err)
 		}
 
-		if len(views) == 0 {
-			return m, tea.Batch(
-				ViewChangedCmd(m.SelectedView),
-			)
-		}
-
-		m.views[m.SelectedList] = views
-		m.SelectedView = m.views[m.SelectedList][0].Id
-		viewsIds := []string{}
-		for _, view := range views {
-			if view.Id == m.SelectedView {
-				continue
+		if len(views) != 0 {
+			m.ctx.Logger.Infof("ViewTabs: Views found for this list: %d", len(views))
+			for _, view := range views {
+				tabView := Tab{
+					Name:   view.Name,
+					Type:   "view",
+					Id:     view.Id,
+					Active: false,
+				}
+				tabs = append(tabs, tabView)
 			}
-			viewsIds = append(viewsIds, view.Id)
+			m.tabs[m.SelectedList] = tabs
+
 		}
+		cmds = append(cmds,
+			FetchTasksForTabsCmd(tabs),
+			TabChangedCmd(tabList),
+		)
 
 		return m, tea.Batch(
-			ViewChangedCmd(m.SelectedView),
-			FetchViewsCmd(viewsToIdList(views)),
+			cmds...,
 		)
 
 	case common.FocusMsg:
 		m.ctx.Logger.Info("ViewsView received FocusMsg")
 		return m, nil
 
-	case ViewsListLoadedMsg:
-		m.ctx.Logger.Info("ViewsView received ViewsListLoadedMsg")
-		m.views[m.SelectedList] = []clickup.View(msg)
-		return m, nil
-
-	case ViewChangedMsg:
-		m.ctx.Logger.Info("ViewsView received ViewChangedMsg")
-		viewName := string(msg)
-		allViews := m.views[m.SelectedList]
-		for _, view := range allViews {
-			if view.Id == viewName {
-				m.SelectedViewStruct = view
-				return m, tea.Batch(common.ViewLoadedCmd(view))
+	case TabChangedMsg:
+		m.ctx.Logger.Info("ViewsView received TabChangedMsg")
+		tab := Tab(msg)
+		tabs := m.tabs[m.SelectedList]
+		for _, t := range tabs {
+			if t.Id == tab.Id {
+				// m.SelectedViewStruct = view
+				return m, tea.Batch(TabLoadedCmd(t))
 			}
 		}
 	}
@@ -103,18 +119,25 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) View() string {
 	s := strings.Builder{}
-	if len(m.views[m.SelectedList]) == 0 {
+	if len(m.tabs[m.SelectedList]) == 0 {
 		return s.String()
 	}
 
-	s.WriteString("Views")
+	s.WriteString("Views | ")
+	// if m.SelectedList == m.SelectedView {
+	// 	s.WriteString(activeTabStyle.Render(m.SelectedList))
+	// } else {
+	// 	s.WriteString(inactiveTabStyle.Render(m.SelectedList))
+	// }
 
-	for _, view := range m.views[m.SelectedList] {
+	s.WriteString(" | ")
+
+	for _, tab := range m.tabs[m.SelectedList] {
 		t := ""
-		if m.SelectedView == view.Id {
-			t = activeTabStyle.Render(view.Name)
+		if tab.Active {
+			t = activeTabStyle.Render(tab.Name)
 		} else {
-			t = inactiveTabStyle.Render(view.Name)
+			t = inactiveTabStyle.Render(tab.Name)
 		}
 		s.WriteString(" | ")
 		s.WriteString(t)
@@ -139,4 +162,12 @@ func (m Model) View() string {
 func (m Model) Init() tea.Cmd {
 	m.ctx.Logger.Info("Initializing component: TabsView")
 	return nil
+}
+
+type TabLoadedMsg Tab
+
+func TabLoadedCmd(tab Tab) tea.Cmd {
+	return func() tea.Msg {
+		return TabLoadedMsg(tab)
+	}
 }

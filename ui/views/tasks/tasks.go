@@ -2,7 +2,6 @@ package tasks
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -119,24 +118,15 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			}
 		}
 
-	case viewtabs.FetchViewsMsg:
-		m.ctx.Logger.Infof("ViewTasks received FetchViewsMsg: %s",
-			strings.Join(msg, ", "))
-
-		var cmds []tea.Cmd
-		for _, viewID := range msg {
-			cmds = append(cmds, tasktable.FetchTasksForViewCmd(viewID))
-		}
-
 	case tea.WindowSizeMsg:
 		m.ctx.Logger.Info("ViewTasks receive tea.WindowSizeMsg")
 
-	case viewtabs.ViewChangedMsg:
-		m.ctx.Logger.Info("ViewTasks received ViewChangedMsg")
+	case viewtabs.TabChangedMsg:
+		tab := viewtabs.Tab(msg)
+		m.ctx.Logger.Infof("ViewTasks received TabChangedMsg: name=%s id=%s", tab.Name, tab.Id)
 		m.showSpinner = true
 
-		cmd = tasktable.ViewChangedCmd(string(msg))
-		cmds = append(cmds, cmd)
+		cmds = append(cmds, tasktable.TabChangedCmd(tab))
 
 		m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
 		cmds = append(cmds, cmd)
@@ -149,7 +139,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		)
 
 	case spinner.TickMsg:
-		m.ctx.Logger.Info("ViewTask receive spinner.TickMsg")
+		// m.ctx.Logger.Info("ViewTask receive spinner.TickMsg")
 		if m.showSpinner {
 			m.spinner, cmd = m.spinner.Update(msg)
 			cmds = append(cmds, cmd)

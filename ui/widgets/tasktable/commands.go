@@ -3,6 +3,7 @@ package tasktable
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
+	"github.com/prgrs/clickup/ui/widgets/viewtabs"
 )
 
 type TaskSelectedMsg string
@@ -29,11 +30,11 @@ func TasksListReloadedCmd(tasks []clickup.Task) tea.Cmd {
 	}
 }
 
-type ViewChangedMsg string
+type TabChangedMsg viewtabs.Tab
 
-func ViewChangedCmd(space string) tea.Cmd {
+func TabChangedCmd(tab viewtabs.Tab) tea.Cmd {
 	return func() tea.Msg {
-		return ViewChangedMsg(space)
+		return TabChangedMsg(tab)
 	}
 }
 
@@ -42,5 +43,13 @@ type FetchTasksForViewMsg string
 func FetchTasksForViewCmd(view string) tea.Cmd {
 	return func() tea.Msg {
 		return FetchTasksForViewMsg(view)
+	}
+}
+
+type FetchTasksForListMsg string
+
+func FetchTasksForListCmd(list string) tea.Cmd {
+	return func() tea.Msg {
+		return FetchTasksForListMsg(list)
 	}
 }
