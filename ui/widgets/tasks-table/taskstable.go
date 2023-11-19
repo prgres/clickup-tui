@@ -4,24 +4,29 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
 	"github.com/prgrs/clickup/ui/widgets/tasks-tabs"
 )
 
+const WidgetId = "tasksTable"
+
 type Model struct {
+	WidgetId          common.WidgetId
 	ctx               *context.UserContext
 	table             table.Model
 	columns           []table.Column
 	requiredCols      []table.Column
 	tasks             map[string][]clickup.Task
-	SelectedTab       taskstabs.Tab // TODO: make it SelectedTabId
+	SelectedTab       taskstabs.Tab
 	SelectedTaskIndex int
 	Focused           bool
 	autoColumns       bool
 	size              size
 	Hidden            bool
+	log               *log.Logger
 }
 
 type size struct {
@@ -29,7 +34,7 @@ type size struct {
 	Height int
 }
 
-func InitialModel(ctx *context.UserContext) Model {
+func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	columns := []table.Column{}
 	requiredCols := []table.Column{
 		{
@@ -62,22 +67,27 @@ func InitialModel(ctx *context.UserContext) Model {
 		table.WithCellsWrap(true),
 	)
 
+	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
+
 	return Model{
+		WidgetId:     WidgetId,
 		ctx:          ctx,
 		table:        t,
 		columns:      columns,
 		requiredCols: requiredCols,
 		tasks:        map[string][]clickup.Task{},
+		autoColumns:  false,
+		size:         size,
+		Focused:      true,
+		Hidden:       false,
+		log:          log,
+
 		// SelectedView: "",
-		autoColumns: false,
-		size:        size,
-		Focused:     true,
-		Hidden:      false,
 	}
 }
 
 func (m *Model) refreshTable() tea.Cmd {
-	m.ctx.Logger.Info("Synchonizing table")
+	m.log.Info("Synchonizing table...")
 	tasks := m.getSelectedViewTasks()
 	items := taskListToRows(tasks, m.columns)
 
@@ -93,12 +103,13 @@ func (m *Model) refreshTable() tea.Cmd {
 		m.Hidden = true
 		return HideTableCmd()
 	}
+	m.log.Info("Table synchonized")
 
 	return nil
 }
 
 func (m *Model) loadTasks(tasks []clickup.Task) {
-	m.ctx.Logger.Info("Reloading table")
+	m.log.Info("Reloading table")
 	m.tasks[m.SelectedTab.Id] = tasks
 }
 
@@ -113,13 +124,13 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case "enter":
 			index := m.table.Cursor()
 			taskId := m.getSelectedViewTaskIdByIndex(index)
-			m.ctx.Logger.Infof("TaskTable receive enter: %d", index)
+			m.log.Infof("Receive enter: %d", index)
 			cmds = append(cmds, TaskSelectedCmd(taskId))
 		}
 
 	case TabChangedMsg:
 		tab := taskstabs.Tab(msg)
-		m.ctx.Logger.Infof("TaskTable receive TabChangedMsg: %s", tab.Name)
+		m.log.Infof("Received TabChangedMsg: %s", tab.Name)
 
 		columns := []table.Column{}
 		columns = append(columns, m.requiredCols...)
@@ -136,7 +147,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		// 		})
 		// 	}
 		// }
-		m.ctx.Logger.Infof("Columns: %d", len(columns))
+		m.log.Infof("Columns: %d", len(columns))
 		m.columns = columns
 
 		m.SelectedTab = tab
@@ -144,7 +155,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, TasksListReloadedCmd(tasks))
 
 		// case TasksListReloadedMsg:
-		// m.ctx.Logger.Infof("TaskTable receive TasksListReloadedMsg: %d", len(msg))
+		// m.log.Infof("TaskTable receive TasksListReloadedMsg: %d", len(msg))
 		// tasks := msg
 		m.loadTasks(tasks)
 		cmd = m.refreshTable()
@@ -158,21 +169,20 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, cmd, TasksListReadyCmd())
 
 	case tea.WindowSizeMsg:
-		m.ctx.Logger.Infof("TaskTable receive tea.WindowSizeMsg Width: %d Height %d", msg.Width, msg.Height)
+		m.log.Info("Received: tea.WindowSizeMsg",
+			"width", msg.Width,
+			"height", msg.Height)
 		m.size.Width = int(0.4 * float32(m.ctx.WindowSize.Width))
 		m.size.Height = int(0.7 * float32(m.ctx.WindowSize.Height))
-
-		m.ctx.Logger.Infof("TaskTable set width: %d height: %d",
-			m.size.Width, m.size.Height)
 
 		cmd := m.refreshTable()
 		cmds = append(cmds, cmd)
 
 	case taskstabs.FetchTasksForTabsMsg:
-		m.ctx.Logger.Infof("TaskTable receive viewtabs.FetchTasksForTabsMsg")
+		m.log.Infof("Received: viewtabs.FetchTasksForTabsMsg")
 		tabs := []taskstabs.Tab(msg)
 		for _, tab := range tabs {
-			m.ctx.Logger.Infof("TaskTable received FetchTasksForTabsMsg: type %v", tab.Type)
+			m.log.Infof("Received: FetchTasksForTabsMsg: type %v", tab.Type)
 			switch tab.Type {
 			case "list":
 				if err := m.fetchTasksForList(tab.Id); err != nil {
@@ -213,13 +223,12 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Cmd {
-	m.ctx.Logger.Info("Initializing component: TaskTable")
+	m.log.Info("Initializing...")
 	return m.refreshTable()
-	// return nil
 }
 
 func (m *Model) fetchTasksForViewId(viewId string) error {
-	m.ctx.Logger.Infof("TaskTable: fetching tasks for the view: %s", viewId)
+	m.log.Infof("Fetching tasks for the view: %s", viewId)
 	tasks, err := m.ctx.Api.GetTasksFromView(viewId)
 	if err != nil {
 		return err
@@ -229,12 +238,11 @@ func (m *Model) fetchTasksForViewId(viewId string) error {
 }
 
 func (m *Model) fetchTasksForList(listId string) error {
-	m.ctx.Logger.Infof("TaskTable: fetching tasks for the list: %s", listId)
+	m.log.Infof("Fetching tasks for the list: %s", listId)
 	tasks, err := m.ctx.Api.GetTasksFromList(listId)
 	if err != nil {
 		return err
 	}
 	m.tasks[listId] = tasks
 	return nil
-	// 	m.refreshTable()
 }

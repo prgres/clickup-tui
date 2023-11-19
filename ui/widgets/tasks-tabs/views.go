@@ -5,9 +5,12 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
 )
+
+const WidgetId = "widgetTasksTabs"
 
 type Tab struct {
 	Name   string
@@ -22,13 +25,16 @@ type Model struct {
 	SelectedTab  Tab
 	SelectedList string
 	Focused      bool
+	log          *log.Logger
 }
 
-func InitialModel(ctx *context.UserContext) Model {
+func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
+	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
+
 	return Model{
 		ctx:  ctx,
 		tabs: map[string][]Tab{},
-		// SelectedTab: nil,
+		log:  log,
 	}
 }
 
@@ -57,7 +63,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		var tabs []Tab
 
 		listName := string(msg)
-		m.ctx.Logger.Infof("ViewsView received ListChangeMsg: %s", listName)
+		m.log.Infof("Received: ListChangeMsg: %s", listName)
 
 		tabList := Tab{
 			Name:   listName,
@@ -76,7 +82,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 		if len(views) != 0 {
-			m.ctx.Logger.Infof("ViewTabs: Views found for this list: %d", len(views))
+			m.log.Infof("Found %d views found for the list", len(views))
 			for _, view := range views {
 				tabView := Tab{
 					Name:   view.Name,
@@ -99,11 +105,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		)
 
 	case common.FocusMsg:
-		m.ctx.Logger.Info("ViewsView received FocusMsg")
+		m.log.Info("Received: FocusMsg")
 		return m, nil
 
 	case TabChangedMsg:
-		m.ctx.Logger.Info("ViewsView received TabChangedMsg")
+		m.log.Info("Received: TabChangedMsg")
 		tab := Tab(msg)
 		tabs := m.tabs[m.SelectedList]
 		for _, t := range tabs {
@@ -159,14 +165,7 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Cmd {
-	m.ctx.Logger.Info("Initializing component: TabsView")
+	m.log.Info("Initializing...")
 	return nil
 }
 
-type TabLoadedMsg Tab
-
-func TabLoadedCmd(tab Tab) tea.Cmd {
-	return func() tea.Msg {
-		return TabLoadedMsg(tab)
-	}
-}

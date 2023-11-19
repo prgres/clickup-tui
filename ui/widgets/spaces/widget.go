@@ -3,36 +3,45 @@ package spaces
 import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	listitem "github.com/prgrs/clickup/ui/components/list-item"
 	"github.com/prgrs/clickup/ui/context"
 )
 
+const WidgetId = "spacesList"
+
 type Model struct {
+	WidgetId          common.WidgetId
 	ctx               *context.UserContext
 	list              list.Model
 	SelectedSpace     string
 	spaces            []clickup.Space
 	SelectedWorkspace string
+	log               *log.Logger
 }
 
-func InitialModel(ctx *context.UserContext) Model {
+func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	l := list.New([]list.Item{},
 		list.NewDefaultDelegate(),
 		0, 0)
 	l.KeyMap.Quit.Unbind()
 
+	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
+
 	return Model{
+		WidgetId:      WidgetId,
 		list:          l,
 		ctx:           ctx,
 		SelectedSpace: "",
 		spaces:        []clickup.Space{},
+		log:           log,
 	}
 }
 
 func (m *Model) syncList(spaces []clickup.Space) {
-	m.ctx.Logger.Info("Synchronizing list")
+	m.log.Info("Synchronizing list...")
 	m.spaces = spaces
 
 	sre_index := 0
@@ -47,6 +56,8 @@ func (m *Model) syncList(spaces []clickup.Space) {
 
 	m.list.SetItems(itemsList)
 	m.list.Select(sre_index)
+
+	m.log.Info("List synchronized")
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -55,17 +66,19 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case SpaceListReloadedMsg:
-		m.ctx.Logger.Info("SpaceView received SpaceListReloadedMsg")
+		m.log.Info("Received: SpaceListReloadedMsg")
 		m.syncList(msg)
 		cmds = append(cmds, SpaceListReadyCmd())
 
 	case tea.WindowSizeMsg:
-		m.ctx.Logger.Info("SpaceView received tea.WindowSizeMsg")
+		m.log.Info("Received: tea.WindowSizeMsg",
+			"width", msg.Width,
+			"height", msg.Height)
 		m.list.SetSize(msg.Width, msg.Height)
 
 	case common.WorkspaceChangeMsg:
 		workspace := string(msg)
-		m.ctx.Logger.Infof("SpaceView received WorkspaceChangeMsg: %s", workspace)
+		m.log.Infof("Received: WorkspaceChangeMsg: %s", workspace)
 		m.SelectedWorkspace = workspace
 		cmds = append(cmds, m.getSpacesCmd(workspace))
 
@@ -73,11 +86,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case "enter":
 			if m.list.SelectedItem() == nil {
-				m.ctx.Logger.Info("SpaceView: list is empty")
+				m.log.Info("List is empty")
 				break
 			}
 			selectedSpace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.ctx.Logger.Infof("SpaceView: Selected space %s", selectedSpace)
+			m.log.Infof("Selected space %s", selectedSpace)
 			m.SelectedSpace = selectedSpace
 			cmds = append(cmds, common.SpaceChangeCmd(selectedSpace))
 		}
@@ -94,6 +107,6 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Cmd {
-	m.ctx.Logger.Infof("Initializing component: spacesList")
+	m.log.Infof("Initializing...")
 	return m.getSpacesCmd(m.ctx.Config.DefaultWorkspace)
 }

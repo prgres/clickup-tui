@@ -3,37 +3,46 @@ package lists
 import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	listitem "github.com/prgrs/clickup/ui/components/list-item"
 	"github.com/prgrs/clickup/ui/context"
 )
 
+const WidgetId = "viewLists"
+
 type Model struct {
+	WidgetId       common.WidgetId
 	ctx            *context.UserContext
 	list           list.Model
 	lists          []clickup.List
 	SelectedList   string
 	SelectedFolder string
+	log            *log.Logger
 }
 
-func InitialModel(ctx *context.UserContext) Model {
+func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	l := list.New([]list.Item{},
 		list.NewDefaultDelegate(),
 		0, 0)
 	l.KeyMap.Quit.Unbind()
 
+	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
+
 	return Model{
+		WidgetId:       WidgetId,
 		list:           l,
 		ctx:            ctx,
 		SelectedFolder: "",
 		SelectedList:   "",
 		lists:          []clickup.List{},
+		log:            log,
 	}
 }
 
 func (m *Model) syncList(lists []clickup.List) {
-	m.ctx.Logger.Info("Synchronizing list")
+	m.log.Info("Synchronizing list")
 	m.lists = lists
 
 	items := listsListToItems(lists)
@@ -41,6 +50,7 @@ func (m *Model) syncList(lists []clickup.List) {
 
 	m.list.SetItems(itemsList)
 	m.list.Select(0)
+	m.log.Info("List synchronized")
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -49,16 +59,18 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case ListsListReloadedMsg:
-		m.ctx.Logger.Info("ListsView received ListsListReloadedMsg")
+		m.log.Info("Received: ListsListReloadedMsg")
 		m.syncList(msg)
 		cmds = append(cmds, ListsListReadyCmd())
 
 	case tea.WindowSizeMsg:
-		m.ctx.Logger.Info("ListsView received tea.WindowSizeMsg")
+		m.log.Info("Received: tea.WindowSizeMsg",
+			"width", msg.Width,
+			"height", msg.Height)
 		m.list.SetSize(msg.Width, msg.Height)
 
 	case common.FolderChangeMsg:
-		m.ctx.Logger.Infof("ListsView received FolderChangeMsg: %s", string(msg))
+		m.log.Infof("Received: FolderChangeMsg: %s", string(msg))
 		m.SelectedFolder = string(msg)
 		cmds = append(cmds, m.getListsCmd(m.SelectedFolder))
 
@@ -66,11 +78,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case "enter":
 			if m.list.SelectedItem() == nil {
-				m.ctx.Logger.Info("ListsView: list is empty")
+				m.log.Info("List is empty")
 				break
 			}
 			selectedList := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.ctx.Logger.Infof("ListsView: Selected list %s", selectedList)
+			m.log.Infof("Selected list %s", selectedList)
 			m.SelectedList = selectedList
 			cmds = append(cmds, common.ListChangeCmd(m.SelectedList))
 		}
@@ -87,7 +99,7 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Cmd {
-	m.ctx.Logger.Infof("Initializing component: listsList")
+	m.log.Infof("Initializing...")
 	return nil
 }
 

@@ -2,6 +2,7 @@ package ui
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
 	"github.com/prgrs/clickup/ui/views/folders"
@@ -12,30 +13,30 @@ import (
 )
 
 type Model struct {
-	ctx            *context.UserContext
-	state          common.ViewId
+	ctx   *context.UserContext
+	state common.ViewId
+	log   *log.Logger
+
+	viewWorkspaces workspaces.Model
 	viewSpaces     spaces.Model
 	viewTasks      tasks.Model
 	viewLists      lists.Model
 	viewFolders    folders.Model
-	viewWorkspaces workspaces.Model
 }
 
-func InitialModel(ctx *context.UserContext) Model {
-	viewSpaces := spaces.InitialModel(ctx)
-	viewTasks := tasks.InitialModel(ctx)
-	viewLists := lists.InitialModel(ctx)
-	viewFolders := folders.InitialModel(ctx)
-	viewWorkspaces := workspaces.InitialModel(ctx)
+func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
+	log := logger.WithPrefix("UI")
 
 	return Model{
-		ctx:            ctx,
-		state:          viewSpaces.ViewId,
-		viewSpaces:     viewSpaces,
-		viewTasks:      viewTasks,
-		viewLists:      viewLists,
-		viewFolders:    viewFolders,
-		viewWorkspaces: viewWorkspaces,
+		ctx:   ctx,
+		state: spaces.ViewId,
+		log:   log,
+
+		viewWorkspaces: workspaces.InitialModel(ctx, log),
+		viewSpaces:     spaces.InitialModel(ctx, log),
+		viewTasks:      tasks.InitialModel(ctx, log),
+		viewLists:      lists.InitialModel(ctx, log),
+		viewFolders:    folders.InitialModel(ctx, log),
 	}
 }
 
@@ -45,7 +46,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case common.ErrMsg:
-		m.ctx.Logger.Fatal(msg.Error())
+		m.log.Fatal(msg.Error())
 		return m, tea.Quit
 
 	case tea.KeyMsg:
@@ -102,29 +103,31 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		m.ctx.Logger.Infof("UI received tea.WindowSizeMsg. Width: %d Height %d", msg.Width, msg.Height)
+		m.log.Info("Received: tea.WindowSizeMsg",
+			"width", msg.Width,
+			"height", msg.Height)
 		m.ctx.WindowSize.Width = msg.Width
 		m.ctx.WindowSize.Height = msg.Height
 
 	case common.WorkspaceChangeMsg:
 		workspace := string(msg)
-		m.ctx.Logger.Infof("UI received WorkspaceChangeMsg: %s", workspace)
+		m.log.Info("Received: WorkspaceChangeMsg", "workspace", workspace)
 		m.state = m.viewSpaces.ViewId
 
 	case common.SpaceChangeMsg:
-		m.ctx.Logger.Infof("UI received SpaceChangeMsg: %s", string(msg))
+		m.log.Info("Received: SpaceChangeMsg", "space", string(msg))
 		m.state = m.viewFolders.ViewId
 
 	case common.FolderChangeMsg:
-		m.ctx.Logger.Infof("UI received FolderChangeMsg: %s", string(msg))
+		m.log.Info("Received: FolderChangeMsg", "folder", string(msg))
 		m.state = m.viewLists.ViewId
 
 	case common.ListChangeMsg:
-		m.ctx.Logger.Infof("UI received ListChangeMsg: %s", string(msg))
+		m.log.Info("Received: ListChangeMsg", "list", string(msg))
 		m.state = m.viewTasks.ViewId
 
 	case common.BackToPreviousViewMsg:
-		m.ctx.Logger.Infof("UI received BackToPreviousViewMsg")
+		m.log.Info("Received: BackToPreviousViewMsg")
 		switch m.state {
 		case m.viewFolders.ViewId:
 			m.state = m.viewSpaces.ViewId
@@ -171,12 +174,12 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Cmd {
-	m.ctx.Logger.Info("Initializing UI")
+	m.log.Info("Initializing...")
 	return tea.Batch(
+		m.viewWorkspaces.Init(),
 		m.viewSpaces.Init(),
 		m.viewTasks.Init(),
 		m.viewLists.Init(),
 		m.viewFolders.Init(),
-		m.viewWorkspaces.Init(),
 	)
 }

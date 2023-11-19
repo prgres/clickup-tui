@@ -6,10 +6,13 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
 	"github.com/prgrs/clickup/ui/widgets/lists"
 )
+
+const ViewId = "viewLists"
 
 type ListsState uint
 
@@ -25,23 +28,27 @@ type Model struct {
 	widgetListsList lists.Model
 	spinner         spinner.Model
 	showSpinner     bool
+	log             *log.Logger
 }
 
 func (m Model) Ready() bool {
 	return !m.showSpinner
 }
 
-func InitialModel(ctx *context.UserContext) Model {
+func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
+	log := logger.WithPrefix(logger.GetPrefix() + "/" + ViewId)
+
 	return Model{
-		ViewId:          "viewLists",
+		ViewId:          ViewId,
 		ctx:             ctx,
-		widgetListsList: lists.InitialModel(ctx),
+		widgetListsList: lists.InitialModel(ctx, log),
 		state:           ListsStateList,
 		spinner:         s,
 		showSpinner:     true,
+		log:             log,
 	}
 }
 
@@ -53,24 +60,24 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "esc":
-			m.ctx.Logger.Info("ViewLists: Go to previous view")
+			m.log.Info("Received: Go to previous view")
 			cmds = append(cmds, common.BackToPreviousViewCmd(m.ViewId))
 		}
 
 	case spinner.TickMsg:
-		// m.ctx.Logger.Info("ViewLists receive spinner.TickMsg")
+		// m.log.Info("Received: spinner.TickMsg")
 		if m.showSpinner {
 			m.spinner, cmd = m.spinner.Update(msg)
 			cmds = append(cmds, cmd)
 		}
 
 	case common.FolderChangeMsg:
-		m.ctx.Logger.Infof("ViewLists receive FolderChangeMsg")
+		m.log.Infof("Received: FolderChangeMsg")
 		m.showSpinner = true
 		cmds = append(cmds, m.spinner.Tick)
 
 	case lists.ListsListReadyMsg:
-		m.ctx.Logger.Infof("ViewLists receive ListsListReadyMsg")
+		m.log.Infof("Received: ListsListReadyMsg")
 		m.showSpinner = false
 	}
 
@@ -94,7 +101,7 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Cmd {
-	m.ctx.Logger.Info("Initializing view: Lists")
+	m.log.Info("Initializing...")
 	return tea.Batch(
 		m.spinner.Tick,
 		m.widgetListsList.Init(),
