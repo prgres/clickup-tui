@@ -2,22 +2,32 @@ package api
 
 import (
 	"encoding/json"
+	"log/slog"
+
+	"github.com/charmbracelet/log"
 
 	"github.com/prgrs/clickup/pkg/cache"
 	"github.com/prgrs/clickup/pkg/clickup"
-	"github.com/prgrs/clickup/pkg/logger1"
 )
 
 type Api struct {
 	Clickup *clickup.Client
 	Cache   *cache.Cache
-	logger  logger1.Logger
+	logger  *log.Logger
 }
 
-func NewApi(clickup *clickup.Client, logger logger1.Logger, cache *cache.Cache) Api {
+func NewApi(logger *log.Logger, cache *cache.Cache, token string) Api {
+	log := logger.WithPrefix("Api")
+	log.Info("Initializing clickup client...")
+
+	clickup := clickup.NewDefaultClientWithLogger(
+		token,
+		slog.New(log.WithPrefix(log.GetPrefix()+"/ClickUp")),
+	)
+
 	return Api{
 		Clickup: clickup,
-		logger:  logger,
+		logger:  log,
 		Cache:   cache,
 	}
 }

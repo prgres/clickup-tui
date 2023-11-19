@@ -1,15 +1,15 @@
 package context
 
 import (
+	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/api"
 	"github.com/prgrs/clickup/internal/config"
-	"github.com/prgrs/clickup/pkg/logger1"
 	"github.com/prgrs/clickup/ui/theme"
 )
 
 type UserContext struct {
-	Style      theme.Style
-	Logger     logger1.Logger
+	Style theme.Style
+	// Logger     *log.Logger
 	WindowSize WindowSize
 	Api        *api.Api
 	Config     *config.Config
@@ -20,10 +20,10 @@ type WindowSize struct {
 	Height int
 }
 
-func NewUserContext(logger logger1.Logger, api *api.Api, config *config.Config) UserContext {
+func NewUserContext(logger *log.Logger, api *api.Api, config *config.Config) UserContext {
 	return UserContext{
-		Style:  theme.NewStyle(*theme.DefaultTheme),
-		Logger: logger,
+		Style: theme.NewStyle(*theme.DefaultTheme),
+		// Logger: logger,
 		WindowSize: WindowSize{
 			Width:  0,
 			Height: 0,

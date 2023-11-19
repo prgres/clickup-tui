@@ -8,29 +8,36 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 	"github.com/mattn/go-runewidth"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
 )
 
+const WidgetId = "widgetTaskSidebar"
+
 type Model struct {
 	ctx      *context.UserContext
 	viewport viewport.Model
 	Focused  bool
 	Hidden   bool
+	log      *log.Logger
 }
 
-func InitialModel(ctx *context.UserContext) Model {
+func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	v := viewport.New(0, 0)
 	v.Style = lipgloss.NewStyle().
 		Height(0)
+
+	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
 
 	return Model{
 		ctx:      ctx,
 		viewport: v,
 		Focused:  false,
 		Hidden:   false,
+		log:      log,
 	}
 }
 
@@ -42,21 +49,20 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 
-	// case tea.KeyMsg:
-	// 	return m, nil
-
 	case InitMsg:
-		m.ctx.Logger.Info("TaskSidebar receive InitMsg")
+		m.log.Info("Received: InitMsg")
 		m.viewport.SetContent("Loading...")
 
 	case tea.WindowSizeMsg:
-		m.ctx.Logger.Info("TaskSidebar receive tea.WindowSizeMsg")
+		m.log.Info("Received: tea.WindowSizeMsg",
+			"width", msg.Width,
+			"height", msg.Height)
 		m.viewport.Width = int(0.6 * float32(m.ctx.WindowSize.Width))
 		m.viewport.Height = int(0.7 * float32(m.ctx.WindowSize.Height))
 
 	case TaskSelectedMsg:
 		id := string(msg)
-		m.ctx.Logger.Infof("TaskSidebar receive TaskSelectedMsg: %s", id)
+		m.log.Infof("Received: TaskSelectedMsg: %s", id)
 
 		task, err := m.ctx.Api.GetTask(id)
 		if err != nil {
@@ -118,6 +124,6 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Cmd {
-	m.ctx.Logger.Info("Initializing component: TaskSidebar")
+	m.log.Info("Initializing...")
 	return InitCmd()
 }

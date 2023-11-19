@@ -3,21 +3,20 @@ package cache
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
-
-	logger "github.com/prgrs/clickup/pkg/logger1"
 )
 
 type Data map[string]interface{}
 
 type Cache struct {
 	path   string
-	logger logger.Logger
+	logger *slog.Logger
 	data   map[string]Data
 }
 
-func NewCache(logger logger.Logger) *Cache {
+func NewCache(logger *slog.Logger) *Cache {
 	path := "cache"
 	return &Cache{
 		path:   path,
@@ -46,7 +45,7 @@ func (c *Cache) getNamespacesFromCacheFiles() ([]os.DirEntry, error) {
 }
 
 func (c *Cache) loadKey(namespace string, key string) (interface{}, error) {
-	c.logger.Infof("Loading key %s/%s", namespace, key)
+	c.logger.Info("Loading key", "key", namespace+"/"+key)
 
 	rawData, err := c.loadFromFile(
 		fmt.Sprintf("%s/%s/%s.json",
@@ -59,7 +58,7 @@ func (c *Cache) loadKey(namespace string, key string) (interface{}, error) {
 }
 
 func (c *Cache) loadNamespace(namespace string) (Data, error) {
-	c.logger.Infof("Loading namespace: %s", namespace)
+	c.logger.Info("Loading namespace", "namespace", namespace)
 
 	keys, err := os.ReadDir(fmt.Sprintf("%s/%s", c.path, namespace))
 	if err != nil {
@@ -85,7 +84,7 @@ func (c *Cache) loadNamespace(namespace string) (Data, error) {
 }
 
 func (c *Cache) Load() error {
-	c.logger.Infof("Loading cache from %s...", c.path)
+	c.logger.Info("Loading cache from path...", "path", c.path)
 
 	namespaces, err := c.getNamespacesFromCacheFiles()
 	if err != nil {
@@ -139,7 +138,8 @@ func (c *Cache) Set(namespace string, key string, value interface{}) {
 	filename := fmt.Sprintf("%s.json", key)
 
 	if err := c.saveToFile(path, filename, value); err != nil {
-		c.logger.Fatal(err)
+		c.logger.Error(err.Error())
+		panic(err)
 	}
 }
 
@@ -160,11 +160,12 @@ func (c *Cache) Dump() error {
 
 func (c *Cache) saveToFile(path string, filename string, value interface{}) error {
 	if err := os.MkdirAll(path, 0777); err != nil {
-		c.logger.Fatal(err)
+		c.logger.Error(err.Error())
+		panic(err)
 	}
 
 	filepath := fmt.Sprintf("%s/%s", path, filename)
-	c.logger.Infof("Saving cache to file: %s", filepath)
+	c.logger.Info("Saving cache to file", "file", filepath)
 
 	f, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
 	if err != nil {

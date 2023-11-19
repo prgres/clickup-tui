@@ -2,14 +2,16 @@ package spaces
 
 import (
 	"fmt"
-
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
 	"github.com/prgrs/clickup/ui/widgets/spaces"
 )
+
+const ViewId = "viewSpaces"
 
 type SpacesState uint
 
@@ -25,23 +27,27 @@ type Model struct {
 	widgetSpaceList spaces.Model
 	spinner         spinner.Model
 	showSpinner     bool
+	log             *log.Logger
 }
 
 func (m Model) Ready() bool {
 	return !m.showSpinner
 }
 
-func InitialModel(ctx *context.UserContext) Model {
+func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
+	log := logger.WithPrefix(logger.GetPrefix() + "/" + ViewId)
+
 	return Model{
-		ViewId:          "viewSpaces",
+		ViewId:          ViewId,
 		ctx:             ctx,
-		widgetSpaceList: spaces.InitialModel(ctx),
+		widgetSpaceList: spaces.InitialModel(ctx, log),
 		state:           SpacesStateList,
 		spinner:         s,
 		showSpinner:     true,
+		log:             log,
 	}
 }
 
@@ -53,24 +59,24 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "esc":
-			m.ctx.Logger.Info("ViewSpaces: Go to previous view")
+			m.log.Info("Received: Go to previous view")
 			cmds = append(cmds, common.BackToPreviousViewCmd(m.ViewId))
 		}
 
 	case spinner.TickMsg:
-		// m.ctx.Logger.Info("ViewSpaces receive spinner.TickMsg")
+		// m.log.Info("Received: spinner.TickMsg")
 		if m.showSpinner {
 			m.spinner, cmd = m.spinner.Update(msg)
 			cmds = append(cmds, cmd)
 		}
 
 	case common.WorkspaceChangeMsg:
-		m.ctx.Logger.Infof("ViewSpaces receive WorkspaceChangeMsg")
+		m.log.Infof("Received: WorkspaceChangeMsg")
 		m.showSpinner = true
 		cmds = append(cmds, m.spinner.Tick)
 
 	case spaces.SpaceListReadyMsg:
-		m.ctx.Logger.Infof("ViewSpaces receive SpaceListReadyMsg")
+		m.log.Infof("Received: SpaceListReadyMsg")
 		m.showSpinner = false
 	}
 
@@ -94,7 +100,7 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Cmd {
-	m.ctx.Logger.Info("Initializing view: Spaces")
+	m.log.Info("Initializing...")
 	return tea.Batch(
 		m.spinner.Tick,
 		m.widgetSpaceList.Init(),

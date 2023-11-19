@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
-
-	logger "github.com/prgrs/clickup/pkg/logger1"
 )
 
 const (
@@ -18,8 +17,7 @@ type Client struct {
 	token      string
 	httpClient *http.Client
 	apiUrl     string
-
-	logger logger.Logger
+	logger     *slog.Logger
 }
 
 func (c *Client) ToJson(data interface{}) string {
@@ -37,11 +35,11 @@ func NewDefaultClient(token string) *Client {
 		token:      token,
 		httpClient: http.DefaultClient,
 		apiUrl:     API_URL,
-		logger:     logger.NewDefaultLogger(),
+		logger:     slog.Default(),
 	}
 }
 
-func NewClient(token string, apiUrl string, logger logger.Logger) *Client {
+func NewClient(token string, apiUrl string, logger *slog.Logger) *Client {
 	return &Client{
 		token:      token,
 		httpClient: http.DefaultClient,
@@ -49,7 +47,7 @@ func NewClient(token string, apiUrl string, logger logger.Logger) *Client {
 		logger:     logger,
 	}
 }
-func NewDefaultClientWithLogger(token string, logger logger.Logger) *Client {
+func NewDefaultClientWithLogger(token string, logger *slog.Logger) *Client {
 	return &Client{
 		token:      token,
 		httpClient: http.DefaultClient,
@@ -72,7 +70,7 @@ func (c *Client) requestGet(endpoint string, paramsQuery ...string) ([]byte, err
 		reqUrl.RawQuery = params
 	}
 
-	c.logger.Infof("requestGet: %s", reqUrl.String())
+	c.logger.Info("Sending GET request", "request", reqUrl.String())
 	req, _ := http.NewRequest("GET", reqUrl.String(), nil)
 	req.Header.Add("Authorization", c.token)
 

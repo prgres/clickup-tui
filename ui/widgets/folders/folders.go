@@ -3,25 +3,32 @@ package folders
 import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	listitem "github.com/prgrs/clickup/ui/components/list-item"
 	"github.com/prgrs/clickup/ui/context"
 )
 
+const WidgetId = "foldersList"
+
 type Model struct {
+	WidgetId       common.WidgetId
 	ctx            *context.UserContext
 	list           list.Model
 	folders        []clickup.Folder
 	SelectedSpace  string
 	SelectedFolder string
+	log            *log.Logger
 }
 
-func InitialModel(ctx *context.UserContext) Model {
+func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	l := list.New([]list.Item{},
 		list.NewDefaultDelegate(),
 		0, 0)
 	l.KeyMap.Quit.Unbind()
+
+	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
 
 	return Model{
 		list:           l,
@@ -29,11 +36,12 @@ func InitialModel(ctx *context.UserContext) Model {
 		SelectedFolder: "",
 		SelectedSpace:  ctx.Config.DefaultSpace,
 		folders:        []clickup.Folder{},
+		log:            log, // <3
 	}
 }
 
 func (m *Model) syncList(folders []clickup.Folder) {
-	m.ctx.Logger.Info("Synchronizing list")
+	m.log.Info("Synchronizing list")
 	m.folders = folders
 
 	sre_index := 0
@@ -56,16 +64,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case FoldersListReloadedMsg:
-		m.ctx.Logger.Info("FolderView received FoldersListReloadedMsg")
+		m.log.Info("Received: FoldersListReloadedMsg")
 		m.syncList(msg)
 		cmds = append(cmds, FoldersListReadyCmd())
 
 	case tea.WindowSizeMsg:
-		m.ctx.Logger.Info("FolderView received tea.WindowSizeMsg")
-		m.list.SetSize(msg.Width, msg.Height)
+		m.log.Info("Received: tea.WindowSizeMsg",
+			"width", msg.Width,
+			"height", msg.Height)
 
 	case common.SpaceChangeMsg:
-		m.ctx.Logger.Infof("FolderView received SpaceChangeMsg: %s", string(msg))
+		m.log.Infof("Received: SpaceChangeMsg: %s", string(msg))
 		m.SelectedSpace = string(msg)
 		cmds = append(cmds, m.getFoldersCmd(m.SelectedSpace))
 
@@ -73,11 +82,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case "enter":
 			if m.list.SelectedItem() == nil {
-				m.ctx.Logger.Info("FolderView: list is empty")
+				m.log.Info("List is empty")
 				break
 			}
 			selectedFolder := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.ctx.Logger.Infof("FolderView: Selected folder %s", selectedFolder)
+			m.log.Infof("Selected folder %s", selectedFolder)
 			m.SelectedFolder = selectedFolder
 			cmds = append(cmds, common.FolderChangeCmd(selectedFolder))
 		}
@@ -94,6 +103,6 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Cmd {
-	m.ctx.Logger.Infof("Initializing component: foldersList")
+	m.log.Info("Initializing...")
 	return nil
 }

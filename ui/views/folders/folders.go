@@ -6,10 +6,13 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
 	"github.com/prgrs/clickup/ui/widgets/folders"
 )
+
+const ViewId = "viewFolders"
 
 type FoldersState uint
 
@@ -25,23 +28,27 @@ type Model struct {
 	widgetFoldersList folders.Model
 	spinner           spinner.Model
 	showSpinner       bool
+	log               *log.Logger
 }
 
 func (m Model) Ready() bool {
 	return !m.showSpinner
 }
 
-func InitialModel(ctx *context.UserContext) Model {
+func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
+	log := logger.WithPrefix(logger.GetPrefix() + "/" + ViewId)
+
 	return Model{
-		ViewId:            "viewFolders",
+		ViewId:            ViewId,
 		ctx:               ctx,
-		widgetFoldersList: folders.InitialModel(ctx),
+		widgetFoldersList: folders.InitialModel(ctx, log),
 		state:             FoldersStateList,
 		spinner:           s,
 		showSpinner:       true,
+		log:               log,
 	}
 }
 
@@ -53,24 +60,24 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "esc":
-			m.ctx.Logger.Info("ViewFolders: Go to previous view")
+			m.log.Info("Received: Go to previous view")
 			cmds = append(cmds, common.BackToPreviousViewCmd(m.ViewId))
 		}
 
 	case spinner.TickMsg:
-		// m.ctx.Logger.Info("ViewFolders receive spinner.TickMsg")
+		// m.log.Info("Received: spinner.TickMsg")
 		if m.showSpinner {
 			m.spinner, cmd = m.spinner.Update(msg)
 			cmds = append(cmds, cmd)
 		}
 
 	case common.SpaceChangeMsg:
-		m.ctx.Logger.Infof("ViewFolders received SpaceChangeMsg: %s", string(msg))
+		m.log.Infof("Received: received SpaceChangeMsg: %s", string(msg))
 		m.showSpinner = true
 		cmds = append(cmds, m.spinner.Tick)
 
 	case folders.FoldersListReadyMsg:
-		m.ctx.Logger.Infof("ViewFolders receive FoldersListReadyMsg")
+		m.log.Infof("Received: FoldersListReadyMsg")
 		m.showSpinner = false
 	}
 
@@ -94,7 +101,7 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Cmd {
-	m.ctx.Logger.Info("Initializing view: Folders")
+	m.log.Info("Initializing...")
 	return tea.Batch(
 		m.spinner.Tick,
 		m.widgetFoldersList.Init(),

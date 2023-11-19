@@ -6,10 +6,13 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
 	"github.com/prgrs/clickup/ui/widgets/workspaces-list"
 )
+
+const ViewId = "viewWorkspaces"
 
 type Model struct {
 	ViewId               common.ViewId
@@ -17,22 +20,26 @@ type Model struct {
 	widgetWorkspacesList workspaceslist.Model
 	spinner              spinner.Model
 	showSpinner          bool
+	log                  *log.Logger
 }
 
 func (m Model) Ready() bool {
 	return !m.showSpinner
 }
 
-func InitialModel(ctx *context.UserContext) Model {
+func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
+	log := logger.WithPrefix(logger.GetPrefix() + "/" + ViewId)
+
 	return Model{
-		ViewId:               "viewWorkspaces",
+		ViewId:               ViewId,
 		ctx:                  ctx,
-		widgetWorkspacesList: workspaceslist.InitialModel(ctx),
+		widgetWorkspacesList: workspaceslist.InitialModel(ctx, log),
 		spinner:              s,
 		showSpinner:          true,
+		log:                  log,
 	}
 }
 
@@ -44,24 +51,24 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "esc":
-			m.ctx.Logger.Info("ViewWorkspaces: Go to previous view")
+			m.log.Info("Received: Go to previous view")
 			cmds = append(cmds, common.BackToPreviousViewCmd(m.ViewId))
 		}
 
 	case spinner.TickMsg:
-		// m.ctx.Logger.Info("ViewWorkspaces receive spinner.TickMsg")
+		// m.log.Info("Received: spinner.TickMsg")
 		if m.showSpinner {
 			m.spinner, cmd = m.spinner.Update(msg)
 			cmds = append(cmds, cmd)
 		}
 
 	case common.WorkspaceChangeMsg:
-		m.ctx.Logger.Infof("ViewWorkspaces receive WorkspaceChangeMsg")
+		m.log.Infof("Received: WorkspaceChangeMsg")
 		m.showSpinner = true
 		cmds = append(cmds, m.spinner.Tick)
 
 	case workspaceslist.WorkspaceListReadyMsg:
-		m.ctx.Logger.Infof("ViewWorkspaces receive WorkspaceListReadyMsg")
+		m.log.Infof("Received: WorkspaceListReadyMsg")
 		m.showSpinner = false
 	}
 
@@ -85,10 +92,9 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Cmd {
-	m.ctx.Logger.Info("Initializing view: Workspaces")
+	m.log.Info("Initializing...")
 	return tea.Batch(
 		m.spinner.Tick,
 		m.widgetWorkspacesList.Init(),
 	)
-
 }

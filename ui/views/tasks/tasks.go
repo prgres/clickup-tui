@@ -2,16 +2,18 @@ package tasks
 
 import (
 	"fmt"
-
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
 	"github.com/prgrs/clickup/ui/widgets/tasks-sidebar"
 	"github.com/prgrs/clickup/ui/widgets/tasks-table"
 	"github.com/prgrs/clickup/ui/widgets/tasks-tabs"
 )
+
+const ViewId = "viewTasks"
 
 type TasksState uint
 
@@ -31,25 +33,29 @@ type Model struct {
 	widgetTaskSidebar taskssidebar.Model
 	spinner           spinner.Model
 	showSpinner       bool
+	log               *log.Logger
 }
 
 func (m Model) Ready() bool {
 	return !m.showSpinner
 }
 
-func InitialModel(ctx *context.UserContext) Model {
+func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
+	log := logger.WithPrefix(logger.GetPrefix() + "/" + ViewId)
+
 	return Model{
-		ViewId:            "viewTasks",
+		ViewId:            ViewId,
 		ctx:               ctx,
 		state:             TasksStateTasksTable,
-		widgetViewsTabs:   taskstabs.InitialModel(ctx),
-		widgetTasksTable:  taskstable.InitialModel(ctx),
-		widgetTaskSidebar: taskssidebar.InitialModel(ctx),
+		widgetViewsTabs:   taskstabs.InitialModel(ctx, log),
+		widgetTasksTable:  taskstable.InitialModel(ctx, log),
+		widgetTaskSidebar: taskssidebar.InitialModel(ctx, log),
 		spinner:           s,
 		showSpinner:       true,
+		log:               log,
 	}
 }
 
@@ -77,7 +83,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 			case TasksStateTasksTable:
 				m.state = TasksStateTasksTable
-				m.ctx.Logger.Info("ViewTasks: Go to previous view")
+				m.log.Info("Received: Go to previous view")
 				cmds = append(cmds, common.BackToPreviousViewCmd(m.ViewId))
 			}
 
@@ -117,17 +123,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				return m, tea.Batch(cmds...)
 
 			default:
-				m.ctx.Logger.Infof("ViewTasks received unhandled keypress: %s", keypress)
+				m.log.Infof("Received: unhandled keypress: %s", keypress)
 				return m, nil
 			}
 		}
 
 	case tea.WindowSizeMsg:
-		m.ctx.Logger.Info("ViewTasks receive tea.WindowSizeMsg")
+		m.log.Info("Received: tea.WindowSizeMsg")
 
 	case taskstabs.TabChangedMsg:
 		tab := taskstabs.Tab(msg)
-		m.ctx.Logger.Infof("ViewTasks received TabChangedMsg: name=%s id=%s", tab.Name, tab.Id)
+		m.log.Info("Received: TabChangedMsg", "name", tab.Name, "id", tab.Id)
 		m.showSpinner = true
 
 		cmds = append(cmds, taskstable.TabChangedCmd(tab))
@@ -136,14 +142,14 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 
 	case taskstable.TasksListReadyMsg:
-		m.ctx.Logger.Info("ViewTasks received TasksListReady")
+		m.log.Info("Received: TasksListReady")
 		m.showSpinner = false
 		cmds = append(cmds,
 			m.spinner.Tick,
 		)
 
 	case spinner.TickMsg:
-		// m.ctx.Logger.Info("ViewTask receive spinner.TickMsg")
+		// m.log.Info("ViewTask spinner.TickMsg")
 		if m.showSpinner {
 			m.spinner, cmd = m.spinner.Update(msg)
 			cmds = append(cmds, cmd)
@@ -151,7 +157,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	case taskstable.TaskSelectedMsg:
 		id := string(msg)
-		m.ctx.Logger.Infof("ViewTask receive taskstable.TaskSelectedMsg: %s", id)
+		m.log.Infof("Received: taskstable.TaskSelectedMsg: %s", id)
 		m.state = TasksStateTaskSidebar
 		m.widgetTasksTable.Focused = false
 		m.widgetTaskSidebar.Focused = true
@@ -210,7 +216,7 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Cmd {
-	m.ctx.Logger.Infof("Initializing view: Tasks")
+	m.log.Infof("Initializing...")
 	return tea.Batch(
 		m.widgetViewsTabs.Init(),
 		m.widgetTasksTable.Init(),
