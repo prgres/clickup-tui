@@ -4,6 +4,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/ui/common"
+	listitem "github.com/prgrs/clickup/ui/components/list-item"
 	"github.com/prgrs/clickup/ui/context"
 	"github.com/prgrs/clickup/ui/views/folders"
 	"github.com/prgrs/clickup/ui/views/lists"
@@ -123,7 +124,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.state = m.viewLists.ViewId
 
 	case common.ListChangeMsg:
-		m.log.Info("Received: ListChangeMsg", "list", string(msg))
+		m.log.Info("Received: ListChangeMsg", "list", listitem.Item(msg).Description())
 		m.state = m.viewTasks.ViewId
 
 	case common.BackToPreviousViewMsg:
