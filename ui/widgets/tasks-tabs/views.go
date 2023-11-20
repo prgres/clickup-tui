@@ -79,7 +79,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		tabs = append(tabs, tabList)
 
-		m.SelectedList = string(msg)
+		m.SelectedList = listName
 		m.SelectedTab = 0
 
 		views, err := m.ctx.Api.GetViewsFromList(string(msg))
@@ -98,9 +98,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				}
 				tabs = append(tabs, tabView)
 			}
-			m.tabs[m.SelectedList] = tabs
-
 		}
+
+		m.tabs[m.SelectedList] = tabs
+
 		cmds = append(cmds,
 			FetchTasksForTabsCmd(tabs),
 			TabChangedCmd(tabList),
@@ -128,13 +129,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) View() string {
 	s := strings.Builder{}
-	if len(m.tabs[m.SelectedList]) == 0 {
-		return s.String()
-	}
-
 	s.WriteString(" Views |")
+
 	if len(m.tabs[m.SelectedList]) == 0 {
 		s.WriteString(" ")
+		return s.String()
 	}
 
 	for i, tab := range m.tabs[m.SelectedList] {
