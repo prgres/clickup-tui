@@ -89,6 +89,14 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 func (m *Model) refreshTable() tea.Cmd {
 	m.log.Info("Synchonizing table...")
 	tasks := m.getSelectedViewTasks()
+
+	m.Hidden = false
+	if len(tasks) == 0 {
+		m.log.Info("Table is empty")
+		m.Hidden = true
+		return HideTableCmd()
+	}
+
 	items := taskListToRows(tasks, m.columns)
 
 	m.table.SetRows(items)
@@ -98,11 +106,6 @@ func (m *Model) refreshTable() tea.Cmd {
 	m.table.SetWidth(m.size.Width)
 	m.table.SetHeight(m.size.Height)
 
-	m.Hidden = false
-	if len(items) == 0 {
-		m.Hidden = true
-		return HideTableCmd()
-	}
 	m.log.Info("Table synchonized")
 
 	return nil
