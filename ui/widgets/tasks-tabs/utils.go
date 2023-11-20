@@ -23,26 +23,16 @@ func viewsToIdList(views []clickup.View) []string {
 	return ids
 }
 
-func nextView(views []clickup.View, SelectedView string) string {
-	for i, view := range views {
-		if view.Id == SelectedView {
-			if i+1 < len(views) {
-				return views[i+1].Id
-			}
-			return views[0].Id
-		}
+func nextTab(tabs []Tab, SelectedTab int) int {
+	if SelectedTab+1 < len(tabs) {
+		return SelectedTab + 1
 	}
-	return views[0].Id
+	return 0
 }
 
-func prevView(views []clickup.View, SelectedView string) string {
-	for i, view := range views {
-		if view.Id == SelectedView {
-			if i-1 >= 0 {
-				return views[i-1].Id
-			}
-			return views[len(views)-1].Id
-		}
+func prevTab(tabs []Tab, SelectedTab int) int {
+	if SelectedTab-1 >= 0 {
+		return SelectedTab - 1
 	}
-	return views[0].Id
+	return len(tabs) - 1
 }

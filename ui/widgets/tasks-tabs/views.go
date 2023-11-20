@@ -22,7 +22,7 @@ type Tab struct {
 type Model struct {
 	ctx          *context.UserContext
 	tabs         map[string][]Tab
-	SelectedTab  Tab
+	SelectedTab  int
 	SelectedList string
 	Focused      bool
 	log          *log.Logger
@@ -47,12 +47,18 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		// case "h", "left":
-		// 	m.SelectedView = prevView(m.views[m.SelectedList], m.SelectedView)
-		// 	return m, ViewChangedCmd(m.SelectedView)
-		// case "l", "right":
-		// 	m.SelectedView = nextView(m.views[m.SelectedList], m.SelectedView)
-		// 	return m, ViewChangedCmd(m.SelectedView)
+		case "h", "left":
+			index := prevTab(m.tabs[m.SelectedList], m.SelectedTab)
+			m.tabs[m.SelectedList][m.SelectedTab].Active = false
+			m.SelectedTab = index
+			m.tabs[m.SelectedList][index].Active = true
+			return m, TabChangedCmd(m.tabs[m.SelectedList][index])
+		case "l", "right":
+			index := nextTab(m.tabs[m.SelectedList], m.SelectedTab)
+			m.tabs[m.SelectedList][m.SelectedTab].Active = false
+			m.SelectedTab = index
+			m.tabs[m.SelectedList][index].Active = true
+			return m, TabChangedCmd(m.tabs[m.SelectedList][index])
 
 		default:
 			return m, nil
@@ -74,7 +80,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		tabs = append(tabs, tabList)
 
 		m.SelectedList = string(msg)
-		m.SelectedTab = tabList
+		m.SelectedTab = 0
 
 		views, err := m.ctx.Api.GetViewsFromList(string(msg))
 		if err != nil {
@@ -100,9 +106,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			TabChangedCmd(tabList),
 		)
 
-		return m, tea.Batch(
-			cmds...,
-		)
+		return m, tea.Batch(cmds...)
 
 	case common.FocusMsg:
 		m.log.Info("Received: FocusMsg")
@@ -114,7 +118,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		tabs := m.tabs[m.SelectedList]
 		for _, t := range tabs {
 			if t.Id == tab.Id {
-				// m.SelectedViewStruct = view
 				return m, tea.Batch(TabLoadedCmd(t))
 			}
 		}
@@ -168,4 +171,3 @@ func (m Model) Init() tea.Cmd {
 	m.log.Info("Initializing...")
 	return nil
 }
-
