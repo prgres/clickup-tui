@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/ui/common"
+	listitem "github.com/prgrs/clickup/ui/components/list-item"
 	"github.com/prgrs/clickup/ui/context"
 )
 
@@ -68,27 +69,27 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		var cmds []tea.Cmd
 		var tabs []Tab
 
-		listName := string(msg)
-		m.log.Infof("Received: ListChangeMsg: %s", listName)
+		list := listitem.Item(msg)
+		m.log.Infof("Received: ListChangeMsg: %s", list.Description())
 
 		tabList := Tab{
-			Name:   listName,
+			Id:     list.Description(),
+			Name:   list.Title(),
 			Type:   "list",
-			Id:     listName,
 			Active: true,
 		}
 		tabs = append(tabs, tabList)
 
-		m.SelectedList = listName
+		m.SelectedList = list.Description()
 		m.SelectedTab = 0
 
-		views, err := m.ctx.Api.GetViewsFromList(string(msg))
+		views, err := m.ctx.Api.GetViewsFromList(list.Description())
 		if err != nil {
 			return m, common.ErrCmd(err)
 		}
+		m.log.Infof("Found %d views found for the list", len(views))
 
 		if len(views) != 0 {
-			m.log.Infof("Found %d views found for the list", len(views))
 			for _, view := range views {
 				tabView := Tab{
 					Name:   view.Name,
@@ -135,13 +136,16 @@ func (m Model) View() string {
 		s.WriteString(" ")
 		return s.String()
 	}
+	m.log.Infof("Rendering %d tabs", len(m.tabs[m.SelectedList]))
 
 	for i, tab := range m.tabs[m.SelectedList] {
+		m.log.Infof("Rendering tab: %s %s", tab.Name, tab.Id)
 		t := ""
+		tabContent := " " + tab.Name + " "
 		if tab.Active {
-			t = activeTabStyle.Render(tab.Name)
+			t = activeTabStyle.Render(tabContent)
 		} else {
-			t = inactiveTabStyle.Render(tab.Name)
+			t = inactiveTabStyle.Render(tabContent)
 		}
 		s.WriteString(" " + t + " ")
 
@@ -154,6 +158,7 @@ func (m Model) View() string {
 	if m.Focused {
 		bColor = lipgloss.Color("#8909FF")
 	}
+
 	return lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(bColor).

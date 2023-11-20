@@ -2,6 +2,7 @@ package common
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	listitem "github.com/prgrs/clickup/ui/components/list-item"
 )
 
 type FocusMsg bool
@@ -28,11 +29,11 @@ func FolderChangeCmd(space string) tea.Cmd {
 	}
 }
 
-type ListChangeMsg string
+type ListChangeMsg listitem.Item
 
-func ListChangeCmd(space string) tea.Cmd {
+func ListChangeCmd(list listitem.Item) tea.Cmd {
 	return func() tea.Msg {
-		return ListChangeMsg(space)
+		return ListChangeMsg(list)
 	}
 }
 

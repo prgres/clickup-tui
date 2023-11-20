@@ -17,7 +17,7 @@ type Model struct {
 	ctx            *context.UserContext
 	list           list.Model
 	lists          []clickup.List
-	SelectedList   string
+	SelectedList   listitem.Item
 	SelectedFolder string
 	log            *log.Logger
 }
@@ -35,7 +35,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		list:           l,
 		ctx:            ctx,
 		SelectedFolder: "",
-		SelectedList:   "",
+		// SelectedList:   nil,
 		lists:          []clickup.List{},
 		log:            log,
 	}
@@ -81,7 +81,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.log.Info("List is empty")
 				break
 			}
-			selectedList := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
+			selectedList := listitem.BubblesItemToItem(m.list.SelectedItem())
+			// .Description()
 			m.log.Infof("Selected list %s", selectedList)
 			m.SelectedList = selectedList
 			cmds = append(cmds, common.ListChangeCmd(m.SelectedList))
