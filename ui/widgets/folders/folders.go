@@ -10,7 +10,7 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const WidgetId = "foldersList"
+const WidgetId = "widgetFoldersList"
 
 type Model struct {
 	WidgetId       common.WidgetId
@@ -31,12 +31,13 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
 
 	return Model{
+		WidgetId:       WidgetId,
 		list:           l,
 		ctx:            ctx,
 		SelectedFolder: "",
 		SelectedSpace:  ctx.Config.DefaultSpace,
 		folders:        []clickup.Folder{},
-		log:            log, // <3
+		log:            log,
 	}
 }
 

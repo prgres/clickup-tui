@@ -11,6 +11,7 @@ import (
 	"github.com/prgrs/clickup/ui/views/spaces"
 	"github.com/prgrs/clickup/ui/views/tasks"
 	"github.com/prgrs/clickup/ui/views/workspaces"
+	"github.com/prgrs/clickup/ui/widgets/help"
 )
 
 type Model struct {
@@ -23,6 +24,8 @@ type Model struct {
 	viewTasks      tasks.Model
 	viewLists      lists.Model
 	viewFolders    folders.Model
+
+	dialogHelp help.Model
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
@@ -30,14 +33,17 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 
 	return Model{
 		ctx:   ctx,
-		state: spaces.ViewId,
-		log:   log,
+		state: help.WidgetId,
+		// state: spaces.ViewId,
+		log: log,
 
 		viewWorkspaces: workspaces.InitialModel(ctx, log),
 		viewSpaces:     spaces.InitialModel(ctx, log),
 		viewTasks:      tasks.InitialModel(ctx, log),
 		viewLists:      lists.InitialModel(ctx, log),
 		viewFolders:    folders.InitialModel(ctx, log),
+
+		dialogHelp: help.InitialModel(ctx, log),
 	}
 }
 
@@ -98,6 +104,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.viewWorkspaces, cmd = m.viewWorkspaces.Update(msg)
 				return m, cmd
 
+			case common.ViewId(m.dialogHelp.WidgetId):
+				m.dialogHelp, cmd = m.dialogHelp.Update(msg)
+				return m, cmd
+
 			default:
 				return m, nil
 			}
@@ -154,10 +164,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.viewTasks, cmd = m.viewTasks.Update(msg)
 	cmds = append(cmds, cmd)
 
+	m.dialogHelp, cmd = m.dialogHelp.Update(msg)
+	cmds = append(cmds, cmd)
+
 	return m, tea.Batch(cmds...)
 }
 
 func (m Model) View() string {
+	return m.dialogHelp.View()
 	switch m.state {
 	case m.viewSpaces.ViewId:
 		return m.viewSpaces.View()
@@ -182,5 +196,6 @@ func (m Model) Init() tea.Cmd {
 		m.viewTasks.Init(),
 		m.viewLists.Init(),
 		m.viewFolders.Init(),
+		m.dialogHelp.Init(),
 	)
 }
