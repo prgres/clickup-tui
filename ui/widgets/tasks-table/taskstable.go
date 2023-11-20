@@ -156,7 +156,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 		m.SelectedTab = tab
 		tasks := m.tasks[tab.Id]
-		cmds = append(cmds, TasksListReloadedCmd(tasks))
 
 		// case TasksListReloadedMsg:
 		// m.log.Infof("TaskTable receive TasksListReloadedMsg: %d", len(msg))
