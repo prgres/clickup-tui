@@ -72,6 +72,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.log.Info("Received: tea.WindowSizeMsg",
 			"width", msg.Width,
 			"height", msg.Height)
+		m.list.SetSize(msg.Width, msg.Height)
 
 	case common.SpaceChangeMsg:
 		m.log.Infof("Received: SpaceChangeMsg: %s", string(msg))
