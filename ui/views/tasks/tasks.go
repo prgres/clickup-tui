@@ -161,9 +161,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case taskstable.TaskSelectedMsg:
 		id := string(msg)
 		m.log.Infof("Received: taskstable.TaskSelectedMsg: %s", id)
-		m.state = TasksStateTaskSidebar
-		m.widgetTasksTable.Focused = false
-		m.widgetTaskSidebar.Focused = true
+		if m.state == TasksStateTasksTable {
+			m.state = TasksStateTaskSidebar
+			m.widgetTasksTable.Focused = false
+			m.widgetTaskSidebar.Focused = true
+		}
 		cmds = append(cmds, taskssidebar.TaskSelectedCmd(id))
 	}
 
