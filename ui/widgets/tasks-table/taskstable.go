@@ -123,6 +123,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case "enter":
 			index := m.table.Cursor()
+			if len(m.table.Rows()) == 0 {
+				m.log.Info("Table is empty")
+				break
+			}
 			taskId := m.getSelectedViewTaskIdByIndex(index)
 			m.log.Infof("Receive enter: %d", index)
 			cmds = append(cmds, TaskSelectedCmd(taskId))
