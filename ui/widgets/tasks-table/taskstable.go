@@ -11,7 +11,7 @@ import (
 	"github.com/prgrs/clickup/ui/widgets/tasks-tabs"
 )
 
-const WidgetId = "tasksTable"
+const WidgetId = "widgetTasksTable"
 
 type Model struct {
 	WidgetId          common.WidgetId
@@ -169,7 +169,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, TaskSelectedCmd(taskId))
 		}
 
-		cmds = append(cmds, cmd, TasksListReadyCmd())
+		cmds = append(cmds, TasksListReadyCmd())
 
 	case tea.WindowSizeMsg:
 		m.log.Info("Received: tea.WindowSizeMsg",
@@ -178,8 +178,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.size.Width = int(0.4 * float32(m.ctx.WindowSize.Width))
 		m.size.Height = int(0.7 * float32(m.ctx.WindowSize.Height))
 
-		cmd := m.refreshTable()
-		cmds = append(cmds, cmd)
+		cmds = append(cmds, m.refreshTable())
 
 	case taskstabs.FetchTasksForTabsMsg:
 		m.log.Infof("Received: viewtabs.FetchTasksForTabsMsg")
