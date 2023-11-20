@@ -110,36 +110,39 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			case TasksStateTasksTable:
 				m.widgetTasksTable, cmd = m.widgetTasksTable.Update(msg)
 				cmds = append(cmds, cmd)
-				return m, tea.Batch(cmds...)
 
 			case TasksStateTaskSidebar:
 				m.widgetTaskSidebar, cmd = m.widgetTaskSidebar.Update(msg)
 				cmds = append(cmds, cmd)
-				return m, tea.Batch(cmds...)
 
 			case TasksStateViewsTabs:
 				m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
 				cmds = append(cmds, cmd)
-				return m, tea.Batch(cmds...)
 
 			default:
 				m.log.Infof("Received: unhandled keypress: %s", keypress)
-				return m, nil
 			}
+
+			return m, tea.Batch(cmds...)
 		}
 
 	case tea.WindowSizeMsg:
-		m.log.Info("Received: tea.WindowSizeMsg")
+		m.log.Info("Received: tea.WindowSizeMsg",
+			"width", msg.Width,
+			"height", msg.Height)
 
 	case taskstabs.TabChangedMsg:
 		tab := taskstabs.Tab(msg)
 		m.log.Info("Received: TabChangedMsg", "name", tab.Name, "id", tab.Id)
 		m.showSpinner = true
 
-		cmds = append(cmds, taskstable.TabChangedCmd(tab))
-
 		m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
-		cmds = append(cmds, cmd)
+
+		cmds = append(cmds,
+			cmd,
+			taskstable.TabChangedCmd(tab),
+			m.spinner.Tick,
+		)
 
 	case taskstable.TasksListReadyMsg:
 		m.log.Info("Received: TasksListReady")
@@ -158,9 +161,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case taskstable.TaskSelectedMsg:
 		id := string(msg)
 		m.log.Infof("Received: taskstable.TaskSelectedMsg: %s", id)
-		m.state = TasksStateTaskSidebar
-		m.widgetTasksTable.Focused = false
-		m.widgetTaskSidebar.Focused = true
+		if m.state == TasksStateTasksTable {
+			m.state = TasksStateTaskSidebar
+			m.widgetTasksTable.Focused = false
+			m.widgetTaskSidebar.Focused = true
+		}
 		cmds = append(cmds, taskssidebar.TaskSelectedCmd(id))
 	}
 
