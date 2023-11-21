@@ -64,7 +64,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		table.WithHeight(size.Height),
 		table.WithWidth(size.Width),
 		table.WithStyles(tablesStyles),
-		table.WithCellsWrap(true),
+		// table.WithCellsWrap(true), // TODO: waits for https://github.com/charmbracelet/bubbles/pull/433
 	)
 
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
@@ -104,7 +104,7 @@ func (m *Model) refreshTable() tea.Cmd {
 	m.SelectedTaskIndex = m.table.Cursor()
 
 	m.table.SetWidth(m.size.Width)
-	m.table.SetHeight(m.size.Height)
+	m.table.SetHeight(m.size.Height - 2) // TODO: waits for WithCellsWrap method to be merged
 
 	m.log.Info("Table synchonized")
 
