@@ -108,5 +108,8 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.log.Infof("Initializing...")
-	return m.getSpacesCmd(m.ctx.Config.DefaultWorkspace)
+	if m.ctx.Config.DefaultWorkspace != "" {
+		return m.getSpacesCmd(m.ctx.Config.DefaultWorkspace)
+	}
+	return nil
 }
