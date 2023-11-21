@@ -1,9 +1,10 @@
 package taskstable
 
 import (
-	"github.com/charmbracelet/bubbles/table"
+	// "github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
@@ -16,9 +17,11 @@ const WidgetId = "widgetTasksTable"
 type Model struct {
 	WidgetId          common.WidgetId
 	ctx               *context.UserContext
-	table             table.Model
-	columns           []table.Column
-	requiredCols      []table.Column
+	table             *table.Table
+	tableData         table.Data
+	tableHeigh        int
+	columns           []string
+	requiredCols      []string
 	tasks             map[string][]clickup.Task
 	SelectedTab       taskstabs.Tab
 	SelectedTaskIndex int
@@ -35,16 +38,10 @@ type size struct {
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
-	columns := []table.Column{}
-	requiredCols := []table.Column{
-		{
-			Title: "name",
-			Width: 40,
-		},
-		{
-			Title: "status",
-			Width: 15,
-		},
+	columns := []string{}
+	requiredCols := []string{
+		"name",
+		"status",
 	}
 
 	size := size{
@@ -52,40 +49,65 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		Height: 0,
 	}
 
-	tablesStyles := table.DefaultStyles()
-	tablesStyles.Cell = tablesStyles.Cell.Copy().
-		PaddingBottom(1)
-
-	tablesStyles.Header = tablesStyles.Header.Copy().
-		PaddingBottom(1)
-
-	t := table.New(
-		table.WithFocused(true),
-		table.WithHeight(size.Height),
-		table.WithWidth(size.Width),
-		table.WithStyles(tablesStyles),
-		// table.WithCellsWrap(true), // TODO: waits for https://github.com/charmbracelet/bubbles/pull/433
-	)
-
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
 
-	return Model{
-		WidgetId:     WidgetId,
-		ctx:          ctx,
-		table:        t,
-		columns:      columns,
-		requiredCols: requiredCols,
-		tasks:        map[string][]clickup.Task{},
-		autoColumns:  false,
-		size:         size,
-		Focused:      true,
-		Hidden:       false,
-		log:          log,
+	m := Model{
+		WidgetId:          WidgetId,
+		ctx:               ctx,
+		table:             table.New(),
+		columns:           columns,
+		requiredCols:      requiredCols,
+		tasks:             map[string][]clickup.Task{},
+		SelectedTaskIndex: 1,
+		autoColumns:       false,
+		size:              size,
+		Focused:           true,
+		Hidden:            false,
+		log:               log,
 
 		// SelectedView: "",
 	}
-}
 
+	// m.table = *t
+
+	return m
+}
+func (m *Model) renderTable() string {
+	var (
+		tablesStyles = lipgloss.NewStyle().
+				PaddingBottom(1)
+
+		tablesStylesCellActive = tablesStyles.Copy().
+					Bold(true).
+					Foreground(lipgloss.Color("212"))
+
+		tablesStylesCellInactive = tablesStyles.Copy()
+
+		tablesStylesHeader = tablesStyles.Copy().
+					Bold(true)
+	)
+
+	return m.table.
+		StyleFunc(func(row, col int) lipgloss.Style {
+			var style lipgloss.Style
+
+			switch row {
+			case 0:
+				return tablesStylesHeader
+			case m.SelectedTaskIndex:
+				return tablesStylesCellActive
+			default:
+				style = tablesStylesCellInactive
+			}
+
+			// Make the second column a little wider.
+			if col == 1 {
+				style = style.Copy().Width(22)
+			}
+
+			return style
+		}).String()
+}
 func (m *Model) refreshTable() tea.Cmd {
 	m.log.Info("Synchonizing table...")
 	tasks := m.getSelectedViewTasks()
@@ -98,13 +120,19 @@ func (m *Model) refreshTable() tea.Cmd {
 	}
 
 	items := taskListToRows(tasks, m.columns)
+	m.tableData = table.NewStringData(items...)
 
-	m.table.SetRows(items)
-	m.table.SetColumns(m.columns)
-	m.SelectedTaskIndex = m.table.Cursor()
+	for i := 0; i < m.size.Height-7-m.tableData.Rows()-1*m.tableData.Rows(); i++ {
+		items = append(items, []string{})
+	}
 
-	m.table.SetWidth(m.size.Width)
-	m.table.SetHeight(m.size.Height - 2) // TODO: waits for WithCellsWrap method to be merged
+	m.table = m.table.Data(table.NewStringData(items...))
+	m.table = m.table.Headers(m.columns...)
+
+	m.SelectedTaskIndex = 1 // 0 is header
+
+	m.table.Width(m.size.Width)
+	m.table.Height(m.size.Height)
 
 	m.log.Info("Table synchonized")
 
@@ -124,14 +152,24 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
+		case "j", "down":
+			if m.SelectedTaskIndex+1 <= m.tableData.Rows() {
+				m.SelectedTaskIndex++
+			}
+
+		case "k", "up":
+			if m.SelectedTaskIndex-1 > 0 {
+				m.SelectedTaskIndex--
+			}
+
 		case "enter":
-			index := m.table.Cursor()
-			if len(m.table.Rows()) == 0 {
+			index := m.SelectedTaskIndex
+			if m.tableData == nil || m.tableData.Rows() == 0 {
 				m.log.Info("Table is empty")
 				break
 			}
-			taskId := m.getSelectedViewTaskIdByIndex(index)
 			m.log.Infof("Receive enter: %d", index)
+			taskId := m.getSelectedViewTaskIdByIndex(index)
 			cmds = append(cmds, TaskSelectedCmd(taskId))
 		}
 
@@ -139,7 +177,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		tab := taskstabs.Tab(msg)
 		m.log.Infof("Received TabChangedMsg: %s", tab.Name)
 
-		columns := []table.Column{}
+		columns := []string{}
 		columns = append(columns, m.requiredCols...)
 
 		// if m.autoColumns {
@@ -154,15 +192,13 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		// 		})
 		// 	}
 		// }
+
 		m.log.Infof("Columns: %d", len(columns))
 		m.columns = columns
 
 		m.SelectedTab = tab
 		tasks := m.tasks[tab.Id]
 
-		// case TasksListReloadedMsg:
-		// m.log.Infof("TaskTable receive TasksListReloadedMsg: %d", len(msg))
-		// tasks := msg
 		m.loadTasks(tasks)
 		cmd = m.refreshTable()
 		cmds = append(cmds, cmd)
@@ -203,9 +239,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	}
 
-	m.table, cmd = m.table.Update(msg)
-	cmds = append(cmds, cmd)
-
 	return m, tea.Batch(cmds...)
 }
 
@@ -223,7 +256,8 @@ func (m Model) View() string {
 		BorderTop(true).
 		BorderLeft(true).
 		Render(
-			m.table.View(),
+			m.renderTable(),
+			// m.table.String(),
 		)
 }
 

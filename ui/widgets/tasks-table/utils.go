@@ -1,12 +1,12 @@
 package taskstable
 
 import (
-	"github.com/charmbracelet/bubbles/table"
+	"github.com/mattn/go-runewidth"
 	"github.com/prgrs/clickup/pkg/clickup"
 )
 
-func taskListToRows(tasks []clickup.Task, columns []table.Column) []table.Row {
-	rows := make([]table.Row, len(tasks))
+func taskListToRows(tasks []clickup.Task, columns []string) [][]string {
+	rows := make([][]string, len(tasks))
 	for i, task := range tasks {
 		rows[i] = taskToRow(task, columns)
 	}
@@ -14,21 +14,24 @@ func taskListToRows(tasks []clickup.Task, columns []table.Column) []table.Row {
 }
 
 func (m Model) getSelectedViewTaskIdByIndex(index int) string {
-	return m.getSelectedViewTasks()[index].Id
+	return m.getSelectedViewTasks()[index-1].Id
 }
 
 func (m Model) getSelectedViewTasks() []clickup.Task {
+	m.log.Infof("getSelectedViewTasks: %v", m.SelectedTab.Id)
 	return m.tasks[m.SelectedTab.Id]
 }
 
-func taskToRow(task clickup.Task, columns []table.Column) table.Row {
-	values := table.Row{}
+func taskToRow(task clickup.Task, columns []string) []string {
+	values := []string{}
 	for _, column := range columns {
-		switch column.Title {
+		switch column {
 		case "status":
 			values = append(values, task.Status.Status)
 		case "name":
-			values = append(values, task.Name)
+			n := runewidth.Wrap(task.Name, 30)
+			values = append(values, n)
+			// values = append(values, task.Name)
 		case "assignee":
 			values = append(values, task.GetAssignees())
 		case "list":
