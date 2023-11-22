@@ -3,13 +3,14 @@ package workspaces
 import (
 	"fmt"
 
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
-	"github.com/prgrs/clickup/ui/widgets/workspaces-list"
+	workspaceslist "github.com/prgrs/clickup/ui/widgets/workspaces-list"
 )
 
 const ViewId = "viewWorkspaces"
@@ -25,6 +26,10 @@ type Model struct {
 
 func (m Model) Ready() bool {
 	return !m.showSpinner
+}
+
+func (m Model) KeyMap() help.KeyMap {
+	return m.widgetWorkspacesList.KeyMap()
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {

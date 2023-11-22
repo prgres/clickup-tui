@@ -1,7 +1,10 @@
 package ui
 
 import (
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/ui/common"
 	listitem "github.com/prgrs/clickup/ui/components/list-item"
@@ -11,6 +14,7 @@ import (
 	"github.com/prgrs/clickup/ui/views/spaces"
 	"github.com/prgrs/clickup/ui/views/tasks"
 	"github.com/prgrs/clickup/ui/views/workspaces"
+	"github.com/prgrs/clickup/ui/widgets/help"
 )
 
 type Model struct {
@@ -20,9 +24,11 @@ type Model struct {
 
 	viewWorkspaces workspaces.Model
 	viewSpaces     spaces.Model
-	viewTasks      tasks.Model
-	viewLists      lists.Model
 	viewFolders    folders.Model
+	viewLists      lists.Model
+	viewTasks      tasks.Model
+
+	dialogHelp help.Model
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
@@ -43,6 +49,8 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		viewTasks:      tasks.InitialModel(ctx, log),
 		viewLists:      lists.InitialModel(ctx, log),
 		viewFolders:    folders.InitialModel(ctx, log),
+
+		dialogHelp: help.InitialModel(ctx, log),
 	}
 }
 
@@ -85,27 +93,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch m.state {
 			case m.viewSpaces.ViewId:
 				m.viewSpaces, cmd = m.viewSpaces.Update(msg)
-				return m, cmd
-
 			case m.viewFolders.ViewId:
 				m.viewFolders, cmd = m.viewFolders.Update(msg)
-				return m, cmd
-
 			case m.viewLists.ViewId:
 				m.viewLists, cmd = m.viewLists.Update(msg)
-				return m, cmd
-
 			case m.viewTasks.ViewId:
 				m.viewTasks, cmd = m.viewTasks.Update(msg)
-				return m, cmd
-
 			case m.viewWorkspaces.ViewId:
 				m.viewWorkspaces, cmd = m.viewWorkspaces.Update(msg)
-				return m, cmd
-
-			default:
-				return m, nil
 			}
+
+			cmds = append(cmds, cmd)
+
+			m.dialogHelp, cmd = m.dialogHelp.Update(msg)
+			cmds = append(cmds, cmd)
+
+			return m, tea.Batch(cmds...)
 		}
 
 	case tea.WindowSizeMsg:
@@ -113,7 +116,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			"width", msg.Width,
 			"height", msg.Height)
 		m.ctx.WindowSize.Width = msg.Width
-		m.ctx.WindowSize.Height = msg.Height
+		m.ctx.WindowSize.Height = msg.Height - 2
 
 	case common.WorkspaceChangeMsg:
 		workspace := string(msg)
@@ -135,6 +138,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case common.BackToPreviousViewMsg:
 		m.log.Info("Received: BackToPreviousViewMsg")
 		switch m.state {
+		case m.viewSpaces.ViewId:
+			m.state = m.viewWorkspaces.ViewId
 		case m.viewFolders.ViewId:
 			m.state = m.viewSpaces.ViewId
 		case m.viewLists.ViewId:
@@ -142,6 +147,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case m.viewTasks.ViewId:
 			m.state = m.viewLists.ViewId
 		}
+		m.dialogHelp.ShowHelp = false
 	}
 
 	m.viewWorkspaces, cmd = m.viewWorkspaces.Update(msg)
@@ -159,24 +165,51 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.viewTasks, cmd = m.viewTasks.Update(msg)
 	cmds = append(cmds, cmd)
 
+	m.dialogHelp, cmd = m.dialogHelp.Update(msg)
+	cmds = append(cmds, cmd)
+
 	return m, tea.Batch(cmds...)
 }
 
 func (m Model) View() string {
+	var viewToRender common.View
+
 	switch m.state {
-	case m.viewSpaces.ViewId:
-		return m.viewSpaces.View()
-	case m.viewFolders.ViewId:
-		return m.viewFolders.View()
-	case m.viewLists.ViewId:
-		return m.viewLists.View()
-	case m.viewTasks.ViewId:
-		return m.viewTasks.View()
 	case m.viewWorkspaces.ViewId:
-		return m.viewWorkspaces.View()
-	default:
-		return m.viewSpaces.View()
+		viewToRender = m.viewWorkspaces
+	case m.viewSpaces.ViewId:
+		viewToRender = m.viewSpaces
+	case m.viewFolders.ViewId:
+		viewToRender = m.viewFolders
+	case m.viewLists.ViewId:
+		viewToRender = m.viewLists
+	case m.viewTasks.ViewId:
+		viewToRender = m.viewTasks
 	}
+
+	view := viewToRender.View()
+	footer := m.dialogHelp.View(viewToRender.KeyMap())
+	footerHeight := lipgloss.Height(footer)
+
+	physicalHeight := m.ctx.WindowSize.Height
+	dividerHeight := physicalHeight - lipgloss.Height(view) - footerHeight
+
+	if dividerHeight < 0 {
+		dividerHeight = 0
+		newViewHeigh := physicalHeight - footerHeight
+		view = lipgloss.NewStyle().
+			Height(newViewHeigh).
+			MaxHeight(newViewHeigh).
+			Render(view)
+	}
+	divider := strings.Repeat("\n", dividerHeight)
+
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		view,
+		divider,
+		footer,
+	)
 }
 
 func (m Model) Init() tea.Cmd {
@@ -187,5 +220,6 @@ func (m Model) Init() tea.Cmd {
 		m.viewTasks.Init(),
 		m.viewLists.Init(),
 		m.viewFolders.Init(),
+		m.dialogHelp.Init(),
 	)
 }

@@ -2,15 +2,17 @@ package tasks
 
 import (
 	"fmt"
+
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
-	"github.com/prgrs/clickup/ui/widgets/tasks-sidebar"
-	"github.com/prgrs/clickup/ui/widgets/tasks-table"
-	"github.com/prgrs/clickup/ui/widgets/tasks-tabs"
+	taskssidebar "github.com/prgrs/clickup/ui/widgets/tasks-sidebar"
+	taskstable "github.com/prgrs/clickup/ui/widgets/tasks-table"
+	taskstabs "github.com/prgrs/clickup/ui/widgets/tasks-tabs"
 )
 
 const ViewId = "viewTasks"
@@ -38,6 +40,20 @@ type Model struct {
 
 func (m Model) Ready() bool {
 	return !m.showSpinner
+}
+
+func (m Model) KeyMap() help.KeyMap {
+	var km help.KeyMap
+	var ()
+	switch m.state {
+	case TasksStateTasksTable:
+		km = m.widgetTasksTable.KeyMap()
+	case TasksStateTaskSidebar:
+		km = m.widgetTaskSidebar.KeyMap()
+	case TasksStateViewsTabs:
+		km = m.widgetViewsTabs.KeyMap()
+	}
+	return km
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
