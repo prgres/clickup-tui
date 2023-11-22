@@ -108,12 +108,10 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 
 	t := table.New(columns).
-		WithMinimumHeight(size.Height).
 		WithTargetWidth(size.Width).
 		SelectableRows(true).
 		WithSelectedText(" ", "✓").
 		Focused(true).
-		// WithMissingDataIndicator("No data").
 		WithBaseStyle(
 			lipgloss.NewStyle().
 				Align(lipgloss.Left),
@@ -162,6 +160,7 @@ func (m *Model) refreshTable() tea.Cmd {
 		WithColumns(m.columns).
 		SelectableRows(true).
 		WithTargetWidth(m.size.Width).
+		WithPageSize(m.size.Height).
 		WithMinimumHeight(m.size.Height)
 
 	m.log.Info("Table synchonized")
