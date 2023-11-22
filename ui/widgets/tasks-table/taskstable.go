@@ -1,6 +1,8 @@
 package taskstable
 
 import (
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
@@ -8,7 +10,7 @@ import (
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
-	"github.com/prgrs/clickup/ui/widgets/tasks-tabs"
+	taskstabs "github.com/prgrs/clickup/ui/widgets/tasks-tabs"
 )
 
 const WidgetId = "widgetTasksTable"
@@ -39,6 +41,55 @@ type size struct {
 	Height int
 }
 
+func (m Model) KeyMap() help.KeyMap {
+	km := m.table.KeyMap()
+
+	switchFocusToListView := key.NewBinding(
+		key.WithKeys("escape"),
+		key.WithHelp("escape", "switch to list view"),
+	)
+
+	return common.NewKeyMap(
+		func() [][]key.Binding {
+			return [][]key.Binding{
+				{
+					common.KeyBindingWithHelp(km.RowDown, "down"),
+					common.KeyBindingWithHelp(km.RowUp, "up"),
+					common.KeyBindingWithHelp(km.RowSelectToggle, "select"),
+				},
+				{
+					common.KeyBindingWithHelp(km.PageDown, "next page"),
+					common.KeyBindingWithHelp(km.PageUp, "previous page"),
+					common.KeyBindingWithHelp(km.PageFirst, "first page"),
+					common.KeyBindingWithHelp(km.PageLast, "last page"),
+				},
+				{
+					common.KeyBindingWithHelp(km.Filter, "filter"),
+					common.KeyBindingWithHelp(km.FilterBlur, "filter blur"),
+					common.KeyBindingWithHelp(km.FilterClear, "filter clear"),
+				},
+				{
+					common.KeyBindingWithHelp(km.ScrollRight, "scroll right"),
+					common.KeyBindingWithHelp(km.ScrollLeft, "scroll left"),
+					switchFocusToListView,
+				},
+			}
+		},
+		func() []key.Binding {
+			return []key.Binding{
+				common.KeyBindingWithHelp(km.RowDown, "down"),
+				common.KeyBindingWithHelp(km.RowUp, "up"),
+				common.KeyBindingWithHelp(km.RowSelectToggle, "select"),
+				common.KeyBindingWithHelp(km.PageDown, "next page"),
+				common.KeyBindingWithHelp(km.PageUp, "previous page"),
+				common.KeyBindingWithHelp(km.PageFirst, "first page"),
+				common.KeyBindingWithHelp(km.PageLast, "last page"),
+				switchFocusToListView,
+			}
+		},
+	)
+}
+
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	columns := []table.Column{}
 
@@ -62,7 +113,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		SelectableRows(true).
 		WithSelectedText(" ", "✓").
 		Focused(true).
-		WithMissingDataIndicator("No data").
+		// WithMissingDataIndicator("No data").
 		WithBaseStyle(
 			lipgloss.NewStyle().
 				Align(lipgloss.Left),

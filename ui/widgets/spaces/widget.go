@@ -1,6 +1,7 @@
 package spaces
 
 import (
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
@@ -22,11 +23,19 @@ type Model struct {
 	log               *log.Logger
 }
 
+func (m Model) KeyMap() help.KeyMap {
+	return common.NewKeyMap(
+		m.list.FullHelp,
+		m.list.ShortHelp,
+	).With(common.KeyBindingBack)
+}
+
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	l := list.New([]list.Item{},
 		list.NewDefaultDelegate(),
 		0, 0)
 	l.KeyMap.Quit.Unbind()
+	l.SetShowHelp(false)
 
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
 
@@ -44,7 +53,7 @@ func (m *Model) syncList(spaces []clickup.Space) {
 	m.log.Info("Synchronizing list...")
 	m.spaces = spaces
 
-	sre_index := 0
+	sre_index := 0 //TODO: rename
 	items := spaceListToItems(spaces)
 	itemsList := listitem.ItemListToBubblesItems(items)
 
