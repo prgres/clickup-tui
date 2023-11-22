@@ -1,10 +1,10 @@
 package taskstable
 
 import (
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/evertras/bubble-table/table"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
@@ -15,18 +15,23 @@ const WidgetId = "widgetTasksTable"
 
 type Model struct {
 	WidgetId          common.WidgetId
-	ctx               *context.UserContext
-	table             table.Model
-	columns           []table.Column
-	requiredCols      []table.Column
-	tasks             map[string][]clickup.Task
+	Hidden            bool
 	SelectedTab       taskstabs.Tab
 	SelectedTaskIndex int
 	Focused           bool
-	autoColumns       bool
-	size              size
-	Hidden            bool
-	log               *log.Logger
+
+	ctx          *context.UserContext
+	table        table.Model
+	columns      []table.Column
+	requiredCols []table.Column
+	tasks        map[string][]clickup.Task
+	autoColumns  bool
+	size         size
+	log          *log.Logger
+
+	// TODO: ugly hack since table.Column does not expose any Getters. Waits for https://github.com/Evertras/bubble-table/issues/157
+	columnsKeys      []string
+	requiredColsKeys []string
 }
 
 type size struct {
@@ -36,53 +41,53 @@ type size struct {
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	columns := []table.Column{}
+
 	requiredCols := []table.Column{
-		{
-			Title: "name",
-			Width: 40,
-		},
-		{
-			Title: "status",
-			Width: 15,
-		},
+		table.NewFlexColumn("name", "Name", 70),
+		table.NewFlexColumn("status", "Status", 5).
+			WithStyle(
+				lipgloss.NewStyle().Align(lipgloss.Center),
+			),
 	}
+	requiredColsKeys := []string{"name", "status"}
 
 	size := size{
 		Width:  0,
 		Height: 0,
 	}
 
-	tablesStyles := table.DefaultStyles()
-	tablesStyles.Cell = tablesStyles.Cell.Copy().
-		PaddingBottom(1)
-
-	tablesStyles.Header = tablesStyles.Header.Copy().
-		PaddingBottom(1)
-
-	t := table.New(
-		table.WithFocused(true),
-		table.WithHeight(size.Height),
-		table.WithWidth(size.Width),
-		table.WithStyles(tablesStyles),
-		// table.WithCellsWrap(true), // TODO: waits for https://github.com/charmbracelet/bubbles/pull/433
-	)
+	t := table.New(columns).
+		WithMinimumHeight(size.Height).
+		WithTargetWidth(size.Width).
+		SelectableRows(true).
+		WithSelectedText(" ", "✓").
+		Focused(true).
+		WithMissingDataIndicator("No data").
+		WithBaseStyle(
+			lipgloss.NewStyle().
+				Align(lipgloss.Left),
+		).
+		HighlightStyle(
+			lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("212")))
 
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
 
 	return Model{
-		WidgetId:     WidgetId,
-		ctx:          ctx,
-		table:        t,
-		columns:      columns,
-		requiredCols: requiredCols,
-		tasks:        map[string][]clickup.Task{},
-		autoColumns:  false,
-		size:         size,
-		Focused:      true,
-		Hidden:       false,
-		log:          log,
-
-		// SelectedView: "",
+		WidgetId:         WidgetId,
+		ctx:              ctx,
+		table:            t,
+		columns:          columns,
+		columnsKeys:      []string{},
+		requiredCols:     requiredCols,
+		requiredColsKeys: requiredColsKeys,
+		tasks:            map[string][]clickup.Task{},
+		autoColumns:      false,
+		size:             size,
+		Focused:          true,
+		Hidden:           false,
+		log:              log,
 	}
 }
 
@@ -97,14 +102,16 @@ func (m *Model) refreshTable() tea.Cmd {
 		return HideTableCmd()
 	}
 
-	items := taskListToRows(tasks, m.columns)
+	items := taskListToRows(tasks, m.columnsKeys)
 
-	m.table.SetRows(items)
-	m.table.SetColumns(m.columns)
-	m.SelectedTaskIndex = m.table.Cursor()
+	m.SelectedTaskIndex = m.table.GetHighlightedRowIndex()
 
-	m.table.SetWidth(m.size.Width)
-	m.table.SetHeight(m.size.Height - 2) // TODO: waits for WithCellsWrap method to be merged
+	m.table = m.table.
+		WithRows(items).
+		WithColumns(m.columns).
+		SelectableRows(true).
+		WithTargetWidth(m.size.Width).
+		WithMinimumHeight(m.size.Height)
 
 	m.log.Info("Table synchonized")
 
@@ -125,8 +132,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
-			index := m.table.Cursor()
-			if len(m.table.Rows()) == 0 {
+			index := m.table.GetHighlightedRowIndex()
+			if m.table.TotalRows() == 0 {
 				m.log.Info("Table is empty")
 				break
 			}
@@ -142,6 +149,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		columns := []table.Column{}
 		columns = append(columns, m.requiredCols...)
 
+		columnsKeys := []string{}
+		columnsKeys = append(columnsKeys, m.requiredColsKeys...)
+
 		// if m.autoColumns {
 		//      tab := viewtabs.Tab(msg)
 		// 	for _, field := range view.Columns.Fields {
@@ -154,15 +164,14 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		// 		})
 		// 	}
 		// }
+
 		m.log.Infof("Columns: %d", len(columns))
 		m.columns = columns
+		m.columnsKeys = columnsKeys
 
 		m.SelectedTab = tab
 		tasks := m.tasks[tab.Id]
 
-		// case TasksListReloadedMsg:
-		// m.log.Infof("TaskTable receive TasksListReloadedMsg: %d", len(msg))
-		// tasks := msg
 		m.loadTasks(tasks)
 		cmd = m.refreshTable()
 		cmds = append(cmds, cmd)
