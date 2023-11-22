@@ -1,11 +1,11 @@
 package taskstable
 
 import (
-	"github.com/charmbracelet/bubbles/table"
+	"github.com/evertras/bubble-table/table"
 	"github.com/prgrs/clickup/pkg/clickup"
 )
 
-func taskListToRows(tasks []clickup.Task, columns []table.Column) []table.Row {
+func taskListToRows(tasks []clickup.Task, columns []string) []table.Row {
 	rows := make([]table.Row, len(tasks))
 	for i, task := range tasks {
 		rows[i] = taskToRow(task, columns)
@@ -21,32 +21,32 @@ func (m Model) getSelectedViewTasks() []clickup.Task {
 	return m.tasks[m.SelectedTab.Id]
 }
 
-func taskToRow(task clickup.Task, columns []table.Column) table.Row {
-	values := table.Row{}
+func taskToRow(task clickup.Task, columns []string) table.Row {
+	values := map[string]interface{}{}
 	for _, column := range columns {
-		switch column.Title {
+		switch column {
 		case "status":
-			values = append(values, task.Status.Status)
+			values[column] = task.Status.Status
 		case "name":
-			values = append(values, task.Name)
-		case "assignee":
-			values = append(values, task.GetAssignees())
-		case "list":
-			values = append(values, task.List.String())
-		case "tags":
-			values = append(values, task.GetTags())
-		case "folder":
-			values = append(values, task.Folder.String())
-		case "url":
-			values = append(values, task.Url)
-		case "space":
-			values = append(values, task.Space.Id)
-		case "id":
-			values = append(values, task.Id)
-		default:
-			values = append(values, "XXX")
+			values[column] = task.Name
+			// After migration from charm to evertras/bubble-table I temporary removed all columns
+			// except "status" and "name" since they are not supported yet. See autoColumns feature
+			// case "assignee":
+			// 	values = append(values, task.GetAssignees())
+			// case "list":
+			// 	values = append(values, task.List.String())
+			// case "tags":
+			// 	values = append(values, task.GetTags())
+			// case "folder":
+			// 	values = append(values, task.Folder.String())
+			// case "url":
+			// 	values = append(values, task.Url)
+			// case "space":
+			// 	values = append(values, task.Space.Id)
+			// case "id":
+			// 	values = append(values, task.Id)
 		}
 	}
 
-	return values
+	return table.NewRow(table.RowData(values))
 }

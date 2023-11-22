@@ -8,8 +8,7 @@ import (
 )
 
 type UserContext struct {
-	Style theme.Style
-	// Logger     *log.Logger
+	Style      theme.Style
 	WindowSize WindowSize
 	Api        *api.Api
 	Config     *config.Config

@@ -31,6 +31,11 @@ type Model struct {
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix("UI")
 
+	var state common.ViewId = workspaces.ViewId
+	if ctx.Config.DefaultWorkspace != "" {
+		state = spaces.ViewId
+	}
+
 	return Model{
 		ctx:   ctx,
 		state: help.WidgetId,

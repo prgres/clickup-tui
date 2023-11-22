@@ -56,7 +56,7 @@ func (m *Api) GetSpaces(team string) ([]clickup.Space, error) {
 	m.logger.Infof("Found %d spaces for team: %s", len(spaces), team)
 
 	m.logger.Infof("Caching spaces")
-	m.Cache.Set("spaces", "spaces", spaces)
+	m.Cache.Set("spaces", team, spaces)
 
 	return spaces, nil
 }
