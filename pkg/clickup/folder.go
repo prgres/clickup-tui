@@ -34,4 +34,3 @@ func (c *Client) GetFolders(spaceId string) ([]Folder, error) {
 	}
 	return objmap.Folders, nil
 }
-

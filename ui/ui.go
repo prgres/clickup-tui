@@ -109,6 +109,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 
 			return m, tea.Batch(cmds...)
+
 		}
 
 	case tea.WindowSizeMsg:
