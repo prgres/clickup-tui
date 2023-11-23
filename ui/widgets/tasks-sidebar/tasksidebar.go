@@ -20,11 +20,13 @@ import (
 const WidgetId = "widgetTaskSidebar"
 
 type Model struct {
-	ctx      *context.UserContext
-	viewport viewport.Model
-	Focused  bool
-	Hidden   bool
-	log      *log.Logger
+	ctx          *context.UserContext
+	viewport     viewport.Model
+	Focused      bool
+	Hidden       bool
+	Ready        bool
+	SelectedTask clickup.Task
+	log          *log.Logger
 }
 
 func (m Model) KeyMap() help.KeyMap {
@@ -52,6 +54,7 @@ func (m Model) KeyMap() help.KeyMap {
 				},
 				{
 					switchFocusToTasks,
+					common.KeyBindingOpenInBrowser,
 				},
 			}
 		},
@@ -59,11 +62,10 @@ func (m Model) KeyMap() help.KeyMap {
 			return []key.Binding{
 				km.Down,
 				km.Up,
-				switchFocusToTasks,
 				km.PageDown,
 				km.PageUp,
-				km.HalfPageUp,
-				km.HalfPageDown,
+				switchFocusToTasks,
+				common.KeyBindingOpenInBrowser,
 			}
 		},
 	)
@@ -77,11 +79,13 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
 
 	return Model{
-		ctx:      ctx,
-		viewport: v,
-		Focused:  false,
-		Hidden:   false,
-		log:      log,
+		ctx:          ctx,
+		viewport:     v,
+		Focused:      false,
+		Hidden:       false,
+		SelectedTask: clickup.Task{},
+		Ready:        false,
+		log:          log,
 	}
 }
 
@@ -93,8 +97,21 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 
+	case tea.KeyMsg:
+		switch keypress := msg.String(); keypress {
+		case "p":
+			if !m.Ready {
+				m.log.Debug("Received: p, but Not ready yet")
+				break
+			}
+			m.log.Debug("Received: p")
+			if err := common.OpenUrlInWebBrowser(m.SelectedTask.Url); err != nil {
+				panic(err)
+			}
+		}
 	case InitMsg:
 		m.log.Info("Received: InitMsg")
+		m.Ready = false
 		m.viewport.SetContent("Loading...")
 
 	case tea.WindowSizeMsg:
@@ -107,15 +124,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case TaskSelectedMsg:
 		id := string(msg)
 		m.log.Infof("Received: TaskSelectedMsg: %s", id)
+		m.Ready = false
 
 		task, err := m.ctx.Api.GetTask(id)
 		if err != nil {
 			return m, common.ErrCmd(err)
 		}
-
+		m.SelectedTask = task
 		m.viewport.SetContent(m.renderTask(task))
 
 		_ = m.viewport.GotoTop()
+		m.Ready = true
 	}
 
 	m.viewport, cmd = m.viewport.Update(msg)

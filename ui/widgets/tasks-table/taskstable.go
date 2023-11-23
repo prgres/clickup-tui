@@ -71,6 +71,7 @@ func (m Model) KeyMap() help.KeyMap {
 				{
 					common.KeyBindingWithHelp(km.ScrollRight, "scroll right"),
 					common.KeyBindingWithHelp(km.ScrollLeft, "scroll left"),
+					common.KeyBindingOpenInBrowser,
 					switchFocusToListView,
 				},
 			}
@@ -82,8 +83,7 @@ func (m Model) KeyMap() help.KeyMap {
 				common.KeyBindingWithHelp(km.RowSelectToggle, "select"),
 				common.KeyBindingWithHelp(km.PageDown, "next page"),
 				common.KeyBindingWithHelp(km.PageUp, "previous page"),
-				common.KeyBindingWithHelp(km.PageFirst, "first page"),
-				common.KeyBindingWithHelp(km.PageLast, "last page"),
+				common.KeyBindingOpenInBrowser,
 				switchFocusToListView,
 			}
 		},
@@ -199,7 +199,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			task := m.getSelectedViewTaskByIndex(index)
 			m.log.Infof("Receive p: %d", index)
 			if err := common.OpenUrlInWebBrowser(task.Url); err != nil {
-				panic(err)
+				m.log.Fatal(err)
 			}
 		}
 

@@ -32,9 +32,15 @@ func NewEmptyKeyMap() help.KeyMap {
 	)
 }
 
-var KeyBindingBack = key.NewBinding(
-	key.WithKeys("escape"),
-	key.WithHelp("escape", "back to previous view"),
+var (
+	KeyBindingBack = key.NewBinding(
+		key.WithKeys("escape"),
+		key.WithHelp("escape", "back to previous view"),
+	)
+	KeyBindingOpenInBrowser = key.NewBinding(
+		key.WithKeys("p"),
+		key.WithHelp("p", "open in browser"),
+	)
 )
 
 func NewKeyMap(fullHelp func() [][]key.Binding, shortHelp func() []key.Binding) KeyMap {
