@@ -21,7 +21,7 @@ run:
 
 .PHONY: lint
 lint:
-	@golangci-lint run .
+	@golangci-lint run
 
 .PHONY: fmt
 fmt:
