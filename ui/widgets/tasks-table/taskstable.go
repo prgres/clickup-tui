@@ -183,7 +183,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, TasksListReadyCmd())
 
 	case tea.WindowSizeMsg:
-		m.log.Info("Received: tea.WindowSizeMsg",
+		m.log.Debug("Received: tea.WindowSizeMsg",
 			"width", msg.Width,
 			"height", msg.Height)
 		m.size.Width = int(0.4 * float32(m.ctx.WindowSize.Width))
