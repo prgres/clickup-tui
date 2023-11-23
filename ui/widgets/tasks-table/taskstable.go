@@ -190,6 +190,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			taskId := m.getSelectedViewTaskIdByIndex(index)
 			m.log.Infof("Receive enter: %d", index)
 			cmds = append(cmds, TaskSelectedCmd(taskId))
+		case "p":
+			index := m.table.GetHighlightedRowIndex()
+			if m.table.TotalRows() == 0 {
+				m.log.Info("Table is empty")
+				break
+			}
+			task := m.getSelectedViewTaskByIndex(index)
+			m.log.Infof("Receive p: %d", index)
+			if err := common.OpenUrlInWebBrowser(task.Url); err != nil {
+				panic(err)
+			}
 		}
 
 	case TabChangedMsg:
