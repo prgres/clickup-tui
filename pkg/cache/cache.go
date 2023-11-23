@@ -115,12 +115,19 @@ func (c *Cache) GetNamespace(namespace string) Data {
 	return v
 }
 
+// Get returns the value of the key in the namespace
+// and a boolean indicating if the key exists in the cache
 func (c *Cache) Get(namespace string, key string) (interface{}, bool) {
 	data := c.GetNamespace(namespace)
+
+	// Check if the key exists in the cache
 	value, ok := data[key]
 	if !ok {
+		// If not, try to load it from the file
 		v, err := c.loadKey(namespace, key)
 		if err != nil {
+			c.logger.Debug("Key not found in cache",
+				"namespace", namespace, "key", key)
 			return nil, false
 		}
 		value = v
