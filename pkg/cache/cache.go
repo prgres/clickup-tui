@@ -133,10 +133,15 @@ func (c *Cache) Get(namespace string, key string) (interface{}, bool) {
 		value = v
 	}
 
+	c.logger.Debug("Key found in cache",
+		"namespace", namespace, "key", key)
+
 	return value, true
 }
 
 func (c *Cache) Set(namespace string, key string, value interface{}) {
+	c.logger.Debug("Caching",
+		"namespace", namespace, "key", key)
 	data := c.GetNamespace(namespace)
 	data[key] = value
 
