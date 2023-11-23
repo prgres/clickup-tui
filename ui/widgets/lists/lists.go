@@ -38,8 +38,8 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		ctx:            ctx,
 		SelectedFolder: "",
 		SelectedList:   listitem.Item{},
-		lists: 			[]clickup.List{},
-		log:   			log,
+		lists:          []clickup.List{},
+		log:            log,
 	}
 }
 

@@ -133,12 +133,13 @@ func filterListViews(views []View) []View {
 }
 
 func (c *Client) GetViewsFromSpace(spaceId string) ([]View, error) {
-	errMsg := "Error occurs while getting views from space: %s. Error: %s"
+	errMsg := "Error occurs while getting views from space: %s. Error: %s. Raw data: %s"
+
 	errApiMsg := errMsg + " API response: %s"
 
 	rawData, err := c.requestGet("/space/" + spaceId + "/view")
 	if err != nil {
-		return nil, fmt.Errorf(errMsg, spaceId, err)
+		return nil, fmt.Errorf(errMsg, spaceId, err, "none")
 	}
 
 	var objmap RequestGetViews
@@ -161,7 +162,8 @@ func (c *Client) GetViewsFromSpace(spaceId string) ([]View, error) {
 
 	}
 	if len(allViews) == 0 {
-		c.logger.Error("No views found in space: %s", spaceId)
+		c.logger.Error("No views found in space",
+			"space", spaceId)
 		return []View{}, nil
 	}
 
@@ -176,31 +178,32 @@ func (c *Client) GetViewsFromFolder(folderId string) ([]View, error) {
 
 	rawData, err := c.requestGet("/folder/" + folderId + "/view")
 	if err != nil {
-		return nil, fmt.Errorf(errMsg, folderId, err)
+		return nil, fmt.Errorf(errMsg,
+			folderId, err)
 	}
 
 	var objmap RequestGetViews
 	if err := json.Unmarshal(rawData, &objmap); err != nil {
-		return nil, fmt.Errorf(
-			errApiMsg, folderId, err, string(rawData))
+		return nil, fmt.Errorf(errApiMsg,
+			folderId, err, string(rawData))
 	}
 
 	if objmap.Err != "" {
-		return nil, fmt.Errorf(
-			errMsg, folderId, "API response contains error.", string(rawData))
+		return nil, fmt.Errorf(errApiMsg,
+			folderId, objmap.Err, string(rawData))
 	}
 
 	allViews := append(objmap.Views, objmap.RequiredViews.GetViews()...)
 	for _, v := range allViews {
 		if v.Id == "" || v.Name == "" {
-			return nil, fmt.Errorf(
-				"View id or name is empty, API response: %s", string(rawData))
+			return nil, fmt.Errorf(errApiMsg,
+				folderId, "View id or name is empty", string(rawData))
 		}
-
 	}
+
 	if len(allViews) == 0 {
-		c.logger.Error("No views found in folder: %s", folderId)
-		return []View{}, nil
+		return []View{}, fmt.Errorf(errMsg,
+			folderId, "No views found in folder")
 	}
 
 	filteredViews := filterListViews(allViews)
@@ -214,31 +217,34 @@ func (c *Client) GetViewsFromList(listId string) ([]View, error) {
 
 	rawData, err := c.requestGet("/list/" + listId + "/view")
 	if err != nil {
-		return nil, fmt.Errorf(errMsg, listId, err)
+		return nil, fmt.Errorf(errMsg,
+			listId, err)
 	}
 
 	var objmap RequestGetViews
 	if err := json.Unmarshal(rawData, &objmap); err != nil {
-		return nil, fmt.Errorf(
-			errApiMsg, listId, err, string(rawData))
+		return nil, fmt.Errorf(errApiMsg,
+			listId, err, string(rawData))
 	}
 
 	if objmap.Err != "" {
-		return nil, fmt.Errorf(
-			errMsg, listId, "API response contains error.", string(rawData))
+		return nil, fmt.Errorf(errApiMsg,
+			listId, objmap.Err, string(rawData))
 	}
 
 	allViews := append(objmap.Views, objmap.RequiredViews.GetViews()...)
 	for _, v := range allViews {
 		if v.Id == "" || v.Name == "" {
-			return nil, fmt.Errorf(
-				"View id or name is empty, API response: %s", string(rawData))
+			return nil, fmt.Errorf(errApiMsg,
+				listId, "View id or name is empty", string(rawData))
 		}
 
 	}
+
 	if len(allViews) == 0 {
 		return []View{}, nil
 	}
+
 	filteredViews := filterListViews(allViews)
 
 	return filteredViews, nil

@@ -30,7 +30,7 @@ func main() {
 
 	logger.Info("Initializing config...")
 	var cfg config.Config
-	fig.Load(&cfg,
+	if err := fig.Load(&cfg,
 		fig.File("config.yaml"),
 		fig.Dirs(
 			".",
@@ -38,11 +38,15 @@ func main() {
 			"/home/user/myapp",
 			"$HOME/.config/clickup-tui",
 		),
-	)
+	); err != nil {
+		logger.Fatal(err)
+	}
 
 	logger.Info("Initializing cache...")
 	cache := cache.NewCache(slog.New(logger.WithPrefix("Cache")))
-	defer cache.Dump()
+	defer func() {
+		_ = cache.Dump()
+	}()
 
 	if err := cache.Load(); err != nil {
 		logger.Fatal(err)

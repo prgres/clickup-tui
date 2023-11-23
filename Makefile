@@ -15,3 +15,18 @@ clean:
 		fi; \
 	done
 
+.PHONY: run
+run:
+	@go run ./main.go
+
+.PHONY: lint
+lint:
+	@golangci-lint run
+
+.PHONY: fmt
+fmt:
+	@go fmt ./...
+
+.PHONY: build
+build:
+	@go build -v .

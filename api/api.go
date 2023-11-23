@@ -343,6 +343,7 @@ func (m *Api) GetViewsFromSpace(spaceId string) ([]clickup.View, error) {
 	return views, nil
 }
 
+//nolint:unused
 func (m *Api) getFromCache(namespace string, key string, v interface{}) (bool, error) {
 	data, ok := m.Cache.Get(namespace, key)
 	if !ok {

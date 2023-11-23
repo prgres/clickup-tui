@@ -23,7 +23,7 @@ type SpaceStatus struct {
 
 type RequestGetSpaces struct {
 	Spaces []Space `json:"spaces"`
-	Err           string        `json:"err"`
+	Err    string  `json:"err"`
 }
 
 func (c *Client) GetSpaces(teamId string) ([]Space, error) {
@@ -42,5 +42,3 @@ func (c *Client) GetSpaces(teamId string) ([]Space, error) {
 	}
 	return objmap.Spaces, nil
 }
-
-
