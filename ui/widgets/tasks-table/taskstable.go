@@ -82,8 +82,6 @@ func (m Model) KeyMap() help.KeyMap {
 				common.KeyBindingWithHelp(km.RowSelectToggle, "select"),
 				common.KeyBindingWithHelp(km.PageDown, "next page"),
 				common.KeyBindingWithHelp(km.PageUp, "previous page"),
-				common.KeyBindingWithHelp(km.PageFirst, "first page"),
-				common.KeyBindingWithHelp(km.PageLast, "last page"),
 				switchFocusToListView,
 			}
 		},
