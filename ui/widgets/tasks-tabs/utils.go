@@ -11,10 +11,12 @@ var (
 	inactiveTabStyle = lipgloss.NewStyle().Background(lipgloss.Color("0"))
 )
 
+//nolint:unused
 func removeView(views []clickup.View, s int) []clickup.View {
 	return append(views[:s], views[s+1:]...)
 }
 
+//nolint:unused
 func viewsToIdList(views []clickup.View) []string {
 	ids := []string{}
 	for _, view := range views {
