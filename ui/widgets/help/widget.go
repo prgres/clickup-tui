@@ -89,6 +89,10 @@ func (m Model) View(keyMap help.KeyMap) string {
 
 	physicalWidth, _, _ := term.GetSize(int(os.Stdout.Fd()))
 	dividerWidth := physicalWidth - lipgloss.Width(helpView) - lipgloss.Width(status)
+
+	if dividerWidth < 0 {
+		dividerWidth = 0
+	}
 	divider := strings.Repeat(" ", dividerWidth)
 
 	return lipgloss.JoinHorizontal(
