@@ -2,6 +2,8 @@ package spaces
 
 import (
 	"fmt"
+
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -32,6 +34,10 @@ type Model struct {
 
 func (m Model) Ready() bool {
 	return !m.showSpinner
+}
+
+func (m Model) KeyMap() help.KeyMap {
+	return m.widgetSpaceList.KeyMap()
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
@@ -23,6 +25,48 @@ type Model struct {
 	Focused  bool
 	Hidden   bool
 	log      *log.Logger
+}
+
+func (m Model) KeyMap() help.KeyMap {
+	km := m.viewport.KeyMap
+
+	switchFocusToTasks := key.NewBinding(
+		key.WithKeys("escape"),
+		key.WithHelp("escape", "switch focus to tasks table"),
+	)
+
+	return common.NewKeyMap(
+		func() [][]key.Binding {
+			return [][]key.Binding{
+				{
+					km.Down,
+					km.Up,
+				},
+				{
+					km.PageDown,
+					km.PageUp,
+				},
+				{
+					km.HalfPageUp,
+					km.HalfPageDown,
+				},
+				{
+					switchFocusToTasks,
+				},
+			}
+		},
+		func() []key.Binding {
+			return []key.Binding{
+				km.Down,
+				km.Up,
+				switchFocusToTasks,
+				km.PageDown,
+				km.PageUp,
+				km.HalfPageUp,
+				km.HalfPageDown,
+			}
+		},
+	)
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {

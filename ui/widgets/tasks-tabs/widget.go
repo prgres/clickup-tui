@@ -3,6 +3,8 @@ package taskstabs
 import (
 	"strings"
 
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
@@ -27,15 +29,38 @@ type Model struct {
 	SelectedList string
 	Focused      bool
 	log          *log.Logger
+	keyMap       KeyMap
+}
+
+func (m Model) KeyMap() help.KeyMap {
+	return common.NewKeyMap(
+		func() [][]key.Binding {
+			return [][]key.Binding{
+				{
+					m.keyMap.CursorLeft,
+					m.keyMap.CursorRight,
+					m.keyMap.Select,
+				},
+			}
+		},
+		func() []key.Binding {
+			return []key.Binding{
+				m.keyMap.CursorLeft,
+				m.keyMap.CursorRight,
+				m.keyMap.Select,
+			}
+		},
+	)
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
 
 	return Model{
-		ctx:  ctx,
-		tabs: map[string][]Tab{},
-		log:  log,
+		ctx:    ctx,
+		tabs:   map[string][]Tab{},
+		log:    log,
+		keyMap: DefaultKeyMap(),
 	}
 }
 
@@ -174,4 +199,32 @@ func (m Model) View() string {
 func (m Model) Init() tea.Cmd {
 	m.log.Info("Initializing...")
 	return nil
+}
+
+type KeyMap struct {
+	CursorLeft         key.Binding
+	CursorRight        key.Binding
+	Select             key.Binding
+	SwitchFocusToTasks key.Binding
+}
+
+func DefaultKeyMap() KeyMap {
+	return KeyMap{
+		CursorLeft: key.NewBinding(
+			key.WithKeys("h", "left"),
+			key.WithHelp("h, left", "previous tab"),
+		),
+		CursorRight: key.NewBinding(
+			key.WithKeys("l", "right"),
+			key.WithHelp("l, right", "next tab"),
+		),
+		Select: key.NewBinding(
+			key.WithKeys("enter"),
+			key.WithHelp("enter", "select"),
+		),
+		SwitchFocusToTasks: key.NewBinding(
+			key.WithKeys("j", "k", "escape"),
+			key.WithHelp("j/k/escape", "switch focus to tasks table"),
+		),
+	}
 }

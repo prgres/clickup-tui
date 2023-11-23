@@ -1,6 +1,7 @@
 package lists
 
 import (
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
@@ -27,6 +28,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		list.NewDefaultDelegate(),
 		0, 0)
 	l.KeyMap.Quit.Unbind()
+	l.SetShowHelp(false)
 
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
 
@@ -36,9 +38,16 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		ctx:            ctx,
 		SelectedFolder: "",
 		SelectedList:   listitem.Item{},
-		lists: []clickup.List{},
-		log:   log,
+		lists: 			[]clickup.List{},
+		log:   			log,
 	}
+}
+
+func (m Model) KeyMap() help.KeyMap {
+	return common.NewKeyMap(
+		m.list.FullHelp,
+		m.list.ShortHelp,
+	).With(common.KeyBindingBack)
 }
 
 func (m *Model) syncList(lists []clickup.List) {
