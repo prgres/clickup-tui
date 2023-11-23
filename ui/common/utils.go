@@ -1,6 +1,9 @@
 package common
 
 import (
+	"fmt"
+	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -29,9 +32,15 @@ func NewEmptyKeyMap() help.KeyMap {
 	)
 }
 
-var KeyBindingBack = key.NewBinding(
-	key.WithKeys("escape"),
-	key.WithHelp("escape", "back to previous view"),
+var (
+	KeyBindingBack = key.NewBinding(
+		key.WithKeys("escape"),
+		key.WithHelp("escape", "back to previous view"),
+	)
+	KeyBindingOpenInBrowser = key.NewBinding(
+		key.WithKeys("p"),
+		key.WithHelp("p", "open in browser"),
+	)
 )
 
 func NewKeyMap(fullHelp func() [][]key.Binding, shortHelp func() []key.Binding) KeyMap {
@@ -76,4 +85,17 @@ func KeyBindingWithHelp(kb key.Binding, description string) key.Binding {
 			),
 			description),
 	)
+}
+
+func OpenUrlInWebBrowser(url string) error {
+	switch runtime.GOOS {
+	case "linux":
+		return exec.Command("xdg-open", url).Start()
+	case "windows":
+		return exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		return exec.Command("open", url).Start()
+	default:
+		return fmt.Errorf("unsupported platform")
+	}
 }

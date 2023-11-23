@@ -71,6 +71,7 @@ func (m Model) KeyMap() help.KeyMap {
 				{
 					common.KeyBindingWithHelp(km.ScrollRight, "scroll right"),
 					common.KeyBindingWithHelp(km.ScrollLeft, "scroll left"),
+					common.KeyBindingOpenInBrowser,
 					switchFocusToListView,
 				},
 			}
@@ -82,6 +83,7 @@ func (m Model) KeyMap() help.KeyMap {
 				common.KeyBindingWithHelp(km.RowSelectToggle, "select"),
 				common.KeyBindingWithHelp(km.PageDown, "next page"),
 				common.KeyBindingWithHelp(km.PageUp, "previous page"),
+				common.KeyBindingOpenInBrowser,
 				switchFocusToListView,
 			}
 		},
@@ -188,6 +190,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			taskId := m.getSelectedViewTaskIdByIndex(index)
 			m.log.Infof("Receive enter: %d", index)
 			cmds = append(cmds, TaskSelectedCmd(taskId))
+		case "p":
+			index := m.table.GetHighlightedRowIndex()
+			if m.table.TotalRows() == 0 {
+				m.log.Info("Table is empty")
+				break
+			}
+			task := m.getSelectedViewTaskByIndex(index)
+			m.log.Infof("Receive p: %d", index)
+			if err := common.OpenUrlInWebBrowser(task.Url); err != nil {
+				m.log.Fatal(err)
+			}
 		}
 
 	case TabChangedMsg:

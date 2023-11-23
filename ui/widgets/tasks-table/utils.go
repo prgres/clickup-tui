@@ -14,7 +14,12 @@ func taskListToRows(tasks []clickup.Task, columns []string) []table.Row {
 }
 
 func (m Model) getSelectedViewTaskIdByIndex(index int) string {
-	return m.getSelectedViewTasks()[index].Id
+	return m.getSelectedViewTaskByIndex(index).Id
+}
+
+
+func (m Model) getSelectedViewTaskByIndex(index int) clickup.Task {
+	return m.getSelectedViewTasks()[index]
 }
 
 func (m Model) getSelectedViewTasks() []clickup.Task {
