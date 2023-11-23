@@ -136,10 +136,10 @@ func (m Model) View() string {
 		s.WriteString(" ")
 		return s.String()
 	}
-	m.log.Infof("Rendering %d tabs", len(m.tabs[m.SelectedList]))
+	m.log.Debugf("Rendering %d tabs", len(m.tabs[m.SelectedList]))
 
 	for i, tab := range m.tabs[m.SelectedList] {
-		m.log.Infof("Rendering tab: %s %s", tab.Name, tab.Id)
+		m.log.Debugf("Rendering tab: %s %s", tab.Name, tab.Id)
 		t := ""
 		tabContent := " " + tab.Name + " "
 		if tab.Active {
