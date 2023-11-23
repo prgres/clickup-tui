@@ -37,9 +37,9 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		list:           l,
 		ctx:            ctx,
 		SelectedFolder: "",
-		// SelectedList:   nil,
-		lists: []clickup.List{},
-		log:   log,
+		SelectedList:   listitem.Item{},
+		lists: 			[]clickup.List{},
+		log:   			log,
 	}
 }
 
@@ -73,7 +73,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, ListsListReadyCmd())
 
 	case tea.WindowSizeMsg:
-		m.log.Info("Received: tea.WindowSizeMsg",
+		m.log.Debug("Received: tea.WindowSizeMsg",
 			"width", msg.Width,
 			"height", msg.Height)
 		m.list.SetSize(msg.Width, msg.Height)
@@ -91,7 +91,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				break
 			}
 			selectedList := listitem.BubblesItemToItem(m.list.SelectedItem())
-			// .Description()
 			m.log.Infof("Selected list %s", selectedList)
 			m.SelectedList = selectedList
 			cmds = append(cmds, common.ListChangeCmd(m.SelectedList))

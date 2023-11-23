@@ -98,7 +98,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.viewport.SetContent("Loading...")
 
 	case tea.WindowSizeMsg:
-		m.log.Info("Received: tea.WindowSizeMsg",
+		m.log.Debug("Received: tea.WindowSizeMsg",
 			"width", msg.Width,
 			"height", msg.Height)
 		m.viewport.Width = int(0.6 * float32(m.ctx.WindowSize.Width))

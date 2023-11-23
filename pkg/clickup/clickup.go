@@ -70,8 +70,11 @@ func (c *Client) requestGet(endpoint string, paramsQuery ...string) ([]byte, err
 		reqUrl.RawQuery = params
 	}
 
-	c.logger.Info("Sending GET request", "request", reqUrl.String())
-	req, _ := http.NewRequest("GET", reqUrl.String(), nil)
+	c.logger.Debug("Sending GET request", "request", reqUrl.String())
+	req, err := http.NewRequest("GET", reqUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Add("Authorization", c.token)
 
 	res, err := c.httpClient.Do(req)

@@ -45,7 +45,7 @@ func (c *Cache) getNamespacesFromCacheFiles() ([]os.DirEntry, error) {
 }
 
 func (c *Cache) loadKey(namespace string, key string) (interface{}, error) {
-	c.logger.Info("Loading key", "key", namespace+"/"+key)
+	c.logger.Debug("Loading key", "key", namespace+"/"+key)
 
 	rawData, err := c.loadFromFile(
 		fmt.Sprintf("%s/%s/%s.json",
@@ -58,7 +58,7 @@ func (c *Cache) loadKey(namespace string, key string) (interface{}, error) {
 }
 
 func (c *Cache) loadNamespace(namespace string) (Data, error) {
-	c.logger.Info("Loading namespace", "namespace", namespace)
+	c.logger.Debug("Loading namespace", "namespace", namespace)
 
 	keys, err := os.ReadDir(fmt.Sprintf("%s/%s", c.path, namespace))
 	if err != nil {
@@ -84,15 +84,14 @@ func (c *Cache) loadNamespace(namespace string) (Data, error) {
 }
 
 func (c *Cache) Load() error {
-	c.logger.Info("Loading cache from path...", "path", c.path)
-
+	c.logger.Debug("Loading cache from path...", "path", c.path)
 	namespaces, err := c.getNamespacesFromCacheFiles()
 	if err != nil {
 		return err
 	}
 
 	if len(namespaces) == 0 {
-		c.logger.Info("No namespaces found in cache")
+		c.logger.Debug("No namespaces found in cache")
 		return nil
 	}
 
@@ -116,21 +115,33 @@ func (c *Cache) GetNamespace(namespace string) Data {
 	return v
 }
 
+// Get returns the value of the key in the namespace
+// and a boolean indicating if the key exists in the cache
 func (c *Cache) Get(namespace string, key string) (interface{}, bool) {
 	data := c.GetNamespace(namespace)
+
+	// Check if the key exists in the cache
 	value, ok := data[key]
 	if !ok {
+		// If not, try to load it from the file
 		v, err := c.loadKey(namespace, key)
 		if err != nil {
+			c.logger.Debug("Key not found in cache",
+				"namespace", namespace, "key", key)
 			return nil, false
 		}
 		value = v
 	}
 
+	c.logger.Debug("Key found in cache",
+		"namespace", namespace, "key", key)
+
 	return value, true
 }
 
 func (c *Cache) Set(namespace string, key string, value interface{}) {
+	c.logger.Debug("Caching",
+		"namespace", namespace, "key", key)
 	data := c.GetNamespace(namespace)
 	data[key] = value
 
@@ -144,7 +155,7 @@ func (c *Cache) Set(namespace string, key string, value interface{}) {
 }
 
 func (c *Cache) Dump() error {
-	c.logger.Info("Dumping cache")
+	c.logger.Debug("Dumping cache")
 	for namespace, data := range c.data {
 		for key, value := range data {
 			path := fmt.Sprintf("%s/%s", c.path, namespace)
@@ -165,7 +176,7 @@ func (c *Cache) saveToFile(path string, filename string, value interface{}) erro
 	}
 
 	filepath := fmt.Sprintf("%s/%s", path, filename)
-	c.logger.Info("Saving cache to file", "file", filepath)
+	c.logger.Debug("Saving cache to file", "file", filepath)
 
 	f, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
 	if err != nil {

@@ -10,6 +10,17 @@ import (
 	"github.com/prgrs/clickup/pkg/clickup"
 )
 
+const (
+	// Cache namespace
+	CacheNamespaceTeams   = "teams"
+	CacheNamespaceSpaces  = "spaces"
+	CacheNamespaceFolders = "folders"
+	CacheNamespaceLists   = "lists"
+	CacheNamespaceViews   = "views"
+	CacheNamespaceTasks   = "tasks"
+	CacheNamespaceTask    = "task"
+)
+
 type Api struct {
 	Clickup *clickup.Client
 	Cache   *cache.Cache
@@ -18,7 +29,7 @@ type Api struct {
 
 func NewApi(logger *log.Logger, cache *cache.Cache, token string) Api {
 	log := logger.WithPrefix("Api")
-	log.Info("Initializing clickup client...")
+	log.Debug("Initializing ClickUp client...")
 
 	clickup := clickup.NewDefaultClientWithLogger(
 		token,
@@ -32,13 +43,14 @@ func NewApi(logger *log.Logger, cache *cache.Cache, token string) Api {
 	}
 }
 
-func (m *Api) GetSpaces(team string) ([]clickup.Space, error) {
-	m.logger.Infof("Getting spaces for team: %s", team)
-	client := m.Clickup
+func (m *Api) GetSpaces(teamId string) ([]clickup.Space, error) {
+	m.logger.Debug("Getting spaces for a team",
+		"teamId", teamId)
 
-	data, ok := m.Cache.Get("spaces", team)
+	cacheNamespace := CacheNamespaceSpaces
+
+	data, ok := m.Cache.Get(cacheNamespace, teamId)
 	if ok {
-		m.logger.Infof("Spaces found in cache")
 		var spaces []clickup.Space
 		if err := m.Cache.ParseData(data, &spaces); err != nil {
 			return nil, err
@@ -46,36 +58,32 @@ func (m *Api) GetSpaces(team string) ([]clickup.Space, error) {
 
 		return spaces, nil
 	}
-	m.logger.Infof("Spaces not found in cache")
 
-	m.logger.Infof("Fetching spaces from API")
-	spaces, err := client.GetSpaces(team)
+	client := m.Clickup
+
+	m.logger.Debugf("Fetching spaces from API")
+	spaces, err := client.GetSpaces(teamId)
 	if err != nil {
 		return nil, err
 	}
-	m.logger.Infof("Found %d spaces for team: %s", len(spaces), team)
+	m.logger.Debugf("Found %d spaces for team: %s", len(spaces), teamId)
 
-	m.logger.Infof("Caching spaces")
-	m.Cache.Set("spaces", team, spaces)
+	m.Cache.Set(cacheNamespace, teamId, spaces)
 
 	return spaces, nil
 }
 
+// Alias for GetTeams since they are the same thing
 func (m *Api) GetWorkspaces() ([]clickup.Workspace, error) {
-	teams, err := m.GetTeams()
-	if err != nil {
-		return nil, err
-	}
-	return teams, nil
+	return m.GetTeams()
 }
 
 func (m *Api) GetTeams() ([]clickup.Team, error) {
-	m.logger.Info("Getting Authorized Teams (Workspaces)")
-	client := m.Clickup
+	m.logger.Debug("Getting Authorized Teams (Workspaces)")
 
-	data, ok := m.Cache.Get("teams", "teams")
+	cacheNamespace := CacheNamespaceTeams
+	data, ok := m.Cache.Get(cacheNamespace, "teams")
 	if ok {
-		m.logger.Infof("Teams found in cache")
 		var teams []clickup.Team
 		if err := m.Cache.ParseData(data, &teams); err != nil {
 			return nil, err
@@ -83,28 +91,28 @@ func (m *Api) GetTeams() ([]clickup.Team, error) {
 
 		return teams, nil
 	}
-	m.logger.Infof("Teams not found in cache")
 
-	m.logger.Infof("Fetching teams from API")
+	client := m.Clickup
+
+	m.logger.Debugf("Fetching teams from API")
 	teams, err := client.GetTeams()
 	if err != nil {
 		return nil, err
 	}
-	m.logger.Infof("Found %d teams ", len(teams))
+	m.logger.Debugf("Found %d teams", len(teams))
 
-	m.logger.Infof("Caching teams")
-	m.Cache.Set("teams", "teams", teams)
+	m.Cache.Set(cacheNamespace, "teams", teams)
 
 	return teams, nil
 }
 
-func (m *Api) GetFolders(space string) ([]clickup.Folder, error) {
-	m.logger.Infof("Getting folders for space: %s", space)
-	client := m.Clickup
+func (m *Api) GetFolders(spaceId string) ([]clickup.Folder, error) {
+	m.logger.Debug("Getting folders for a space",
+		"space", spaceId)
 
-	data, ok := m.Cache.Get("folders", space)
+	cacheNamespace := CacheNamespaceFolders
+	data, ok := m.Cache.Get(cacheNamespace, spaceId)
 	if ok {
-		m.logger.Infof("Folders found in cache")
 		var folders []clickup.Folder
 		if err := m.Cache.ParseData(data, &folders); err != nil {
 			return nil, err
@@ -112,28 +120,28 @@ func (m *Api) GetFolders(space string) ([]clickup.Folder, error) {
 
 		return folders, nil
 	}
-	m.logger.Infof("Folders not found in cache")
 
-	m.logger.Infof("Fetching folders from API")
-	folders, err := client.GetFolders(space)
+	client := m.Clickup
+
+	m.logger.Debugf("Fetching folders from API")
+	folders, err := client.GetFolders(spaceId)
 	if err != nil {
 		return nil, err
 	}
-	m.logger.Infof("Found %d folders for space: %s", len(folders), space)
+	m.logger.Debugf("Found %d folders for space: %s", len(folders), spaceId)
 
-	m.logger.Infof("Caching folders")
-	m.Cache.Set("folders", space, folders)
+	m.Cache.Set(cacheNamespace, spaceId, folders)
 
 	return folders, nil
 }
 
 func (m *Api) GetLists(folderId string) ([]clickup.List, error) {
-	m.logger.Infof("Getting lists for folder: %s", folderId)
-	client := m.Clickup
+	m.logger.Debug("Getting lists for a folder",
+		"folderId", folderId)
 
-	data, ok := m.Cache.Get("lists", folderId)
+	cacheNamespace := CacheNamespaceLists
+	data, ok := m.Cache.Get(cacheNamespace, folderId)
 	if ok {
-		m.logger.Infof("Lists found in cache")
 		var lists []clickup.List
 		if err := m.Cache.ParseData(data, &lists); err != nil {
 			return nil, err
@@ -141,32 +149,33 @@ func (m *Api) GetLists(folderId string) ([]clickup.List, error) {
 
 		return lists, nil
 	}
-	m.logger.Infof("Lists not found in cache")
 
-	m.logger.Infof("Fetching lists from API")
+	client := m.Clickup
+
+	m.logger.Debugf("Fetching lists from API")
 	lists, err := client.GetListsFromFolder(folderId)
 	if err != nil {
 		return nil, err
 	}
-	m.logger.Infof("Found %d lists for folder: %s", len(lists), folderId)
+	m.logger.Debugf("Found %d lists for folder: %s", len(lists), folderId)
 
 	for _, f := range lists {
 		j, _ := json.MarshalIndent(f, "", "  ")
-		m.logger.Infof("%s", j)
+		m.logger.Debugf("%s", j)
 	}
 
-	m.logger.Infof("Caching lists")
-	m.Cache.Set("lists", folderId, lists)
+	m.Cache.Set(cacheNamespace, folderId, lists)
 
 	return lists, nil
 }
 
-func (m *Api) GetTask(id string) (clickup.Task, error) {
-	m.logger.Infof("Getting task: %s", id)
+func (m *Api) GetTask(taskId string) (clickup.Task, error) {
+	m.logger.Debug("Getting a task",
+		"taskId", taskId)
 
-	data, ok := m.Cache.Get("task", id)
+	cacheNamespace := CacheNamespaceTask
+	data, ok := m.Cache.Get(cacheNamespace, taskId)
 	if ok {
-		m.logger.Infof("Task found in cache")
 		var task clickup.Task
 		if err := m.Cache.ParseData(data, &task); err != nil {
 			return clickup.Task{}, err
@@ -174,29 +183,28 @@ func (m *Api) GetTask(id string) (clickup.Task, error) {
 
 		return task, nil
 	}
-	m.logger.Info("Task not found in cache")
 
-	m.logger.Info("Fetching task from API")
 	client := m.Clickup
 
-	task, err := client.GetTask(id)
+	m.logger.Debug("Fetching task from API")
+	task, err := client.GetTask(taskId)
 	if err != nil {
 		return clickup.Task{}, err
 	}
-	m.logger.Infof("Found tasks %s", id)
+	m.logger.Debugf("Found tasks %s", taskId)
 
-	m.logger.Info("Caching tasks")
-	m.Cache.Set("task", id, task)
+	m.Cache.Set(cacheNamespace, taskId, task)
 
 	return task, nil
 }
 
-func (m *Api) GetTasksFromList(list string) ([]clickup.Task, error) {
-	m.logger.Infof("Getting tasks for list: %s", list)
+func (m *Api) GetTasksFromList(listId string) ([]clickup.Task, error) {
+	m.logger.Debug("Getting tasks for a list",
+		"listId", listId)
 
-	data, ok := m.Cache.Get("tasks", list)
+	cacheNamespace := CacheNamespaceTasks
+	data, ok := m.Cache.Get(cacheNamespace, listId)
 	if ok {
-		m.logger.Infof("Tasks found in cache")
 		var tasks []clickup.Task
 		if err := m.Cache.ParseData(data, &tasks); err != nil {
 			return nil, err
@@ -204,28 +212,27 @@ func (m *Api) GetTasksFromList(list string) ([]clickup.Task, error) {
 
 		return tasks, nil
 	}
-	m.logger.Info("Tasks not found in cache")
 
-	m.logger.Info("Fetching tasks from API")
 	client := m.Clickup
 
-	tasks, err := client.GetTasksFromList(list)
+	m.logger.Debug("Fetching tasks from API")
+	tasks, err := client.GetTasksFromList(listId)
 	if err != nil {
 		return nil, err
 	}
-	m.logger.Infof("Found %d tasks in list %s", len(tasks), list)
+	m.logger.Debugf("Found %d tasks in list %s", len(tasks), listId)
 
-	m.logger.Info("Caching tasks")
-	m.Cache.Set("tasks", list, tasks)
+	m.Cache.Set(cacheNamespace, listId, tasks)
 
 	return tasks, nil
 }
-func (m *Api) GetTasksFromView(view string) ([]clickup.Task, error) {
-	m.logger.Infof("Getting tasks for view: %s", view)
+func (m *Api) GetTasksFromView(viewId string) ([]clickup.Task, error) {
+	m.logger.Debug("Getting tasks for a view",
+		"viewId", viewId)
 
-	data, ok := m.Cache.Get("tasks", view)
+	cacheNamespace := CacheNamespaceTasks
+	data, ok := m.Cache.Get(cacheNamespace, viewId)
 	if ok {
-		m.logger.Infof("Tasks found in cache")
 		var tasks []clickup.Task
 		if err := m.Cache.ParseData(data, &tasks); err != nil {
 			return nil, err
@@ -233,29 +240,28 @@ func (m *Api) GetTasksFromView(view string) ([]clickup.Task, error) {
 
 		return tasks, nil
 	}
-	m.logger.Info("Tasks not found in cache")
 
-	m.logger.Info("Fetching tasks from API")
 	client := m.Clickup
 
-	tasks, err := client.GetTasksFromView(view)
+	m.logger.Debug("Fetching tasks from API")
+	tasks, err := client.GetTasksFromView(viewId)
 	if err != nil {
 		return nil, err
 	}
-	m.logger.Infof("Found %d tasks in view %s", len(tasks), view)
+	m.logger.Debugf("Found %d tasks in view %s", len(tasks), viewId)
 
-	m.logger.Info("Caching tasks")
-	m.Cache.Set("tasks", view, tasks)
+	m.Cache.Set(cacheNamespace, viewId, tasks)
 
 	return tasks, nil
 }
 
-func (m *Api) GetViewsFromFolder(folder string) ([]clickup.View, error) {
-	m.logger.Infof("Getting views for folder: %s", folder)
+func (m *Api) GetViewsFromFolder(folderId string) ([]clickup.View, error) {
+	m.logger.Debug("Getting views for folder",
+		"folder", folderId)
 
-	data, ok := m.Cache.Get("views", folder)
+	cacheNamespace := CacheNamespaceViews
+	data, ok := m.Cache.Get(cacheNamespace, folderId)
 	if ok {
-		m.logger.Infof("Views found in cache")
 		var views []clickup.View
 		if err := m.Cache.ParseData(data, &views); err != nil {
 			return nil, err
@@ -263,30 +269,28 @@ func (m *Api) GetViewsFromFolder(folder string) ([]clickup.View, error) {
 
 		return views, nil
 	}
-	m.logger.Info("Views not found in cache")
 
-	m.logger.Info("Fetching views from API")
 	client := m.Clickup
 
-	m.logger.Infof("Getting views from folder: %s", folder)
-	views, err := client.GetViewsFromFolder(folder)
+	m.logger.Debug("Fetching views from API")
+	views, err := client.GetViewsFromFolder(folderId)
 	if err != nil {
 		return nil, err
 	}
-	m.logger.Infof("Found %d views in folder %s", len(views), folder)
+	m.logger.Debugf("Found %d views in folder %s", len(views), folderId)
 
-	m.logger.Info("Caching views")
-	m.Cache.Set("views", folder, views)
+	m.Cache.Set(cacheNamespace, folderId, views)
 
 	return views, nil
 }
 
 func (m *Api) GetViewsFromList(listId string) ([]clickup.View, error) {
-	m.logger.Infof("Getting views for list: %s", listId)
+	m.logger.Debug("Getting views for list",
+		"listId", listId)
 
-	data, ok := m.Cache.Get("views", listId)
+	cacheNamespace := CacheNamespaceViews
+	data, ok := m.Cache.Get(cacheNamespace, listId)
 	if ok {
-		m.logger.Infof("Views found in cache")
 		var views []clickup.View
 		if err := m.Cache.ParseData(data, &views); err != nil {
 			return nil, err
@@ -294,30 +298,28 @@ func (m *Api) GetViewsFromList(listId string) ([]clickup.View, error) {
 
 		return views, nil
 	}
-	m.logger.Info("Views not found in cache")
 
-	m.logger.Info("Fetching views from API")
 	client := m.Clickup
 
-	m.logger.Infof("Getting views from folder: %s", listId)
+	m.logger.Debug("Fetching views from API")
 	views, err := client.GetViewsFromList(listId)
 	if err != nil {
 		return nil, err
 	}
-	m.logger.Infof("Found %d views in folder %s", len(views), listId)
+	m.logger.Debugf("Found %d views in folder %s", len(views), listId)
 
-	m.logger.Info("Caching views")
-	m.Cache.Set("views", listId, views)
+	m.Cache.Set(cacheNamespace, listId, views)
 
 	return views, nil
 }
 
-func (m *Api) GetViewsFromSpace(space string) ([]clickup.View, error) {
-	m.logger.Infof("Getting views for space: %s", space)
+func (m *Api) GetViewsFromSpace(spaceId string) ([]clickup.View, error) {
+	m.logger.Info("Getting views for space",
+		"spaceId", spaceId)
 
-	data, ok := m.Cache.Get("views", space)
+	cacheNamespace := CacheNamespaceViews
+	data, ok := m.Cache.Get(cacheNamespace, spaceId)
 	if ok {
-		m.logger.Infof("Views found in cache")
 		var views []clickup.View
 		if err := m.Cache.ParseData(data, &views); err != nil {
 			return nil, err
@@ -325,20 +327,31 @@ func (m *Api) GetViewsFromSpace(space string) ([]clickup.View, error) {
 
 		return views, nil
 	}
-	m.logger.Info("Views not found in cache")
 
-	m.logger.Info("Fetching views from API")
 	client := m.Clickup
 
-	m.logger.Infof("Getting views from space: %s", space)
-	views, err := client.GetViewsFromSpace(space)
+	m.logger.Debug("Fetching views from API",
+		"spaceId", spaceId)
+	views, err := client.GetViewsFromSpace(spaceId)
 	if err != nil {
 		return nil, err
 	}
-	m.logger.Infof("Found %d views in space %s", len(views), space)
+	m.logger.Debugf("Found %d views in space %s", len(views), spaceId)
 
-	m.logger.Info("Caching views")
-	m.Cache.Set("views", space, views)
+	m.Cache.Set(cacheNamespace, spaceId, views)
 
 	return views, nil
+}
+
+func (m *Api) getFromCache(namespace string, key string, v interface{}) (bool, error) {
+	data, ok := m.Cache.Get(namespace, key)
+	if !ok {
+		return false, nil
+	}
+
+	if err := m.Cache.ParseData(data, &v); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

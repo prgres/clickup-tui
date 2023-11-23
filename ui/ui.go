@@ -112,7 +112,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		m.log.Info("Received: tea.WindowSizeMsg",
+		m.log.Debug("Received: tea.WindowSizeMsg",
 			"width", msg.Width,
 			"height", msg.Height)
 		m.ctx.WindowSize.Width = msg.Width
