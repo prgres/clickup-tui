@@ -33,6 +33,24 @@ clickup-tui
 Use the arrow keys, enter, and other relevant keyboard shortcuts to navigate through the TUI and interact with ClickUp.
 ### Clonig the repository
 To run without buiding the binary, simply just clone the repo, set config and run `go run .` in the root.
+## Flags
+For flags help simply exec:
+```
+clickup-tui -h
+
+clickup-tui - A terminal user interface for ClickUp
+Usage:
+  clickup-tui [flags]
+Flags:
+      --cache-path string   The path to the cache directory (default "./cache")
+      --clean-cache         Cleans cache data
+      --clean-cache-only    Cleans cache data and exits
+  -c, --config string       A config filename (default "config.yaml")
+      --debug               Enable debug mode
+      --debug-deep          Enable deep debug mode
+  -h, --help                Show help
+  -v, --version             Show version
+```
 
 ## Configuration
 Before using the tool, set up your ClickUp API key and configure any necessary settings. You can do this by creating a configuration file or using environment variables. Please take a look at the documentation for details on how to set up your configuration.

@@ -25,8 +25,7 @@ type Cache struct {
 	data   map[string]Data
 }
 
-func NewCache(logger *slog.Logger) *Cache {
-	path := "cache"
+func NewCache(logger *slog.Logger, path string) *Cache {
 	return &Cache{
 		path:   path,
 		data:   map[string]Data{},
