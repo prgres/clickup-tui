@@ -372,25 +372,46 @@ func (m *Api) InvalidateCache() error {
 		switch entry.Namespace {
 		case CacheNamespaceTeams:
 			m.logger.Debug("Invalidating teams cache")
-			m.GetTeams()
+			_, err := m.GetTeams()
+			if err != nil {
+				m.logger.Error("Failed to invalidate teams cache", "error", err)
+			}
 		case CacheNamespaceSpaces:
 			m.logger.Debug("Invalidating spaces cache")
-			m.GetSpaces(entry.Key)
+			_, err := m.GetSpaces(entry.Key)
+			if err != nil {
+				m.logger.Error("Failed to invalidate spaces cache", "error", err)
+			}
 		case CacheNamespaceFolders:
 			m.logger.Debug("Invalidating folders cache")
-			m.GetFolders(entry.Key)
+			_, err := m.GetFolders(entry.Key)
+			if err != nil {
+				m.logger.Error("Failed to invalidate folders cache", "error", err)
+			}
 		case CacheNamespaceLists:
 			m.logger.Debug("Invalidating lists cache")
-			m.GetLists(entry.Key)
+			_, err := m.GetLists(entry.Key)
+			if err != nil {
+				m.logger.Error("Failed to invalidate lists cache", "error", err)
+			}
 		case CacheNamespaceViews:
 			m.logger.Debug("Invalidating views cache")
-			m.GetViewsFromSpace(entry.Key)
+			_, err := m.GetViewsFromSpace(entry.Key)
+			if err != nil {
+				m.logger.Error("Failed to invalidate views cache", "error", err)
+			}
 		case CacheNamespaceTasks:
 			m.logger.Debug("Invalidating tasks cache")
-			m.GetTasksFromList(entry.Key)
+			_, err := m.GetTasksFromList(entry.Key)
+			if err != nil {
+				m.logger.Error("Failed to invalidate tasks cache", "error", err)
+			}
 		case CacheNamespaceTask:
 			m.logger.Debug("Invalidating task cache")
-			m.GetTask(entry.Key)
+			_, err := m.GetTask(entry.Key)
+			if err != nil {
+				m.logger.Error("Failed to invalidate task cache", "error", err)
+			}
 		default:
 			m.logger.Debug("Invalidating cache",
 				"namespace", entry.Namespace, "key", entry.Key)
