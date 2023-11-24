@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"strings"
@@ -28,6 +29,8 @@ const (
 	DefaultConfigFilename = "config.yaml"
 	// DefaultCachePath is the default cache path
 	DefaultCachePath = "./cache"
+
+	ErrMissingToken = `ClickUp API token is required. Follow the steps: [ClickUp API docs: Generate your personal API token](https://clickup.com/api/developer-portal/authentication/#generate-your-personal-api-token) and please set it in the config file. See https://docs.clickup.com/en/articles/1367130-getting-started-with-the-clickup-api")`
 )
 
 var (
@@ -50,6 +53,11 @@ var (
 		s.WriteString(flag.FlagUsages())
 		return s.String()
 	}
+
+	termLogger *log.Logger = log.NewWithOptions(os.Stderr, log.Options{
+		ReportCaller: false,
+		Level:        log.InfoLevel,
+	})
 )
 
 func main() {
@@ -80,11 +88,14 @@ func main() {
 		ReportTimestamp: true,
 	})
 
-	f, err := tea.LogToFileWith("debug.log", logger.GetPrefix(), logger)
+	f, err := os.OpenFile("debug.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	defer f.Close()
+	logger.SetOutput(f)
+
+	termLogger.SetOutput(io.MultiWriter(os.Stderr, f))
 
 	logger.Info("Starting up...")
 
@@ -94,12 +105,16 @@ func main() {
 		fig.File(*flagConfigFilename),
 		fig.Dirs(
 			".",
-			"/etc/myapp",
-			"/home/user/myapp",
+			"/etc/clickup-tui",
+			"/home/user/clickup-tui",
 			"$HOME/.config/clickup-tui",
 		),
 	); err != nil {
-		logger.Fatal(err)
+		termLogger.Fatal(err)
+	}
+
+	if cfg.Token == "" {
+		termLogger.Fatal(ErrMissingToken)
 	}
 
 	logger.Info("Initializing cache...")
@@ -110,14 +125,14 @@ func main() {
 
 	defer func() {
 		if err := cache.Dump(); err != nil {
-			logger.Fatal(err)
+			termLogger.Fatal(err)
 		}
 	}()
 
 	if *flagCleanCache || *flagCleanCacheOnly {
 		logger.Info("Cleaning cache...")
 		if err := cache.Invalidate(); err != nil {
-			logger.Fatal(err)
+			termLogger.Fatal(err)
 		}
 
 		if *flagCleanCacheOnly {
@@ -126,7 +141,7 @@ func main() {
 	}
 
 	if err := cache.Load(); err != nil {
-		logger.Fatal(err)
+		termLogger.Fatal(err)
 	}
 
 	logger.Info("Initializing api...")
@@ -141,6 +156,6 @@ func main() {
 	logger.Info("Initializing program...")
 	p := tea.NewProgram(mainModel, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
-		logger.Fatal(err)
+		termLogger.Fatal(err)
 	}
 }
