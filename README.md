@@ -14,7 +14,7 @@
 ## Installation
 
 > [!CAUTION]
-> This will not work OOTB util the repository is private. Cloning the repo is a way to go for now. But if you want to `get` it, follow the https://go.dev/doc/faq#git_https
+> This will not work OOTB until the repository is private. Cloning the repo is a way to go for now. But if you want to `get` it, follow the https://go.dev/doc/faq#git_https
 
 To install **clickup-tui**, you can use the following steps:
 
@@ -32,7 +32,7 @@ clickup-tui
 
 Use the arrow keys, enter, and other relevant keyboard shortcuts to navigate through the TUI and interact with ClickUp.
 ### Clonig the repository
-To run without buiding the binary, simply just clone the repo, set config and run `go run .` in the root.
+To run without building the binary, simply just clone the repo, set config, and run `go run .` in the root.
 ## Flags
 For flags help simply exec:
 ```
@@ -55,12 +55,12 @@ Flags:
 ## Configuration
 Before using the tool, set up your ClickUp API key and configure any necessary settings. You can do this by creating a configuration file or using environment variables. Please take a look at the documentation for details on how to set up your configuration.
 The app looks for a config file in paths:
-- ".",
-- "etc/myapp",
-- "home/user/myapp",
-- "HOME/.config/clickup-tui",
-For now, you have to manually create that (this will be addressed) - just copy the `config.yaml.example` file, remove example suffix and fill properties (only token is required). In future, this settings will be manipulated within the app.
-### How to obtain Clickup token
+- .
+- etc/clickup-tui
+- home/user/clickup-tui
+- $HOME/.config/clickup-tui
+For now, you have to manually create that (this will be addressed) - just copy the [`config.yaml.example`](config.yaml.example) file, remove the example suffix, and fill properties (only token is required). In the future, these settings will be manipulated within the app.
+### How to obtain a Clickup token
 Follow the steps: [ClickUp API docs: Generate your personal API token](https://clickup.com/api/developer-portal/authentication/#generate-your-personal-api-token)
 ## Dependencies
 
@@ -74,4 +74,4 @@ Follow the steps: [ClickUp API docs: Generate your personal API token](https://c
 Contributions are welcome! If you find any bugs or have suggestions for improvement, please open an issue or submit a pull request.
 
 # License
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details.
