@@ -356,3 +356,45 @@ func (m *Api) getFromCache(namespace string, key string, v interface{}) (bool, e
 
 	return true, nil
 }
+
+func (m *Api) InvalidateCache() error {
+	m.logger.Debug("Invalidating cache")
+
+	entries := m.Cache.GetEntries()
+	m.logger.Debug("Found cache entries", "count", len(entries))
+
+	if err := m.Cache.Invalidate(); err != nil {
+		m.logger.Error("Failed to invalidate cache", "error", err)
+		return err
+	}
+
+	for _, entry := range entries {
+		switch entry.Namespace {
+		case CacheNamespaceTeams:
+			m.logger.Debug("Invalidating teams cache")
+			m.GetTeams()
+		case CacheNamespaceSpaces:
+			m.logger.Debug("Invalidating spaces cache")
+			m.GetSpaces(entry.Key)
+		case CacheNamespaceFolders:
+			m.logger.Debug("Invalidating folders cache")
+			m.GetFolders(entry.Key)
+		case CacheNamespaceLists:
+			m.logger.Debug("Invalidating lists cache")
+			m.GetLists(entry.Key)
+		case CacheNamespaceViews:
+			m.logger.Debug("Invalidating views cache")
+			m.GetViewsFromSpace(entry.Key)
+		case CacheNamespaceTasks:
+			m.logger.Debug("Invalidating tasks cache")
+			m.GetTasksFromList(entry.Key)
+		case CacheNamespaceTask:
+			m.logger.Debug("Invalidating task cache")
+			m.GetTask(entry.Key)
+		default:
+			m.logger.Debug("Invalidating cache",
+				"namespace", entry.Namespace, "key", entry.Key)
+		}
+	}
+	return nil
+}

@@ -135,6 +135,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.viewTasks.Ready() {
 				m.state = m.viewTasks.ViewId
 			}
+		case key.Matches(msg, m.KeyMap.Refresh):
+			m.log.Info("Refreshing...")
+			if err := m.ctx.Api.InvalidateCache(); err != nil {
+				m.log.Error("Failed to invalidate cache", "error", err)
+			}
+			m.log.Debug("Cache invalidated")
 
 		default:
 			switch m.state {
