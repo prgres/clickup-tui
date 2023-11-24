@@ -5,8 +5,17 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strings"
 )
+
+type Entry struct {
+	// The key of the Entry
+	Key string
+
+	// The namespace of the Entryl
+	Namespace string
+}
 
 type Data map[string]interface{}
 
@@ -220,6 +229,65 @@ func (c *Cache) ParseData(data interface{}, target interface{}) error {
 
 	if err := json.Unmarshal(j, target); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (c *Cache) GetEntries() []Entry {
+	entries := []Entry{}
+	c.logger.Debug("Getting all cache entries",
+		"entries", len(c.data))
+
+	j, _ := json.Marshal(c.data)
+	c.logger.Debug(string(j))
+
+	for ns, data := range c.data {
+		for key := range data {
+			entries = append(entries, Entry{
+				Namespace: ns,
+				Key:       key,
+			})
+		}
+	}
+
+	return entries
+}
+
+func (c *Cache) Invalidate() error {
+	c.logger.Debug("Invalidating all cache entries")
+
+	// Clear the in-memory cache
+	c.data = make(map[string]Data)
+
+	// Remove subdirectories and nested files within the cache directory
+	subdirs, err := os.ReadDir(c.path)
+	if err != nil {
+		return err
+	}
+
+	for _, subdir := range subdirs {
+		if subdir.IsDir() {
+			subdirPath := filepath.Join(c.path, subdir.Name())
+
+			// Remove files within the subdirectory
+			files, err := os.ReadDir(subdirPath)
+			if err != nil {
+				return err
+			}
+
+			for _, file := range files {
+				filePath := filepath.Join(subdirPath, file.Name())
+				if err := os.Remove(filePath); err != nil {
+					return err
+				}
+			}
+
+			// Remove the subdirectory
+			if err := os.Remove(subdirPath); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
