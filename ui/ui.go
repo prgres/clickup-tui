@@ -3,6 +3,7 @@ package ui
 import (
 	"strings"
 
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
@@ -29,6 +30,51 @@ type Model struct {
 	viewTasks      tasks.Model
 
 	dialogHelp help.Model
+
+	KeyMap KeyMap
+}
+
+type KeyMap struct {
+	GoToViewWorkspaces key.Binding
+	GoToViewSpaces     key.Binding
+	GoToViewFolders    key.Binding
+	GoToViewLists      key.Binding
+	GoToViewTasks      key.Binding
+	Refresh            key.Binding
+	ForceQuit          key.Binding
+}
+
+func DefaultKeyMap() KeyMap {
+	return KeyMap{
+		GoToViewWorkspaces: key.NewBinding(
+			key.WithKeys("1"),
+			key.WithHelp("1", "go to workspaces"),
+		),
+		GoToViewSpaces: key.NewBinding(
+			key.WithKeys("2"),
+			key.WithHelp("2", "go to spaces"),
+		),
+		GoToViewFolders: key.NewBinding(
+			key.WithKeys("3"),
+			key.WithHelp("3", "go to folders"),
+		),
+		GoToViewLists: key.NewBinding(
+			key.WithKeys("4"),
+			key.WithHelp("4", "go to lists"),
+		),
+		GoToViewTasks: key.NewBinding(
+			key.WithKeys("5"),
+			key.WithHelp("5", "go to tasks"),
+		),
+		Refresh: key.NewBinding(
+			key.WithKeys("R"),
+			key.WithHelp("R", "go to refresh"),
+		),
+		ForceQuit: key.NewBinding(
+			key.WithKeys("ctrl+c", "q"),
+			key.WithHelp("ctrl+c/q", "quit"),
+		),
+	}
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
@@ -51,6 +97,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		viewFolders:    folders.InitialModel(ctx, log),
 
 		dialogHelp: help.InitialModel(ctx, log),
+		KeyMap:     DefaultKeyMap(),
 	}
 }
 
@@ -64,27 +111,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 
 	case tea.KeyMsg:
-		switch keypress := msg.String(); keypress {
-		case "ctrl+c", "q":
+		switch {
+		case key.Matches(msg, m.KeyMap.ForceQuit):
 			return m, tea.Quit
 
-		case "1":
+		case key.Matches(msg, m.KeyMap.GoToViewWorkspaces):
 			if m.viewWorkspaces.Ready() {
 				m.state = m.viewWorkspaces.ViewId
 			}
-		case "2":
+		case key.Matches(msg, m.KeyMap.GoToViewSpaces):
 			if m.viewSpaces.Ready() {
 				m.state = m.viewSpaces.ViewId
 			}
-		case "3":
+		case key.Matches(msg, m.KeyMap.GoToViewFolders):
 			if m.viewFolders.Ready() {
 				m.state = m.viewFolders.ViewId
 			}
-		case "4":
+		case key.Matches(msg, m.KeyMap.GoToViewLists):
 			if m.viewLists.Ready() {
 				m.state = m.viewLists.ViewId
 			}
-		case "5":
+		case key.Matches(msg, m.KeyMap.GoToViewTasks):
 			if m.viewTasks.Ready() {
 				m.state = m.viewTasks.ViewId
 			}
@@ -189,7 +236,27 @@ func (m Model) View() string {
 	}
 
 	view := viewToRender.View()
-	footer := m.dialogHelp.View(viewToRender.KeyMap())
+
+	viewKm := viewToRender.KeyMap()
+	km := common.NewKeyMap(
+		func() [][]key.Binding {
+			return append(viewKm.FullHelp(), [][]key.Binding{
+				{
+					m.KeyMap.GoToViewWorkspaces,
+					m.KeyMap.GoToViewSpaces,
+					m.KeyMap.GoToViewFolders,
+					m.KeyMap.GoToViewLists,
+					m.KeyMap.GoToViewTasks,
+				},
+				{
+					m.KeyMap.Refresh,
+				},
+			}...)
+		},
+		viewKm.ShortHelp,
+	)
+
+	footer := m.dialogHelp.View(km)
 	footerHeight := lipgloss.Height(footer)
 
 	physicalHeight := m.ctx.WindowSize.Height
