@@ -192,11 +192,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ctx.WindowSize.Width = msg.Width
 		m.ctx.WindowSize.Height = msg.Height
 
-		size := common.Size{
-			Width:  msg.Width,
-			Height: msg.Height - m.ctx.WindowSize.MetaHeight,
-		}
-		m = m.SetSize(size)
+		// size := common.Size{
+		// 	Width:  msg.Width,
+		// 	Height: msg.Height - m.ctx.WindowSize.MetaHeight,
+		// }
+		// m = m.SetSize(size)
 
 		return m, nil
 
@@ -343,12 +343,12 @@ func (m Model) Init() tea.Cmd {
 	)
 }
 
-func (m Model) SetSize(size common.Size) Model {
-	m.viewWorkspaces = m.viewWorkspaces.SetSize(size)
-	m.viewSpaces = m.viewSpaces.SetSize(size)
-	m.viewFolders = m.viewFolders.SetSize(size)
-	m.viewLists = m.viewLists.SetSize(size)
-	m.viewTasks = m.viewTasks.SetSize(size)
-
-	return m
-}
+// func (m Model) SetSize(size common.Size) Model {
+// 	m.viewWorkspaces = m.viewWorkspaces.SetSize(size)
+// 	m.viewSpaces = m.viewSpaces.SetSize(size)
+// 	m.viewFolders = m.viewFolders.SetSize(size)
+// 	m.viewLists = m.viewLists.SetSize(size)
+// 	m.viewTasks = m.viewTasks.SetSize(size)
+//
+// 	return m
+// }
