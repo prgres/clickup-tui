@@ -14,13 +14,13 @@ import (
 const WidgetId = "viewLists"
 
 type Model struct {
-	WidgetId       common.WidgetId
-	ctx            *context.UserContext
 	list           list.Model
-	lists          []clickup.List
-	SelectedList   listitem.Item
-	SelectedFolder string
+	ctx            *context.UserContext
 	log            *log.Logger
+	SelectedList   listitem.Item
+	WidgetId       common.WidgetId
+	SelectedFolder string
+	lists          []clickup.List
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
@@ -72,12 +72,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.syncList(msg)
 		cmds = append(cmds, ListsListReadyCmd())
 
-	case tea.WindowSizeMsg:
-		m.log.Debug("Received: tea.WindowSizeMsg",
-			"width", msg.Width,
-			"height", msg.Height)
-		m.list.SetSize(msg.Width, msg.Height)
-
 	case common.FolderChangeMsg:
 		m.log.Infof("Received: FolderChangeMsg: %s", string(msg))
 		m.SelectedFolder = string(msg)
@@ -121,4 +115,9 @@ func (m Model) getListsCmd(folderId string) tea.Cmd {
 
 		return ListsListReloadedMsg(folders)
 	}
+}
+
+func (m Model) SetSize(size common.Size) Model {
+	m.list.SetSize(size.Width, size.Height)
+	return m
 }

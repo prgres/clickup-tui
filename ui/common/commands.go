@@ -52,3 +52,16 @@ func BackToPreviousViewCmd(currentView ViewId) tea.Cmd {
 		return BackToPreviousViewMsg(currentView)
 	}
 }
+
+type Size struct {
+	Width  int
+	Height int
+}
+
+type ResizeMsg Size
+
+func ResizeCmd(s Size) tea.Cmd {
+	return func() tea.Msg {
+		return ResizeMsg(s)
+	}
+}

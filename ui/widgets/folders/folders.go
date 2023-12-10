@@ -14,13 +14,13 @@ import (
 const WidgetId = "widgetFoldersList"
 
 type Model struct {
-	WidgetId       common.WidgetId
-	ctx            *context.UserContext
 	list           list.Model
-	folders        []clickup.Folder
+	ctx            *context.UserContext
+	log            *log.Logger
+	WidgetId       common.WidgetId
 	SelectedSpace  string
 	SelectedFolder string
-	log            *log.Logger
+	folders        []clickup.Folder
 }
 
 func (m Model) KeyMap() help.KeyMap {
@@ -78,12 +78,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.syncList(msg)
 		cmds = append(cmds, FoldersListReadyCmd())
 
-	case tea.WindowSizeMsg:
-		m.log.Debug("Received: tea.WindowSizeMsg",
-			"width", msg.Width,
-			"height", msg.Height)
-		m.list.SetSize(msg.Width, msg.Height)
-
 	case common.SpaceChangeMsg:
 		m.log.Infof("Received: SpaceChangeMsg: %s", string(msg))
 		m.SelectedSpace = string(msg)
@@ -116,4 +110,9 @@ func (m Model) View() string {
 func (m Model) Init() tea.Cmd {
 	m.log.Info("Initializing...")
 	return nil
+}
+
+func (m Model) SetSize(s common.Size) Model {
+	m.list.SetSize(s.Width, s.Height)
+	return m
 }

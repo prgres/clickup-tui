@@ -14,12 +14,12 @@ import (
 const WidgetId = "workspacesList"
 
 type Model struct {
-	WidgetId          common.WidgetId
-	ctx               *context.UserContext
 	list              list.Model
+	ctx               *context.UserContext
+	log               *log.Logger
+	WidgetId          common.WidgetId
 	SelectedWorkspace string
 	workspaces        []clickup.Workspace
-	log               *log.Logger
 }
 
 func (m Model) KeyMap() help.KeyMap {
@@ -77,12 +77,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.syncList(msg)
 		cmds = append(cmds, WorkspaceListReadyCmd())
 
-	case tea.WindowSizeMsg:
-		m.log.Debug("Received: tea.WindowSizeMsg",
-			"width", msg.Width,
-			"height", msg.Height)
-		m.list.SetSize(msg.Width, msg.Height)
-
 	case common.WorkspaceChangeMsg:
 		m.log.Info("Received: WorkspaceChangeMsg")
 		m.SelectedWorkspace = string(msg)
@@ -115,4 +109,9 @@ func (m Model) View() string {
 func (m Model) Init() tea.Cmd {
 	m.log.Infof("Initializing...")
 	return m.getWorkspacesCmd()
+}
+
+func (m Model) SetSize(s common.Size) Model {
+	m.list.SetSize(s.Width, s.Height)
+	return m
 }

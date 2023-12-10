@@ -8,6 +8,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type ViewId string
@@ -18,11 +19,23 @@ type View interface {
 	View() string
 	KeyMap() help.KeyMap
 	Ready() bool
+	SetSize(Size) View
+	GetSize() Size
+	Update(msg tea.Msg) (View, tea.Cmd)
+	GetViewId() ViewId
+	Init() tea.Cmd
 }
 
 type Widget interface {
 	View() string
 	KeyMap() help.KeyMap
+	GetFocused() bool
+	SetFocused(f bool) Widget
+	Update(msg tea.Msg) (Widget, tea.Cmd)
+	SetSize(s Size) Widget
+	Init() tea.Cmd
+	SetHidden(h bool) Widget
+	GetHidden() bool
 }
 
 func NewEmptyKeyMap() help.KeyMap {

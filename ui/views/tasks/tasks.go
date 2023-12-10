@@ -27,15 +27,18 @@ const (
 )
 
 type Model struct {
-	ViewId            common.ViewId
+	widgetViewsTabs   common.Widget
+	widgetTasksTable  common.Widget
+	widgetTaskSidebar common.Widget
 	ctx               *context.UserContext
-	state             TasksState
-	widgetViewsTabs   taskstabs.Model
-	widgetTasksTable  taskstable.Model
-	widgetTaskSidebar taskssidebar.Model
-	spinner           spinner.Model
-	showSpinner       bool
 	log               *log.Logger
+	ViewId            common.ViewId
+	widgetsList       []common.Widget
+	spinner           spinner.Model
+	size              common.Size
+	state             TasksState
+	showSpinner       bool
+	ifBorders         bool
 }
 
 func (m Model) Ready() bool {
@@ -56,26 +59,44 @@ func (m Model) KeyMap() help.KeyMap {
 	return km
 }
 
-func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
+func InitialModel(ctx *context.UserContext, logger *log.Logger) common.View {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + ViewId)
 
+	var (
+		widgetViewsTabs   = taskstabs.InitialModel(ctx, log)
+		widgetTasksTable  = taskstable.InitialModel(ctx, log)
+		widgetTaskSidebar = taskssidebar.InitialModel(ctx, log)
+	)
+
+	widgetsList := []common.Widget{
+		widgetViewsTabs,
+		widgetTasksTable,
+		widgetTaskSidebar,
+	}
+
 	return Model{
 		ViewId:            ViewId,
 		ctx:               ctx,
 		state:             TasksStateTasksTable,
-		widgetViewsTabs:   taskstabs.InitialModel(ctx, log),
-		widgetTasksTable:  taskstable.InitialModel(ctx, log),
-		widgetTaskSidebar: taskssidebar.InitialModel(ctx, log),
+		widgetViewsTabs:   widgetViewsTabs,
+		widgetTasksTable:  widgetTasksTable,
+		widgetTaskSidebar: widgetTaskSidebar,
+		widgetsList:       widgetsList,
 		spinner:           s,
 		showSpinner:       true,
 		log:               log,
+		ifBorders:         true,
+		size: common.Size{
+			Width:  0,
+			Height: 0,
+		},
 	}
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -87,15 +108,15 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			switch m.state {
 			case TasksStateTaskSidebar:
 				m.state = TasksStateTasksTable
-				m.widgetTasksTable.Focused = true
-				m.widgetTaskSidebar.Focused = false
-				m.widgetViewsTabs.Focused = false
+				m.widgetTasksTable.SetFocused(true)
+				m.widgetTaskSidebar.SetFocused(false)
+				m.widgetViewsTabs.SetFocused(false)
 
 			case TasksStateViewsTabs:
 				m.state = TasksStateTasksTable
-				m.widgetTasksTable.Focused = true
-				m.widgetTaskSidebar.Focused = false
-				m.widgetViewsTabs.Focused = false
+				m.widgetTasksTable.SetFocused(true)
+				m.widgetTaskSidebar.SetFocused(false)
+				m.widgetViewsTabs.SetFocused(false)
 
 			case TasksStateTasksTable:
 				m.state = TasksStateTasksTable
@@ -108,17 +129,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			case "h", "left", "l", "right":
 				if m.state == TasksStateTasksTable {
 					m.state = TasksStateViewsTabs
-					m.widgetTasksTable.Focused = false
-					m.widgetTaskSidebar.Focused = false
-					m.widgetViewsTabs.Focused = true
+					m.widgetTasksTable.SetFocused(false)
+					m.widgetTaskSidebar.SetFocused(false)
+					m.widgetViewsTabs.SetFocused(true)
 				}
 
 			case "j", "down", "k", "up":
 				if m.state == TasksStateViewsTabs {
 					m.state = TasksStateTasksTable
-					m.widgetTasksTable.Focused = true
-					m.widgetTaskSidebar.Focused = false
-					m.widgetViewsTabs.Focused = false
+					m.widgetTasksTable.SetFocused(true)
+					m.widgetTaskSidebar.SetFocused(false)
+					m.widgetViewsTabs.SetFocused(false)
 				}
 			}
 
@@ -142,11 +163,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 		}
 
-	case tea.WindowSizeMsg:
-		m.log.Debug("Received: tea.WindowSizeMsg",
-			"width", msg.Width,
-			"height", msg.Height)
-
 	case taskstabs.TabChangedMsg:
 		tab := taskstabs.Tab(msg)
 		m.log.Info("Received: TabChangedMsg", "name", tab.Name, "id", tab.Id)
@@ -163,6 +179,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case taskstable.TasksListReadyMsg:
 		m.log.Info("Received: TasksListReady")
 		m.showSpinner = false
+		// m = m.Resize(m.size)
 		cmds = append(cmds,
 			m.spinner.Tick,
 		)
@@ -179,8 +196,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.log.Infof("Received: taskstable.TaskSelectedMsg: %s", id)
 		if m.state == TasksStateTasksTable {
 			m.state = TasksStateTaskSidebar
-			m.widgetTasksTable.Focused = false
-			m.widgetTaskSidebar.Focused = true
+			m.widgetTasksTable.SetFocused(false)
+			m.widgetTaskSidebar.SetFocused(true)
 		}
 		cmds = append(cmds, taskssidebar.TaskSelectedCmd(id))
 	}
@@ -197,25 +214,53 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+func (m Model) Resize(size common.Size) Model {
+	if m.ifBorders {
+		size.Width -= 2
+		size.Height -= 2
+	}
+
+	tableWidth := int(0.4 * float32(size.Width))
+	m.widgetTasksTable = m.widgetTasksTable.SetSize(common.Size{
+		Width:  tableWidth,
+		Height: size.Height,
+	})
+
+	widgetTasksTableRendered := m.widgetTasksTable.View()
+	widgetTasksTableWidth := lipgloss.Width(widgetTasksTableRendered)
+	widgetTasksTableHeight := lipgloss.Height(widgetTasksTableRendered)
+
+	m.widgetTaskSidebar = m.widgetTaskSidebar.SetSize(common.Size{
+		Width:  size.Width - widgetTasksTableWidth,
+		Height: widgetTasksTableHeight,
+	})
+
+	return m
+}
+
 func (m Model) View() string {
 	if m.showSpinner {
 		return lipgloss.Place(
-			m.ctx.WindowSize.Width, m.ctx.WindowSize.Height,
+			m.ctx.WindowSize.Width,
+			m.ctx.WindowSize.Height,
 			lipgloss.Center,
 			lipgloss.Center,
-			fmt.Sprintf("%s Loading tasks...", m.spinner.View()),
+			fmt.Sprintf("%s Loading tasks...",
+				m.spinner.View()),
 		)
 	}
 
+	widgetViewsTabsRendered := m.widgetViewsTabs.View()
+
 	tableAndSidebar := ""
-	if m.widgetTasksTable.Hidden {
+	if m.widgetTasksTable.GetHidden() {
 		tableAndSidebar = lipgloss.Place(
 			int(0.9*float32(m.ctx.WindowSize.Width)),
-			int(0.7*float32(m.ctx.WindowSize.Height)),
+			m.size.Height,
+			// availableHeight,
 			lipgloss.Center, lipgloss.Center,
 			"No tasks founds",
 		)
-
 	} else {
 		tableAndSidebar = lipgloss.JoinHorizontal(
 			lipgloss.Left,
@@ -223,25 +268,54 @@ func (m Model) View() string {
 			m.widgetTaskSidebar.View(),
 		)
 	}
+
 	return lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
-		BorderRight(true).
-		BorderBottom(true).
-		BorderTop(true).
-		BorderLeft(true).
+		BorderRight(m.ifBorders).
+		BorderBottom(m.ifBorders).
+		BorderTop(m.ifBorders).
+		BorderLeft(m.ifBorders).
 		Render(lipgloss.JoinVertical(
 			lipgloss.Top,
-			m.widgetViewsTabs.View(),
+			widgetViewsTabsRendered,
 			tableAndSidebar,
 		))
 }
 
 func (m Model) Init() tea.Cmd {
 	m.log.Infof("Initializing...")
+
+	cmds := make([]tea.Cmd, len(m.widgetsList))
+	for i, w := range m.widgetsList {
+		cmds[i] = w.Init()
+	}
+
+	cmds = append(cmds, m.spinner.Tick)
+
 	return tea.Batch(
-		m.widgetViewsTabs.Init(),
-		m.widgetTasksTable.Init(),
-		m.widgetTaskSidebar.Init(),
-		m.spinner.Tick,
+		cmds...,
 	)
+}
+
+func (m Model) SetSize(s common.Size) common.View {
+	availableHeight := s.Height
+	// availableHeight := s.Height - m.ctx.WindowSize.MetaHeight
+	// availableHeight := m.ctx.WindowSize.Height - m.ctx.WindowSize.MetaHeight
+	widgetViewsTabsRendered := m.widgetViewsTabs.View()
+	availableHeight -= lipgloss.Height(widgetViewsTabsRendered)
+	// availableHeight -= 1
+	m = m.Resize(common.Size{
+		Width:  s.Width,
+		Height: availableHeight,
+	})
+	m.size = s
+	return m
+}
+
+func (m Model) GetSize() common.Size {
+	return m.size
+}
+
+func (m Model) GetViewId() common.ViewId {
+	return m.ViewId
 }

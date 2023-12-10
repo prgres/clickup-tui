@@ -21,12 +21,27 @@ const WidgetId = "widgetTaskSidebar"
 
 type Model struct {
 	ctx          *context.UserContext
+	log          *log.Logger
+	SelectedTask clickup.Task
 	viewport     viewport.Model
+	size         common.Size
 	Focused      bool
 	Hidden       bool
 	Ready        bool
-	SelectedTask clickup.Task
-	log          *log.Logger
+	ifBorders    bool
+}
+
+func (m Model) SetSize(s common.Size) common.Widget {
+	if m.ifBorders {
+		s.Width -= 2  // two borders
+		s.Height -= 2 // two borders
+	}
+
+	m.size = s
+	m.viewport.Width = m.size.Width
+	m.viewport.Height = m.size.Height
+
+	return m
 }
 
 func (m Model) KeyMap() help.KeyMap {
@@ -86,10 +101,11 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		SelectedTask: clickup.Task{},
 		Ready:        false,
 		log:          log,
+		ifBorders:    true,
 	}
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
 		cmds []tea.Cmd
@@ -113,13 +129,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.log.Info("Received: InitMsg")
 		m.Ready = false
 		m.viewport.SetContent("Loading...")
-
-	case tea.WindowSizeMsg:
-		m.log.Debug("Received: tea.WindowSizeMsg",
-			"width", msg.Width,
-			"height", msg.Height)
-		m.viewport.Width = int(0.6 * float32(m.ctx.WindowSize.Width))
-		m.viewport.Height = int(0.7 * float32(m.ctx.WindowSize.Height))
 
 	case TaskSelectedMsg:
 		id := string(msg)
@@ -171,22 +180,38 @@ func (m Model) View() string {
 	if m.Focused {
 		bColor = lipgloss.Color("#8909FF")
 	}
+
 	return lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(bColor).
-		BorderRight(true).
-		BorderBottom(true).
-		BorderTop(true).
-		BorderLeft(true).
-		Width(m.viewport.Width).
-		Height(m.viewport.Height).
+		BorderRight(m.ifBorders).
+		BorderBottom(m.ifBorders).
+		BorderTop(m.ifBorders).
+		BorderLeft(m.ifBorders).
 		Render(
 			m.viewport.View(),
-			// m.viewport.View() + "\n", // a extra newline due to table height do not consider headerView
 		)
 }
 
 func (m Model) Init() tea.Cmd {
 	m.log.Info("Initializing...")
 	return InitCmd()
+}
+
+func (m Model) GetFocused() bool {
+	return m.Focused
+}
+
+func (m Model) SetFocused(f bool) common.Widget {
+	m.Focused = f
+	return m
+}
+
+func (m Model) GetHidden() bool {
+	return m.Hidden
+}
+
+func (m Model) SetHidden(h bool) common.Widget {
+	m.Hidden = h
+	return m
 }
