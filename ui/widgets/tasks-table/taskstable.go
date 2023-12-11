@@ -22,7 +22,6 @@ type Model struct {
 	WidgetId          common.WidgetId
 	SelectedTab       taskstabs.Tab
 	requiredColsKeys  []string
-	columnsKeys       []string // TODO: ugly hack since table.Column does not expose any Getters. Waits for https://github.com/Evertras/bubble-table/issues/157
 	columns           []table.Column
 	requiredCols      []table.Column
 	table             table.Model
@@ -138,7 +137,6 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		ctx:              ctx,
 		table:            t,
 		columns:          columns,
-		columnsKeys:      []string{},
 		requiredCols:     requiredCols,
 		requiredColsKeys: requiredColsKeys,
 		tasks:            map[string][]clickup.Task{},
@@ -155,6 +153,15 @@ func (m *Model) RefreshTable() tea.Cmd {
 	return m.refreshTable()
 }
 
+func (m *Model) GetColumnsKey() []string {
+	r := make([]string, len(m.columns))
+	for i, c := range m.columns {
+		r[i] = c.Key()
+	}
+
+	return r
+}
+
 func (m *Model) refreshTable() tea.Cmd {
 	m.log.Info("Synchonizing table...")
 	tasks := m.getSelectedViewTasks()
@@ -166,7 +173,7 @@ func (m *Model) refreshTable() tea.Cmd {
 		return HideTableCmd()
 	}
 
-	items := taskListToRows(tasks, m.columnsKeys)
+	items := taskListToRows(tasks, m.GetColumnsKey())
 
 	m.SelectedTaskIndex = m.table.GetHighlightedRowIndex()
 
@@ -238,9 +245,6 @@ func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 		columns := []table.Column{}
 		columns = append(columns, m.requiredCols...)
 
-		columnsKeys := []string{}
-		columnsKeys = append(columnsKeys, m.requiredColsKeys...)
-
 		// if m.autoColumns {
 		//      tab := viewtabs.Tab(msg)
 		// 	for _, field := range view.Columns.Fields {
@@ -256,7 +260,6 @@ func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 
 		m.log.Infof("Columns: %d", len(columns))
 		m.columns = columns
-		m.columnsKeys = columnsKeys
 
 		m.SelectedTab = tab
 		tasks := m.tasks[tab.Id]
