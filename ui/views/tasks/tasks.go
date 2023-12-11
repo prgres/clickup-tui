@@ -179,7 +179,6 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 	case taskstable.TasksListReadyMsg:
 		m.log.Info("Received: TasksListReady")
 		m.showSpinner = false
-		// m = m.Resize(m.size)
 		cmds = append(cmds,
 			m.spinner.Tick,
 		)
@@ -299,15 +298,14 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) SetSize(s common.Size) common.View {
 	availableHeight := s.Height
-	// availableHeight := s.Height - m.ctx.WindowSize.MetaHeight
-	// availableHeight := m.ctx.WindowSize.Height - m.ctx.WindowSize.MetaHeight
 	widgetViewsTabsRendered := m.widgetViewsTabs.View()
 	availableHeight -= lipgloss.Height(widgetViewsTabsRendered)
-	// availableHeight -= 1
+
 	m = m.Resize(common.Size{
 		Width:  s.Width,
 		Height: availableHeight,
 	})
+
 	m.size = s
 	return m
 }

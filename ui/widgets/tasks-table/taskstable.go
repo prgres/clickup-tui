@@ -22,7 +22,7 @@ type Model struct {
 	WidgetId          common.WidgetId
 	SelectedTab       taskstabs.Tab
 	requiredColsKeys  []string
-	columnsKeys       []string
+	columnsKeys       []string // TODO: ugly hack since table.Column does not expose any Getters. Waits for https://github.com/Evertras/bubble-table/issues/157
 	columns           []table.Column
 	requiredCols      []table.Column
 	table             table.Model
