@@ -108,15 +108,15 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 			switch m.state {
 			case TasksStateTaskSidebar:
 				m.state = TasksStateTasksTable
-				m.widgetTasksTable.SetFocused(true)
-				m.widgetTaskSidebar.SetFocused(false)
-				m.widgetViewsTabs.SetFocused(false)
+				m.widgetTasksTable = m.widgetTasksTable.SetFocused(true)
+				m.widgetTaskSidebar = m.widgetTaskSidebar.SetFocused(false)
+				m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 
 			case TasksStateViewsTabs:
 				m.state = TasksStateTasksTable
-				m.widgetTasksTable.SetFocused(true)
-				m.widgetTaskSidebar.SetFocused(false)
-				m.widgetViewsTabs.SetFocused(false)
+				m.widgetTasksTable = m.widgetTasksTable.SetFocused(true)
+				m.widgetTaskSidebar = m.widgetTaskSidebar.SetFocused(false)
+				m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 
 			case TasksStateTasksTable:
 				m.state = TasksStateTasksTable
@@ -129,17 +129,17 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 			case "h", "left", "l", "right":
 				if m.state == TasksStateTasksTable {
 					m.state = TasksStateViewsTabs
-					m.widgetTasksTable.SetFocused(false)
-					m.widgetTaskSidebar.SetFocused(false)
-					m.widgetViewsTabs.SetFocused(true)
+					m.widgetTasksTable = m.widgetTasksTable.SetFocused(false)
+					m.widgetTaskSidebar = m.widgetTaskSidebar.SetFocused(false)
+					m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(true)
 				}
 
 			case "j", "down", "k", "up":
 				if m.state == TasksStateViewsTabs {
 					m.state = TasksStateTasksTable
-					m.widgetTasksTable.SetFocused(true)
-					m.widgetTaskSidebar.SetFocused(false)
-					m.widgetViewsTabs.SetFocused(false)
+					m.widgetTasksTable = m.widgetTasksTable.SetFocused(true)
+					m.widgetTaskSidebar = m.widgetTaskSidebar.SetFocused(false)
+					m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 				}
 			}
 
@@ -196,8 +196,8 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		m.log.Infof("Received: taskstable.TaskSelectedMsg: %s", id)
 		if m.state == TasksStateTasksTable {
 			m.state = TasksStateTaskSidebar
-			m.widgetTasksTable.SetFocused(false)
-			m.widgetTaskSidebar.SetFocused(true)
+			m.widgetTasksTable = m.widgetTasksTable.SetFocused(false)
+			m.widgetTaskSidebar = m.widgetTaskSidebar.SetFocused(true)
 		}
 		cmds = append(cmds, taskssidebar.TaskSelectedCmd(id))
 	}
