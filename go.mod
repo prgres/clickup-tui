@@ -33,7 +33,7 @@ require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/bubbles v0.16.1
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
-	github.com/evertras/bubble-table v0.15.4
+	github.com/evertras/bubble-table v0.15.5
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/kkyr/fig v0.3.2
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
