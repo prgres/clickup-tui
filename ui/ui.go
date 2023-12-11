@@ -29,8 +29,6 @@ type Model struct {
 	viewLists      common.View
 	viewTasks      common.View
 
-	viewsList []common.View
-
 	dialogHelp help.Model
 
 	KeyMap KeyMap
@@ -87,22 +85,6 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		state = spaces.ViewId
 	}
 
-	var (
-		viewWorkspaces = workspaces.InitialModel(ctx, log)
-		viewSpaces     = spaces.InitialModel(ctx, log)
-		viewTasks      = tasks.InitialModel(ctx, log)
-		viewLists      = lists.InitialModel(ctx, log)
-		viewFolders    = folders.InitialModel(ctx, log)
-
-		viewsList = []common.View{
-			viewWorkspaces,
-			viewSpaces,
-			viewTasks,
-			viewLists,
-			viewFolders,
-		}
-	)
-
 	return Model{
 		ctx:   ctx,
 		state: state,
@@ -113,8 +95,6 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		viewTasks:      tasks.InitialModel(ctx, log),
 		viewLists:      lists.InitialModel(ctx, log),
 		viewFolders:    folders.InitialModel(ctx, log),
-
-		viewsList: viewsList,
 
 		dialogHelp: help.InitialModel(ctx, log),
 		KeyMap:     DefaultKeyMap(),
@@ -182,7 +162,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 
 			return m, tea.Batch(cmds...)
-
 		}
 
 	case tea.WindowSizeMsg:
@@ -191,12 +170,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			"height", msg.Height)
 		m.ctx.WindowSize.Width = msg.Width
 		m.ctx.WindowSize.Height = msg.Height
-
-		// size := common.Size{
-		// 	Width:  msg.Width,
-		// 	Height: msg.Height - m.ctx.WindowSize.MetaHeight,
-		// }
-		// m = m.SetSize(size)
 
 		return m, nil
 
@@ -229,6 +202,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case m.viewTasks.GetViewId():
 			m.state = m.viewLists.GetViewId()
 		}
+
 		m.dialogHelp.ShowHelp = false
 	}
 
@@ -311,16 +285,7 @@ func (m Model) View() string {
 	}
 
 	divider := strings.Repeat("\n", dividerHeight)
-	// newMetaHeight := lipgloss.Height(divider) + footerHeight
-	// if newMetaHeight != m.ctx.WindowSize.MetaHeight {
-	// 	m.log.Info("Updating meta height", "newMetaHeight", newMetaHeight)
-	// 	m.ctx.WindowSize.MetaHeight = newMetaHeight
-	//
-	// 	m = m.SetSize(common.Size{
-	// 		Width:  m.ctx.WindowSize.Width,
-	// 		Height: m.ctx.WindowSize.Height - m.ctx.WindowSize.MetaHeight,
-	// 	})
-	// }
+
 	m.ctx.WindowSize.MetaHeight = lipgloss.Height(divider) + footerHeight
 
 	return lipgloss.JoinVertical(
@@ -342,13 +307,3 @@ func (m Model) Init() tea.Cmd {
 		m.dialogHelp.Init(),
 	)
 }
-
-// func (m Model) SetSize(size common.Size) Model {
-// 	m.viewWorkspaces = m.viewWorkspaces.SetSize(size)
-// 	m.viewSpaces = m.viewSpaces.SetSize(size)
-// 	m.viewFolders = m.viewFolders.SetSize(size)
-// 	m.viewLists = m.viewLists.SetSize(size)
-// 	m.viewTasks = m.viewTasks.SetSize(size)
-//
-// 	return m
-// }
