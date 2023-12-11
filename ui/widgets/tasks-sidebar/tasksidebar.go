@@ -109,6 +109,11 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
+var KeyPreviewInWebBrowser = key.NewBinding(
+	key.WithKeys("p"),
+	key.WithHelp("p", "preview in web browser"),
+)
+
 func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
@@ -118,8 +123,8 @@ func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.KeyMsg:
-		switch keypress := msg.String(); keypress {
-		case "p":
+		switch {
+		case key.Matches(msg, KeyPreviewInWebBrowser):
 			if !m.Ready {
 				m.log.Debug("Received: p, but Not ready yet")
 				break
@@ -129,6 +134,7 @@ func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 				panic(err)
 			}
 		}
+
 	case InitMsg:
 		m.log.Info("Received: InitMsg")
 		m.Ready = false
