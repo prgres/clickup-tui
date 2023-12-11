@@ -41,6 +41,10 @@ func (m Model) SetSize(s common.Size) common.Widget {
 	m.viewport.Width = m.size.Width
 	m.viewport.Height = m.size.Height
 
+	task := lipgloss.NewStyle().Width(m.size.Width).
+		Render(m.renderTask(m.SelectedTask))
+	m.viewport.SetContent(task)
+
 	return m
 }
 
