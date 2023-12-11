@@ -53,15 +53,10 @@ func BackToPreviousViewCmd(currentView ViewId) tea.Cmd {
 	}
 }
 
-type Size struct {
-	Width  int
-	Height int
-}
+type ErrMsg error
 
-type ResizeMsg Size
-
-func ResizeCmd(s Size) tea.Cmd {
+func ErrCmd(err ErrMsg) tea.Cmd {
 	return func() tea.Msg {
-		return ResizeMsg(s)
+		return err
 	}
 }
