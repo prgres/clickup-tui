@@ -47,6 +47,7 @@ func NewClient(token string, apiUrl string, logger *slog.Logger) *Client {
 		logger:     logger,
 	}
 }
+
 func NewDefaultClientWithLogger(token string, logger *slog.Logger) *Client {
 	return &Client{
 		token:      token,

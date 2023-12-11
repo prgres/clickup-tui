@@ -17,19 +17,27 @@ const WidgetId = "widgetTasksTabs"
 
 type Tab struct {
 	Name   string
-	Active bool
 	Type   string
 	Id     string
+	Active bool
 }
 
 type Model struct {
 	ctx          *context.UserContext
 	tabs         map[string][]Tab
-	SelectedTab  int
-	SelectedList string
-	Focused      bool
 	log          *log.Logger
+	SelectedList string
 	keyMap       KeyMap
+	size         common.Size
+	SelectedTab  int
+	Focused      bool
+	Hidden       bool
+}
+
+func (m Model) SetSize(s common.Size) common.Widget {
+	m.size = s
+
+	return m
 }
 
 func (m Model) KeyMap() help.KeyMap {
@@ -64,7 +72,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -227,4 +235,22 @@ func DefaultKeyMap() KeyMap {
 			key.WithHelp("j/k/escape", "switch focus to tasks table"),
 		),
 	}
+}
+
+func (m Model) GetFocused() bool {
+	return m.Focused
+}
+
+func (m Model) SetFocused(f bool) common.Widget {
+	m.Focused = f
+	return m
+}
+
+func (m Model) GetHidden() bool {
+	return m.Hidden
+}
+
+func (m Model) SetHidden(h bool) common.Widget {
+	m.Hidden = h
+	return m
 }

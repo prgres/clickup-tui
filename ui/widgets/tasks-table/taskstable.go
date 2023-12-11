@@ -16,29 +16,38 @@ import (
 const WidgetId = "widgetTasksTable"
 
 type Model struct {
+	tasks             map[string][]clickup.Task
+	log               *log.Logger
+	ctx               *context.UserContext
 	WidgetId          common.WidgetId
-	Hidden            bool
 	SelectedTab       taskstabs.Tab
+	requiredColsKeys  []string
+	columnsKeys       []string // TODO: ugly hack since table.Column does not expose any Getters. Waits for https://github.com/Evertras/bubble-table/issues/157
+	columns           []table.Column
+	requiredCols      []table.Column
+	table             table.Model
+	size              common.Size
 	SelectedTaskIndex int
+	autoColumns       bool
 	Focused           bool
-
-	ctx          *context.UserContext
-	table        table.Model
-	columns      []table.Column
-	requiredCols []table.Column
-	tasks        map[string][]clickup.Task
-	autoColumns  bool
-	size         size
-	log          *log.Logger
-
-	// TODO: ugly hack since table.Column does not expose any Getters. Waits for https://github.com/Evertras/bubble-table/issues/157
-	columnsKeys      []string
-	requiredColsKeys []string
+	Hidden            bool
+	ifBorders         bool
 }
 
-type size struct {
-	Width  int
-	Height int
+func (m Model) SetSize(s common.Size) common.Widget {
+	if m.ifBorders {
+		s.Width -= 2  // two borders
+		s.Height -= 2 // two borders
+	}
+
+	if m.size.Width == s.Width && m.size.Height == s.Height {
+		return m
+	}
+
+	m.size = s
+	m.log.Info("here")
+	m.refreshTable()
+	return m
 }
 
 func (m Model) KeyMap() help.KeyMap {
@@ -102,7 +111,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 	requiredColsKeys := []string{"name", "status"}
 
-	size := size{
+	size := common.Size{
 		Width:  0,
 		Height: 0,
 	}
@@ -112,6 +121,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		SelectableRows(true).
 		WithSelectedText(" ", "✓").
 		Focused(true).
+		WithPageSize(0).
 		WithBaseStyle(
 			lipgloss.NewStyle().
 				Align(lipgloss.Left),
@@ -137,7 +147,12 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		Focused:          true,
 		Hidden:           false,
 		log:              log,
+		ifBorders:        true,
 	}
+}
+
+func (m *Model) RefreshTable() tea.Cmd {
+	return m.refreshTable()
 }
 
 func (m *Model) refreshTable() tea.Cmd {
@@ -155,13 +170,26 @@ func (m *Model) refreshTable() tea.Cmd {
 
 	m.SelectedTaskIndex = m.table.GetHighlightedRowIndex()
 
+	pageSize := m.size.Height
+	m.log.Infof("pageSize: %d", pageSize)
+	if m.table.GetHeaderVisibility() {
+		pageSize -= 1
+	}
+	if m.table.GetFooterVisibility() {
+		pageSize -= 1
+	}
+	pageSize -= 3 // TODO: why 3? fix
+	if pageSize < 0 {
+		pageSize = 1
+	}
+	m.log.Infof("pageSize: %d", pageSize)
 	m.table = m.table.
 		WithRows(items).
 		WithColumns(m.columns).
-		SelectableRows(true).
 		WithTargetWidth(m.size.Width).
-		WithPageSize(m.size.Height).
-		WithMinimumHeight(m.size.Height)
+		WithMaxTotalWidth(m.size.Width).
+		WithMinimumHeight(m.size.Height).
+		WithPageSize(pageSize)
 
 	m.log.Info("Table synchonized")
 
@@ -173,7 +201,7 @@ func (m *Model) loadTasks(tasks []clickup.Task) {
 	m.tasks[m.SelectedTab.Id] = tasks
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -237,21 +265,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmd = m.refreshTable()
 		cmds = append(cmds, cmd)
 
-		if len(m.tasks[m.SelectedTab.Id]) != 0 { //TODO: store tasks list in var
+		if len(m.tasks[m.SelectedTab.Id]) != 0 { // TODO: store tasks list in var
 			taskId := m.getSelectedViewTaskIdByIndex(m.SelectedTaskIndex)
 			cmds = append(cmds, TaskSelectedCmd(taskId))
 		}
 
 		cmds = append(cmds, TasksListReadyCmd())
-
-	case tea.WindowSizeMsg:
-		m.log.Debug("Received: tea.WindowSizeMsg",
-			"width", msg.Width,
-			"height", msg.Height)
-		m.size.Width = int(0.4 * float32(m.ctx.WindowSize.Width))
-		m.size.Height = int(0.7 * float32(m.ctx.WindowSize.Height))
-
-		cmds = append(cmds, m.refreshTable())
 
 	case taskstabs.FetchTasksForTabsMsg:
 		m.log.Infof("Received: viewtabs.FetchTasksForTabsMsg")
@@ -288,10 +307,10 @@ func (m Model) View() string {
 	return lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(bColor).
-		BorderBottom(true).
-		BorderRight(true).
-		BorderTop(true).
-		BorderLeft(true).
+		BorderBottom(m.ifBorders).
+		BorderRight(m.ifBorders).
+		BorderTop(m.ifBorders).
+		BorderLeft(m.ifBorders).
 		Render(
 			m.table.View(),
 		)
@@ -320,4 +339,22 @@ func (m *Model) fetchTasksForList(listId string) error {
 	}
 	m.tasks[listId] = tasks
 	return nil
+}
+
+func (m Model) GetFocused() bool {
+	return m.Focused
+}
+
+func (m Model) SetFocused(f bool) common.Widget {
+	m.Focused = f
+	return m
+}
+
+func (m Model) GetHidden() bool {
+	return m.Hidden
+}
+
+func (m Model) SetHidden(h bool) common.Widget {
+	m.Hidden = h
+	return m
 }

@@ -23,13 +23,14 @@ const (
 )
 
 type Model struct {
-	ViewId          common.ViewId
-	ctx             *context.UserContext
-	state           ListsState
 	widgetListsList lists.Model
-	spinner         spinner.Model
-	showSpinner     bool
+	ctx             *context.UserContext
 	log             *log.Logger
+	ViewId          common.ViewId
+	spinner         spinner.Model
+	size            common.Size
+	state           ListsState
+	showSpinner     bool
 }
 
 func (m Model) Ready() bool {
@@ -40,7 +41,7 @@ func (m Model) KeyMap() help.KeyMap {
 	return m.widgetListsList.KeyMap()
 }
 
-func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
+func InitialModel(ctx *context.UserContext, logger *log.Logger) common.View {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
@@ -57,7 +58,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -111,4 +112,18 @@ func (m Model) Init() tea.Cmd {
 		m.spinner.Tick,
 		m.widgetListsList.Init(),
 	)
+}
+
+func (m Model) SetSize(size common.Size) common.View {
+	m.size = size
+	m.widgetListsList = m.widgetListsList.SetSize(size)
+	return m
+}
+
+func (m Model) GetSize() common.Size {
+	return m.size
+}
+
+func (m Model) GetViewId() common.ViewId {
+	return m.ViewId
 }

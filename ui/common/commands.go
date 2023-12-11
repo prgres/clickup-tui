@@ -52,3 +52,11 @@ func BackToPreviousViewCmd(currentView ViewId) tea.Cmd {
 		return BackToPreviousViewMsg(currentView)
 	}
 }
+
+type ErrMsg error
+
+func ErrCmd(err ErrMsg) tea.Cmd {
+	return func() tea.Msg {
+		return err
+	}
+}

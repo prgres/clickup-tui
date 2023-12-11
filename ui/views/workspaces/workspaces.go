@@ -16,12 +16,13 @@ import (
 const ViewId = "viewWorkspaces"
 
 type Model struct {
-	ViewId               common.ViewId
-	ctx                  *context.UserContext
 	widgetWorkspacesList workspaceslist.Model
-	spinner              spinner.Model
-	showSpinner          bool
+	ctx                  *context.UserContext
 	log                  *log.Logger
+	ViewId               common.ViewId
+	spinner              spinner.Model
+	size                 common.Size
+	showSpinner          bool
 }
 
 func (m Model) Ready() bool {
@@ -32,7 +33,7 @@ func (m Model) KeyMap() help.KeyMap {
 	return m.widgetWorkspacesList.KeyMap()
 }
 
-func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
+func InitialModel(ctx *context.UserContext, logger *log.Logger) common.View {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
@@ -48,7 +49,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -102,4 +103,18 @@ func (m Model) Init() tea.Cmd {
 		m.spinner.Tick,
 		m.widgetWorkspacesList.Init(),
 	)
+}
+
+func (m Model) SetSize(size common.Size) common.View {
+	m.size = size
+	m.widgetWorkspacesList = m.widgetWorkspacesList.SetSize(size)
+	return m
+}
+
+func (m Model) GetSize() common.Size {
+	return m.size
+}
+
+func (m Model) GetViewId() common.ViewId {
+	return m.ViewId
 }

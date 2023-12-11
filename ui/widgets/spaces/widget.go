@@ -14,13 +14,13 @@ import (
 const WidgetId = "spacesList"
 
 type Model struct {
-	WidgetId          common.WidgetId
-	ctx               *context.UserContext
 	list              list.Model
-	SelectedSpace     string
-	spaces            []clickup.Space
-	SelectedWorkspace string
+	ctx               *context.UserContext
 	log               *log.Logger
+	WidgetId          common.WidgetId
+	SelectedSpace     string
+	SelectedWorkspace string
+	spaces            []clickup.Space
 }
 
 func (m Model) KeyMap() help.KeyMap {
@@ -53,7 +53,7 @@ func (m *Model) syncList(spaces []clickup.Space) {
 	m.log.Info("Synchronizing list...")
 	m.spaces = spaces
 
-	sre_index := 0 //TODO: rename
+	sre_index := 0 // TODO: rename
 	items := spaceListToItems(spaces)
 	itemsList := listitem.ItemListToBubblesItems(items)
 
@@ -78,12 +78,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.log.Info("Received: SpaceListReloadedMsg")
 		m.syncList(msg)
 		cmds = append(cmds, SpaceListReadyCmd())
-
-	case tea.WindowSizeMsg:
-		m.log.Debug("Received: tea.WindowSizeMsg",
-			"width", msg.Width,
-			"height", msg.Height)
-		m.list.SetSize(msg.Width, msg.Height)
 
 	case common.WorkspaceChangeMsg:
 		workspace := string(msg)
@@ -121,4 +115,9 @@ func (m Model) Init() tea.Cmd {
 		return m.getSpacesCmd(m.ctx.Config.DefaultWorkspace)
 	}
 	return nil
+}
+
+func (m Model) SetSize(s common.Size) Model {
+	m.list.SetSize(s.Width, s.Height)
+	return m
 }

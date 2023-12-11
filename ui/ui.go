@@ -23,11 +23,11 @@ type Model struct {
 	state common.ViewId
 	log   *log.Logger
 
-	viewWorkspaces workspaces.Model
-	viewSpaces     spaces.Model
-	viewFolders    folders.Model
-	viewLists      lists.Model
-	viewTasks      tasks.Model
+	viewWorkspaces common.View
+	viewSpaces     common.View
+	viewFolders    common.View
+	viewLists      common.View
+	viewTasks      common.View
 
 	dialogHelp help.Model
 
@@ -117,23 +117,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, m.KeyMap.GoToViewWorkspaces):
 			if m.viewWorkspaces.Ready() {
-				m.state = m.viewWorkspaces.ViewId
+				m.state = m.viewWorkspaces.GetViewId()
 			}
 		case key.Matches(msg, m.KeyMap.GoToViewSpaces):
 			if m.viewSpaces.Ready() {
-				m.state = m.viewSpaces.ViewId
+				m.state = m.viewSpaces.GetViewId()
 			}
 		case key.Matches(msg, m.KeyMap.GoToViewFolders):
 			if m.viewFolders.Ready() {
-				m.state = m.viewFolders.ViewId
+				m.state = m.viewFolders.GetViewId()
 			}
 		case key.Matches(msg, m.KeyMap.GoToViewLists):
 			if m.viewLists.Ready() {
-				m.state = m.viewLists.ViewId
+				m.state = m.viewLists.GetViewId()
 			}
 		case key.Matches(msg, m.KeyMap.GoToViewTasks):
 			if m.viewTasks.Ready() {
-				m.state = m.viewTasks.ViewId
+				m.state = m.viewTasks.GetViewId()
 			}
 		case key.Matches(msg, m.KeyMap.Refresh):
 			m.log.Info("Refreshing...")
@@ -144,15 +144,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		default:
 			switch m.state {
-			case m.viewSpaces.ViewId:
+			case m.viewSpaces.GetViewId():
 				m.viewSpaces, cmd = m.viewSpaces.Update(msg)
-			case m.viewFolders.ViewId:
+			case m.viewFolders.GetViewId():
 				m.viewFolders, cmd = m.viewFolders.Update(msg)
-			case m.viewLists.ViewId:
+			case m.viewLists.GetViewId():
 				m.viewLists, cmd = m.viewLists.Update(msg)
-			case m.viewTasks.ViewId:
+			case m.viewTasks.GetViewId():
 				m.viewTasks, cmd = m.viewTasks.Update(msg)
-			case m.viewWorkspaces.ViewId:
+			case m.viewWorkspaces.GetViewId():
 				m.viewWorkspaces, cmd = m.viewWorkspaces.Update(msg)
 			}
 
@@ -162,7 +162,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 
 			return m, tea.Batch(cmds...)
-
 		}
 
 	case tea.WindowSizeMsg:
@@ -170,37 +169,40 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			"width", msg.Width,
 			"height", msg.Height)
 		m.ctx.WindowSize.Width = msg.Width
-		m.ctx.WindowSize.Height = msg.Height - 2
+		m.ctx.WindowSize.Height = msg.Height
+
+		return m, nil
 
 	case common.WorkspaceChangeMsg:
 		workspace := string(msg)
 		m.log.Info("Received: WorkspaceChangeMsg", "workspace", workspace)
-		m.state = m.viewSpaces.ViewId
+		m.state = m.viewSpaces.GetViewId()
 
 	case common.SpaceChangeMsg:
 		m.log.Info("Received: SpaceChangeMsg", "space", string(msg))
-		m.state = m.viewFolders.ViewId
+		m.state = m.viewFolders.GetViewId()
 
 	case common.FolderChangeMsg:
 		m.log.Info("Received: FolderChangeMsg", "folder", string(msg))
-		m.state = m.viewLists.ViewId
+		m.state = m.viewLists.GetViewId()
 
 	case common.ListChangeMsg:
 		m.log.Info("Received: ListChangeMsg", "list", listitem.Item(msg).Description())
-		m.state = m.viewTasks.ViewId
+		m.state = m.viewTasks.GetViewId()
 
 	case common.BackToPreviousViewMsg:
 		m.log.Info("Received: BackToPreviousViewMsg")
 		switch m.state {
-		case m.viewSpaces.ViewId:
-			m.state = m.viewWorkspaces.ViewId
-		case m.viewFolders.ViewId:
-			m.state = m.viewSpaces.ViewId
-		case m.viewLists.ViewId:
-			m.state = m.viewFolders.ViewId
-		case m.viewTasks.ViewId:
-			m.state = m.viewLists.ViewId
+		case m.viewSpaces.GetViewId():
+			m.state = m.viewWorkspaces.GetViewId()
+		case m.viewFolders.GetViewId():
+			m.state = m.viewSpaces.GetViewId()
+		case m.viewLists.GetViewId():
+			m.state = m.viewFolders.GetViewId()
+		case m.viewTasks.GetViewId():
+			m.state = m.viewLists.GetViewId()
 		}
+
 		m.dialogHelp.ShowHelp = false
 	}
 
@@ -226,22 +228,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	// m.log.Info("Rendering...")
 	var viewToRender common.View
 
 	switch m.state {
-	case m.viewWorkspaces.ViewId:
+	case m.viewWorkspaces.GetViewId():
 		viewToRender = m.viewWorkspaces
-	case m.viewSpaces.ViewId:
+	case m.viewSpaces.GetViewId():
 		viewToRender = m.viewSpaces
-	case m.viewFolders.ViewId:
+	case m.viewFolders.GetViewId():
 		viewToRender = m.viewFolders
-	case m.viewLists.ViewId:
+	case m.viewLists.GetViewId():
 		viewToRender = m.viewLists
-	case m.viewTasks.ViewId:
+	case m.viewTasks.GetViewId():
 		viewToRender = m.viewTasks
+	default:
+		panic("Unknown view")
 	}
-
-	view := viewToRender.View()
 
 	viewKm := viewToRender.KeyMap()
 	km := common.NewKeyMap(
@@ -266,21 +269,28 @@ func (m Model) View() string {
 	footerHeight := lipgloss.Height(footer)
 
 	physicalHeight := m.ctx.WindowSize.Height
-	dividerHeight := physicalHeight - lipgloss.Height(view) - footerHeight
+	physicalWidth := m.ctx.WindowSize.Width
+
+	viewHeight := physicalHeight - footerHeight
+	viewToRender = viewToRender.SetSize(common.Size{
+		Width:  physicalWidth,
+		Height: viewHeight - m.ctx.WindowSize.MetaHeight,
+	})
+
+	dividerHeight := physicalHeight - viewHeight - footerHeight
 
 	if dividerHeight < 0 {
 		dividerHeight = 0
-		newViewHeigh := physicalHeight - footerHeight
-		view = lipgloss.NewStyle().
-			Height(newViewHeigh).
-			MaxHeight(newViewHeigh).
-			Render(view)
+		m.log.Info("dividerHeight", "dividerHeight", dividerHeight)
 	}
+
 	divider := strings.Repeat("\n", dividerHeight)
+
+	m.ctx.WindowSize.MetaHeight = lipgloss.Height(divider) + footerHeight
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		view,
+		viewToRender.View(),
 		divider,
 		footer,
 	)
@@ -291,9 +301,9 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.viewWorkspaces.Init(),
 		m.viewSpaces.Init(),
-		m.viewTasks.Init(),
-		m.viewLists.Init(),
 		m.viewFolders.Init(),
+		m.viewLists.Init(),
+		m.viewTasks.Init(),
 		m.dialogHelp.Init(),
 	)
 }
