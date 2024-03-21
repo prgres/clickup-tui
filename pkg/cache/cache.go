@@ -7,6 +7,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type Entry struct {
@@ -20,9 +23,11 @@ type Entry struct {
 type Data map[string]interface{}
 
 type Cache struct {
-	path   string
 	logger *slog.Logger
-	data   map[string]Data
+
+	data  map[string]Data
+	path  string
+	mutex sync.RWMutex
 }
 
 func NewCache(logger *slog.Logger, path string) *Cache {
@@ -103,23 +108,38 @@ func (c *Cache) Load() error {
 		return nil
 	}
 
+	errgroup := new(errgroup.Group)
 	for _, namespace := range namespaces {
-		data, err := c.loadNamespace(namespace.Name())
-		if err != nil {
-			return err
-		}
+		// nested function to prevent loop closure
+		func(namespace os.DirEntry) {
+			errgroup.Go(func() error {
+				data, err := c.loadNamespace(namespace.Name())
+				if err != nil {
+					return err
+				}
 
-		c.data[namespace.Name()] = data
+				c.mutex.Lock()
+				c.data[namespace.Name()] = data
+				c.mutex.Unlock()
+
+				return nil
+			})
+		}(namespace)
 	}
 
-	return nil
+	return errgroup.Wait()
 }
 
 func (c *Cache) GetNamespace(namespace string) Data {
+	c.mutex.Lock()
+
 	v, ok := c.data[namespace]
 	if !ok {
 		v = Data{}
 	}
+
+	c.mutex.Unlock()
+
 	return v
 }
 
@@ -151,7 +171,10 @@ func (c *Cache) Set(namespace string, key string, value interface{}) {
 	c.logger.Debug("Caching",
 		"namespace", namespace, "key", key)
 	data := c.GetNamespace(namespace)
+
+	c.mutex.Lock()
 	data[key] = value
+	c.mutex.Unlock()
 
 	path := fmt.Sprintf("%s/%s", c.path, namespace)
 	filename := fmt.Sprintf("%s.json", key)
@@ -164,13 +187,18 @@ func (c *Cache) Set(namespace string, key string, value interface{}) {
 
 func (c *Cache) Dump() error {
 	c.logger.Debug("Dumping cache")
+
+	errgroup := new(errgroup.Group)
 	for namespace, data := range c.data {
 		for key, value := range data {
-			path := fmt.Sprintf("%s/%s", c.path, namespace)
-			filename := fmt.Sprintf("%s.json", key)
-			if err := c.saveToFile(path, filename, value); err != nil {
-				return err
-			}
+			func(namespace string, key string, value interface{}) {
+				errgroup.Go(func() error {
+					path := fmt.Sprintf("%s/%s", c.path, namespace)
+					filename := fmt.Sprintf("%s.json", key)
+
+					return c.saveToFile(path, filename, value)
+				})
+			}(namespace, key, value)
 		}
 	}
 
@@ -265,29 +293,38 @@ func (c *Cache) Invalidate() error {
 		return err
 	}
 
+	errgroup := new(errgroup.Group)
 	for _, subdir := range subdirs {
 		if subdir.IsDir() {
-			subdirPath := filepath.Join(c.path, subdir.Name())
+			func(subdir os.DirEntry) {
+				errgroup.Go(func() error {
+					subdirPath := filepath.Join(c.path, subdir.Name())
 
-			// Remove files within the subdirectory
-			files, err := os.ReadDir(subdirPath)
-			if err != nil {
-				return err
-			}
+					// Remove files within the subdirectory
+					files, err := os.ReadDir(subdirPath)
+					if err != nil {
+						return err
+					}
 
-			for _, file := range files {
-				filePath := filepath.Join(subdirPath, file.Name())
-				if err := os.Remove(filePath); err != nil {
-					return err
-				}
-			}
+					for _, file := range files {
+						func(file os.DirEntry) {
+							errgroup.Go(func() error {
+								filePath := filepath.Join(subdirPath, file.Name())
+								return os.Remove(filePath)
+							})
+						}(file)
+					}
 
-			// Remove the subdirectory
-			if err := os.Remove(subdirPath); err != nil {
-				return err
-			}
+					// Remove the subdirectory
+					if err := os.Remove(subdirPath); err != nil {
+						return err
+					}
+
+					return nil
+				})
+			}(subdir)
 		}
 	}
 
-	return nil
+	return errgroup.Wait()
 }
