@@ -10,7 +10,6 @@ import (
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
-	taskstabs "github.com/prgrs/clickup/ui/widgets/tasks-tabs"
 )
 
 const WidgetId = "widgetTasksTable"
@@ -20,7 +19,7 @@ type Model struct {
 	log               *log.Logger
 	ctx               *context.UserContext
 	WidgetId          common.WidgetId
-	SelectedTab       taskstabs.Tab
+	SelectedParentId  string
 	requiredColsKeys  []string
 	columns           []table.Column
 	requiredCols      []table.Column
@@ -205,7 +204,7 @@ func (m *Model) refreshTable() tea.Cmd {
 
 func (m *Model) loadTasks(tasks []clickup.Task) {
 	m.log.Info("Reloading table")
-	m.tasks[m.SelectedTab.Id] = tasks
+	m.tasks[m.SelectedParentId] = tasks
 }
 
 func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
@@ -239,8 +238,8 @@ func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 		}
 
 	case TabChangedMsg:
-		tab := taskstabs.Tab(msg)
-		m.log.Infof("Received TabChangedMsg: %s", tab.Name)
+		tabId := string(msg)
+		m.log.Infof("Received TabChangedMsg: %s", tabId)
 
 		columns := []table.Column{}
 		columns = append(columns, m.requiredCols...)
@@ -261,36 +260,37 @@ func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 		m.log.Infof("Columns: %d", len(columns))
 		m.columns = columns
 
-		m.SelectedTab = tab
-		tasks := m.tasks[tab.Id]
+		m.SelectedParentId = tabId
+		tasks := m.tasks[m.SelectedParentId]
 
 		m.loadTasks(tasks)
 		cmd = m.refreshTable()
 		cmds = append(cmds, cmd)
 
-		if len(m.tasks[m.SelectedTab.Id]) != 0 { // TODO: store tasks list in var
+		if len(m.tasks[m.SelectedParentId]) != 0 { // TODO: store tasks list in var
 			taskId := m.getSelectedViewTaskIdByIndex(m.SelectedTaskIndex)
 			cmds = append(cmds, TaskSelectedCmd(taskId))
 		}
 
 		cmds = append(cmds, TasksListReadyCmd())
 
-	case taskstabs.FetchTasksForTabsMsg:
-		m.log.Infof("Received: viewtabs.FetchTasksForTabsMsg")
-		tabs := []taskstabs.Tab(msg)
-		for _, tab := range tabs {
-			m.log.Infof("Received: FetchTasksForTabsMsg: type %v", tab.Type)
-			switch tab.Type {
-			case "list":
-				if err := m.fetchTasksForList(tab.Id); err != nil {
-					return m, common.ErrCmd(err)
-				}
-			case "view":
-				if err := m.fetchTasksForViewId(tab.Id); err != nil {
-					return m, common.ErrCmd(err)
-				}
-			}
+	case FetchTasksForViewMsg:
+		m.log.Infof("Received: FetchTasksForViewMsg")
+		viewId := string(msg)
+		if err := m.fetchTasksForViewId(viewId); err != nil {
+			return m, common.ErrCmd(err)
 		}
+
+		cmd = m.refreshTable()
+		cmds = append(cmds, cmd)
+
+	case FetchTasksForListMsg:
+		m.log.Infof("Received: FetchTasksForListMsg")
+		listId := string(msg)
+		if err := m.fetchTasksForList(listId); err != nil {
+			return m, common.ErrCmd(err)
+		}
+
 		cmd = m.refreshTable()
 		cmds = append(cmds, cmd)
 	}

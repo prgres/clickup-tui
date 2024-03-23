@@ -2,7 +2,6 @@ package taskstable
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	taskstabs "github.com/prgrs/clickup/ui/widgets/tasks-tabs"
 )
 
 type TaskSelectedMsg string
@@ -21,11 +20,11 @@ func TasksListReadyCmd() tea.Cmd {
 	}
 }
 
-type TabChangedMsg taskstabs.Tab
+type TabChangedMsg string
 
-func TabChangedCmd(tab taskstabs.Tab) tea.Cmd {
+func TabChangedCmd(tabId string) tea.Cmd {
 	return func() tea.Msg {
-		return TabChangedMsg(tab)
+		return TabChangedMsg(tabId)
 	}
 }
 
