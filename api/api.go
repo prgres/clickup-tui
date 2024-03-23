@@ -226,6 +226,7 @@ func (m *Api) GetTasksFromList(listId string) ([]clickup.Task, error) {
 
 	return tasks, nil
 }
+
 func (m *Api) GetTasksFromView(viewId string) ([]clickup.Task, error) {
 	m.logger.Debug("Getting tasks for a view",
 		"viewId", viewId)

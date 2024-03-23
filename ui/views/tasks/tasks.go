@@ -172,9 +172,24 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 
 		cmds = append(cmds,
 			cmd,
-			taskstable.TabChangedCmd(tab),
+			taskstable.TabChangedCmd(tab.Id),
 			m.spinner.Tick,
 		)
+
+	case taskstabs.FetchTasksForTabsMsg:
+		m.log.Infof("Received: viewtabs.FetchTasksForTabsMsg")
+		tabs := []taskstabs.Tab(msg)
+		tabsCmd := make([]tea.Cmd, len(tabs))
+		for i, tab := range tabs {
+			m.log.Infof("Received: FetchTasksForTabsMsg: type %v", tab.Type)
+			switch tab.Type {
+			case "list":
+				tabsCmd[i] = taskstable.FetchTasksForListCmd(tab.Id)
+			case "view":
+				tabsCmd[i] = taskstable.FetchTasksForViewCmd(tab.Id)
+			}
+		}
+		cmds = append(cmds, tabsCmd...)
 
 	case taskstable.TasksListReadyMsg:
 		m.log.Info("Received: TasksListReady")
@@ -284,12 +299,12 @@ func (m Model) View() string {
 func (m Model) Init() tea.Cmd {
 	m.log.Infof("Initializing...")
 
-	cmds := make([]tea.Cmd, len(m.widgetsList))
-	for i, w := range m.widgetsList {
-		cmds[i] = w.Init()
-	}
+	cmds := make([]tea.Cmd, len(m.widgetsList)+1)
+	cmds[0] = m.spinner.Tick
 
-	cmds = append(cmds, m.spinner.Tick)
+	for i, w := range m.widgetsList {
+		cmds[i+1] = w.Init()
+	}
 
 	return tea.Batch(
 		cmds...,
