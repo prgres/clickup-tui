@@ -58,7 +58,6 @@ func (m *Model) syncList(workspaces []clickup.Workspace) {
 	if len(items) == 0 {
 		panic("list is empty")
 	}
-	// m.SelectedWorkspace = items[0].Description()
 
 	for i, item := range items {
 		if item.Description() == m.ctx.Config.DefaultWorkspace {
