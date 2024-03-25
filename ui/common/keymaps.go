@@ -40,10 +40,10 @@ func NewKeyMap(fullHelp func() [][]key.Binding, shortHelp func() []key.Binding) 
 func (km KeyMap) With(kb key.Binding) KeyMap {
 	return NewKeyMap(
 		func() [][]key.Binding {
-			return append(km.FullHelp(), []key.Binding{KeyBindingBack})
+			return append(km.FullHelp(), []key.Binding{kb})
 		},
 		func() []key.Binding {
-			return append(km.ShortHelp(), KeyBindingBack)
+			return append(km.ShortHelp(), kb)
 		},
 	)
 }
