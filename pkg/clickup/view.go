@@ -10,12 +10,12 @@ type View struct {
 	Name        string          `json:"name"`
 	Type        string          `json:"type"`
 	Parent      ViewParent      `json:"parent"`
-	Grouping    ViewGrouping    `json:"grouping"`
-	Divide      ViewDivide      `json:"divide"`
 	Sorting     ViewSorting     `json:"sorting"`
-	Filter      ViewFilter      `json:"filters"`
 	Columns     ViewColumns     `json:"columns"`
+	Filter      ViewFilter      `json:"filters"`
+	Divide      ViewDivide      `json:"divide"`
 	TeamSidebar ViewTeamSidebar `json:"team_sidebar"`
+	Grouping    ViewGrouping    `json:"grouping"`
 	Settings    ViewSettings    `json:"settings"`
 }
 
