@@ -376,6 +376,7 @@ func (m *Api) GetList(listId string) (clickup.List, error) {
 		return clickup.List{}, err
 	}
 	m.logger.Debugf("Found list %s", listId)
+
 	m.Cache.Set(cacheNamespace, listId, list)
 
 	return list, nil

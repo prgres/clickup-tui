@@ -85,7 +85,7 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 
 	case LoadingSpacesFromWorkspaceMsg:
 		id := string(msg)
-		m.log.Info("Received: LoadingSpacesFromWorkspaceMsg: %s", id)
+		m.log.Infof("Received: LoadingSpacesFromWorkspaceMsg: %s", id)
 		if err := m.widgetSpaceList.WorkspaceChanged(id); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
 			return m, tea.Batch(cmds...)

@@ -100,11 +100,6 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.log.Infof("Initializing...")
-	// if m.ctx.Config.DefaultWorkspace != "" {
-	// 	if err := m.WorkspaceChanged(m.ctx.Config.DefaultWorkspace); err != nil {
-	// 		return common.ErrCmd(err)
-	// 	}
-	// }
 	return nil
 }
 

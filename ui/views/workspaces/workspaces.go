@@ -68,14 +68,14 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 			cmds = append(cmds, cmd)
 		}
 
-	case common.WorkspaceChangeMsg:
-		m.log.Infof("Received: WorkspaceChangeMsg")
-		m.showSpinner = true
-		cmds = append(cmds, m.spinner.Tick)
-
-	case workspaceslist.WorkspaceListReadyMsg:
-		m.log.Infof("Received: WorkspaceListReadyMsg")
+	case InitWorkspacesMsg:
+		m.log.Info("Received: InitWorkspacesMsg")
+		if err := m.widgetWorkspacesList.InitWorkspaces(); err != nil {
+			cmds = append(cmds, common.ErrCmd(err))
+			return m, tea.Batch(cmds...)
+		}
 		m.showSpinner = false
+		cmds = append(cmds, common.WorkspaceChangeCmd(m.widgetWorkspacesList.SelectedWorkspace))
 	}
 
 	m.widgetWorkspacesList, cmd = m.widgetWorkspacesList.Update(msg)
@@ -102,6 +102,7 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.spinner.Tick,
 		m.widgetWorkspacesList.Init(),
+		InitWorkspacesCmd(),
 	)
 }
 

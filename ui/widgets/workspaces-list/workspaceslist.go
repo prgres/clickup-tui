@@ -55,6 +55,10 @@ func (m *Model) syncList(workspaces []clickup.Workspace) {
 	sre_index := 0
 	items := workspaceListToItems(workspaces)
 	itemsList := listitem.ItemListToBubblesItems(items)
+	if len(items) == 0 {
+		panic("list is empty")
+	}
+	// m.SelectedWorkspace = items[0].Description()
 
 	for i, item := range items {
 		if item.Description() == m.ctx.Config.DefaultWorkspace {
@@ -73,16 +77,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case WorkspaceListReloadedMsg:
-		m.log.Info("Received: WorkspaceListReloadedMsg")
-		m.syncList(msg)
-		cmds = append(cmds, WorkspaceListReadyCmd(), common.WorkspaceChangeCmd(m.SelectedWorkspace))
-
-	// case common.WorkspaceChangeMsg:
-	// 	m.log.Info("Received: WorkspaceChangeMsg")
-	// 	m.SelectedWorkspace = string(msg)
-	// cmds = append(cmds, m.getWorkspacesCmd())
-
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
@@ -109,10 +103,23 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.log.Infof("Initializing...")
-	return m.initWorkspacesCmd()
+	return nil
 }
 
 func (m Model) SetSize(s common.Size) Model {
 	m.list.SetSize(s.Width, s.Height)
 	return m
+}
+
+func (m *Model) InitWorkspaces() error {
+	m.log.Info("Received: InitWorkspacesMsg")
+	workspaces, err := m.ctx.Api.GetWorkspaces()
+	if err != nil {
+		return err
+	}
+	// panic(len(workspaces))
+	m.SelectedWorkspace = workspaces[0].Id
+	m.syncList(workspaces)
+
+	return nil
 }
