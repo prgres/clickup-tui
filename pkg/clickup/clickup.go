@@ -14,10 +14,10 @@ const (
 )
 
 type Client struct {
-	token      string
 	httpClient *http.Client
-	apiUrl     string
 	logger     *slog.Logger
+	token      string
+	apiUrl     string
 }
 
 func (c *Client) ToJson(data interface{}) string {
