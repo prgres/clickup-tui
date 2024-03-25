@@ -168,11 +168,11 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		m.log.Info("Received: TabChangedMsg", "name", tab.Name, "id", tab.Id)
 		m.showSpinner = true
 
-		m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
+		m.widgetTasksTable, cmd = m.widgetTasksTable.(taskstable.Model).TabChanged(tab.Id)
+		cmds = append(cmds, cmd)
 
 		cmds = append(cmds,
 			cmd,
-			taskstable.TabChangedCmd(tab.Id),
 			m.spinner.Tick,
 		)
 
@@ -184,19 +184,25 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 			m.log.Infof("Received: FetchTasksForTabsMsg: type %v", tab.Type)
 			switch tab.Type {
 			case "list":
-				tabsCmd[i] = taskstable.FetchTasksForListCmd(tab.Id)
+				m.widgetTasksTable, cmd = m.widgetTasksTable.(taskstable.Model).FetchTasksForList(tab.Id)
+				tabsCmd[i] = cmd
 			case "view":
-				tabsCmd[i] = taskstable.FetchTasksForViewCmd(tab.Id)
+				m.widgetTasksTable, cmd = m.widgetTasksTable.(taskstable.Model).FetchTasksForView(tab.Id)
+				tabsCmd[i] = cmd
 			}
 		}
 		cmds = append(cmds, tabsCmd...)
 
+	case common.ListChangeMsg:
+		id := string(msg)
+		m.log.Info("Received: ListChangeMsg", "id", id)
+		m.widgetViewsTabs, cmd = m.widgetViewsTabs.(taskstabs.Model).ListChanged(id)
+		cmds = append(cmds, cmd)
+
 	case taskstable.TasksListReadyMsg:
 		m.log.Info("Received: TasksListReady")
 		m.showSpinner = false
-		cmds = append(cmds,
-			m.spinner.Tick,
-		)
+		cmds = append(cmds, m.spinner.Tick)
 
 	case spinner.TickMsg:
 		// m.log.Info("ViewTask spinner.TickMsg")
@@ -213,7 +219,8 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 			m.widgetTasksTable = m.widgetTasksTable.SetFocused(false)
 			m.widgetTaskSidebar = m.widgetTaskSidebar.SetFocused(true)
 		}
-		cmds = append(cmds, taskssidebar.TaskSelectedCmd(id))
+		m.widgetTaskSidebar, cmd = m.widgetTaskSidebar.(taskssidebar.Model).TaskSelected(id)
+		cmds = append(cmds, cmd)
 	}
 
 	m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)

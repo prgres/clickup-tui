@@ -17,8 +17,8 @@ type Model struct {
 	list           list.Model
 	ctx            *context.UserContext
 	log            *log.Logger
-	SelectedList   listitem.Item
 	WidgetId       common.WidgetId
+	SelectedList   string
 	SelectedFolder string
 	lists          []clickup.List
 }
@@ -37,7 +37,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		list:           l,
 		ctx:            ctx,
 		SelectedFolder: "",
-		SelectedList:   listitem.Item{},
+		SelectedList:   "",
 		lists:          []clickup.List{},
 		log:            log,
 	}
@@ -67,16 +67,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case ListsListReloadedMsg:
-		m.log.Info("Received: ListsListReloadedMsg")
-		m.syncList(msg)
-		cmds = append(cmds, ListsListReadyCmd())
-
-	case common.FolderChangeMsg:
-		m.log.Infof("Received: FolderChangeMsg: %s", string(msg))
-		m.SelectedFolder = string(msg)
-		cmds = append(cmds, m.getListsCmd(m.SelectedFolder))
-
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
@@ -84,10 +74,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.log.Info("List is empty")
 				break
 			}
-			selectedList := listitem.BubblesItemToItem(m.list.SelectedItem())
+			selectedList := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
 			m.log.Infof("Selected list %s", selectedList)
 			m.SelectedList = selectedList
-			cmds = append(cmds, common.ListChangeCmd(m.SelectedList))
+			cmds = append(cmds, ListChangedCmd(m.SelectedList))
 		}
 	}
 
@@ -106,18 +96,17 @@ func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m Model) getListsCmd(folderId string) tea.Cmd {
-	return func() tea.Msg {
-		folders, err := m.ctx.Api.GetLists(folderId)
-		if err != nil {
-			return common.ErrMsg(err)
-		}
-
-		return ListsListReloadedMsg(folders)
-	}
-}
-
 func (m Model) SetSize(size common.Size) Model {
 	m.list.SetSize(size.Width, size.Height)
 	return m
+}
+
+func (m *Model) SpaceChanged(id string) error {
+	folders, err := m.ctx.Api.GetLists(id)
+	if err != nil {
+		return err
+	}
+	m.syncList(folders)
+
+	return nil
 }

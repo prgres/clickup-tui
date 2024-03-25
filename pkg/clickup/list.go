@@ -19,26 +19,25 @@ type ListSpace struct {
 }
 
 type List struct {
-	Id         string `json:"id"`
-	Name       string `json:"name"`
-	OrderIndex int    `json:"orderindex"`
-	Content    string `json:"content"`
-	Status     string `json:"status"`
-	// Priority         string     `json:"priority"`
-	Assignee         string     `json:"assignee"`
-	TaskCount        int        `json:"task_count"`
-	DueDate          string     `json:"due_date"`
 	StartDate        string     `json:"start_date"`
+	Name             string     `json:"name"`
+	PermissionLevel  string     `json:"permission_level"`
+	Content          string     `json:"content"`
+	Status           string     `json:"status"`
+	Assignee         string     `json:"assignee"`
+	Id               string     `json:"id"`
+	DueDate          string     `json:"due_date"`
 	Folder           ListFolder `json:"folder"`
 	Space            ListSpace  `json:"space"`
+	TaskCount        int        `json:"task_count"`
+	OrderIndex       int        `json:"orderindex"`
 	Archived         bool       `json:"archived"`
 	OverrideStatuses bool       `json:"override_statuses"`
-	PermissionLevel  string     `json:"permission_level"`
 }
 
 type RequestGetLists struct {
-	Lists []List `json:"lists"`
 	Err   string `json:"err"`
+	Lists []List `json:"lists"`
 }
 
 func (c *Client) GetListsFromFolder(folderId string) ([]List, error) {
@@ -54,9 +53,29 @@ func (c *Client) GetListsFromFolder(folderId string) ([]List, error) {
 
 	if objmap.Err != "" {
 		return nil, fmt.Errorf(
-			"Error occurs while getting lists from folders: %s. API response: %s",
+			"error occurs while getting lists from folders: %s. API response: %s",
 			folderId, string(rawData))
 	}
 
 	return objmap.Lists, nil
+}
+
+type RequestGetList struct {
+	Err  string `json:"err"`
+	List List   `json:"list"`
+}
+
+func (c *Client) GetList(listId string) (List, error) {
+	rawData, err := c.requestGet("/list/" + listId)
+	if err != nil {
+		return List{}, err
+	}
+
+	var objmap List
+
+	if err := json.Unmarshal(rawData, &objmap); err != nil {
+		return List{}, err
+	}
+
+	return objmap, nil
 }

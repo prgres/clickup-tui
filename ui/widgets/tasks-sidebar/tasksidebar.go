@@ -94,6 +94,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	v := viewport.New(0, 0)
 	v.Style = lipgloss.NewStyle().
 		Height(0)
+	v.SetContent("Loading...")
 
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
 
@@ -121,7 +122,6 @@ func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 	)
 
 	switch msg := msg.(type) {
-
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, KeyPreviewInWebBrowser):
@@ -134,26 +134,6 @@ func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 				panic(err)
 			}
 		}
-
-	case InitMsg:
-		m.log.Info("Received: InitMsg")
-		m.Ready = false
-		m.viewport.SetContent("Loading...")
-
-	case TaskSelectedMsg:
-		id := string(msg)
-		m.log.Infof("Received: TaskSelectedMsg: %s", id)
-		m.Ready = false
-
-		task, err := m.ctx.Api.GetTask(id)
-		if err != nil {
-			return m, common.ErrCmd(err)
-		}
-		m.SelectedTask = task
-		m.viewport.SetContent(m.renderTask(task))
-
-		_ = m.viewport.GotoTop()
-		m.Ready = true
 	}
 
 	m.viewport, cmd = m.viewport.Update(msg)
@@ -205,7 +185,7 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.log.Info("Initializing...")
-	return InitCmd()
+	return nil
 }
 
 func (m Model) GetFocused() bool {
@@ -224,4 +204,21 @@ func (m Model) GetHidden() bool {
 func (m Model) SetHidden(h bool) common.Widget {
 	m.Hidden = h
 	return m
+}
+
+func (m Model) TaskSelected(id string) (common.Widget, tea.Cmd) {
+	m.log.Infof("Received: TaskSelectedMsg: %s", id)
+	m.Ready = false
+
+	task, err := m.ctx.Api.GetTask(id)
+	if err != nil {
+		return m, common.ErrCmd(err)
+	}
+	m.SelectedTask = task
+	m.viewport.SetContent(m.renderTask(task))
+
+	_ = m.viewport.GotoTop()
+	m.Ready = true
+
+	return m, nil
 }

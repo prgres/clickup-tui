@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"log/slog"
 
 	"github.com/charmbracelet/log"
@@ -68,7 +67,9 @@ func (m *Api) GetSpaces(teamId string) ([]clickup.Space, error) {
 	}
 	m.logger.Debugf("Found %d spaces for team: %s", len(spaces), teamId)
 
-	m.Cache.Set(cacheNamespace, teamId, spaces)
+	if len(spaces) > 0 {
+		m.Cache.Set(cacheNamespace, teamId, spaces)
+	}
 
 	return spaces, nil
 }
@@ -101,7 +102,9 @@ func (m *Api) GetTeams() ([]clickup.Team, error) {
 	}
 	m.logger.Debugf("Found %d teams", len(teams))
 
-	m.Cache.Set(cacheNamespace, "teams", teams)
+	if len(teams) == 0 {
+		m.Cache.Set(cacheNamespace, "teams", teams)
+	}
 
 	return teams, nil
 }
@@ -130,7 +133,9 @@ func (m *Api) GetFolders(spaceId string) ([]clickup.Folder, error) {
 	}
 	m.logger.Debugf("Found %d folders for space: %s", len(folders), spaceId)
 
-	m.Cache.Set(cacheNamespace, spaceId, folders)
+	if len(folders) > 0 {
+		m.Cache.Set(cacheNamespace, spaceId, folders)
+	}
 
 	return folders, nil
 }
@@ -159,12 +164,9 @@ func (m *Api) GetLists(folderId string) ([]clickup.List, error) {
 	}
 	m.logger.Debugf("Found %d lists for folder: %s", len(lists), folderId)
 
-	for _, f := range lists {
-		j, _ := json.MarshalIndent(f, "", "  ")
-		m.logger.Debugf("%s", j)
+	if len(lists) > 0 {
+		m.Cache.Set(cacheNamespace, folderId, lists)
 	}
-
-	m.Cache.Set(cacheNamespace, folderId, lists)
 
 	return lists, nil
 }
@@ -222,7 +224,9 @@ func (m *Api) GetTasksFromList(listId string) ([]clickup.Task, error) {
 	}
 	m.logger.Debugf("Found %d tasks in list %s", len(tasks), listId)
 
-	m.Cache.Set(cacheNamespace, listId, tasks)
+	if len(tasks) > 0 {
+		m.Cache.Set(cacheNamespace, listId, tasks)
+	}
 
 	return tasks, nil
 }
@@ -251,7 +255,9 @@ func (m *Api) GetTasksFromView(viewId string) ([]clickup.Task, error) {
 	}
 	m.logger.Debugf("Found %d tasks in view %s", len(tasks), viewId)
 
-	m.Cache.Set(cacheNamespace, viewId, tasks)
+	if len(tasks) > 0 {
+		m.Cache.Set(cacheNamespace, viewId, tasks)
+	}
 
 	return tasks, nil
 }
@@ -280,7 +286,9 @@ func (m *Api) GetViewsFromFolder(folderId string) ([]clickup.View, error) {
 	}
 	m.logger.Debugf("Found %d views in folder %s", len(views), folderId)
 
-	m.Cache.Set(cacheNamespace, folderId, views)
+	if len(views) > 0 {
+		m.Cache.Set(cacheNamespace, folderId, views)
+	}
 
 	return views, nil
 }
@@ -309,7 +317,9 @@ func (m *Api) GetViewsFromList(listId string) ([]clickup.View, error) {
 	}
 	m.logger.Debugf("Found %d views in folder %s", len(views), listId)
 
-	m.Cache.Set(cacheNamespace, listId, views)
+	if len(views) > 0 {
+		m.Cache.Set(cacheNamespace, listId, views)
+	}
 
 	return views, nil
 }
@@ -339,9 +349,36 @@ func (m *Api) GetViewsFromSpace(spaceId string) ([]clickup.View, error) {
 	}
 	m.logger.Debugf("Found %d views in space %s", len(views), spaceId)
 
-	m.Cache.Set(cacheNamespace, spaceId, views)
+	if len(views) > 0 {
+		m.Cache.Set(cacheNamespace, spaceId, views)
+	}
 
 	return views, nil
+}
+
+func (m *Api) GetList(listId string) (clickup.List, error) {
+	m.logger.Debug("Getting a list",
+		"listId", listId)
+	cacheNamespace := CacheNamespaceLists
+	data, ok := m.Cache.Get(cacheNamespace, listId)
+	if ok {
+		var list clickup.List
+		if err := m.Cache.ParseData(data, &list); err != nil {
+			return clickup.List{}, err
+		}
+		return list, nil
+	}
+	client := m.Clickup
+	m.logger.Debug("Fetching list from API")
+
+	list, err := client.GetList(listId)
+	if err != nil {
+		return clickup.List{}, err
+	}
+	m.logger.Debugf("Found list %s", listId)
+	m.Cache.Set(cacheNamespace, listId, list)
+
+	return list, nil
 }
 
 //nolint:unused

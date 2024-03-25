@@ -78,12 +78,23 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		}
 
 	case common.SpaceChangeMsg:
-		m.log.Infof("Received: received SpaceChangeMsg: %s", string(msg))
+		id := string(msg)
+		m.log.Infof("Received: received SpaceChangeMsg: %s", id)
 		m.showSpinner = true
-		cmds = append(cmds, m.spinner.Tick)
+		cmds = append(cmds, m.spinner.Tick, LoadingFoldersFromSpaceCmd(id))
 
-	case folders.FoldersListReadyMsg:
-		m.log.Infof("Received: FoldersListReadyMsg")
+	case folders.FolderChangeMsg:
+		id := string(msg)
+		m.log.Infof("Received: FolderChangeMsg: %s", id)
+		cmds = append(cmds, common.FolderChangeCmd(id))
+
+	case LoadingFoldersFromSpaceMsg:
+		id := string(msg)
+		m.log.Infof("Received: LoadingFoldersFromSpaceMsg: %s", id)
+		if err := m.widgetFoldersList.SpaceChange(id); err != nil {
+			cmds = append(cmds, common.ErrCmd(err))
+			return m, tea.Batch(cmds...)
+		}
 		m.showSpinner = false
 	}
 

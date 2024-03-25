@@ -78,13 +78,24 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		}
 
 	case common.WorkspaceChangeMsg:
-		m.log.Infof("Received: WorkspaceChangeMsg")
+		id := string(msg)
+		m.log.Infof("Received: WorkspaceChangeMsg: %s", id)
 		m.showSpinner = true
-		cmds = append(cmds, m.spinner.Tick)
+		cmds = append(cmds, m.spinner.Tick, LoadingSpacesFromWorkspaceCmd(id))
 
-	case spaces.SpaceListReadyMsg:
-		m.log.Infof("Received: SpaceListReadyMsg")
+	case LoadingSpacesFromWorkspaceMsg:
+		id := string(msg)
+		m.log.Info("Received: LoadingSpacesFromWorkspaceMsg: %s", id)
+		if err := m.widgetSpaceList.WorkspaceChanged(id); err != nil {
+			cmds = append(cmds, common.ErrCmd(err))
+			return m, tea.Batch(cmds...)
+		}
 		m.showSpinner = false
+
+	case spaces.SpaceChangedMsg:
+		id := string(msg)
+		m.log.Infof("Received: SpaceChangedMsg: %s", id)
+		cmds = append(cmds, common.SpaceChangeCmd(id))
 	}
 
 	m.widgetSpaceList, cmd = m.widgetSpaceList.Update(msg)

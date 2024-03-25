@@ -8,7 +8,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/ui/common"
-	listitem "github.com/prgrs/clickup/ui/components/list-item"
 	"github.com/prgrs/clickup/ui/context"
 	"github.com/prgrs/clickup/ui/views/folders"
 	"github.com/prgrs/clickup/ui/views/lists"
@@ -187,7 +186,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.state = m.viewLists.GetViewId()
 
 	case common.ListChangeMsg:
-		m.log.Info("Received: ListChangeMsg", "list", listitem.Item(msg).Description())
+		id := string(msg)
+		m.log.Info("Received: ListChangeMsg", "list", id)
 		m.state = m.viewTasks.GetViewId()
 
 	case common.BackToPreviousViewMsg:

@@ -20,34 +20,10 @@ func TasksListReadyCmd() tea.Cmd {
 	}
 }
 
-type TabChangedMsg string
-
-func TabChangedCmd(tabId string) tea.Cmd {
-	return func() tea.Msg {
-		return TabChangedMsg(tabId)
-	}
-}
-
 type HideTableMsg bool
 
 func HideTableCmd() tea.Cmd {
 	return func() tea.Msg {
 		return HideTableMsg(true)
-	}
-}
-
-type FetchTasksForViewMsg string
-
-func FetchTasksForViewCmd(view string) tea.Cmd {
-	return func() tea.Msg {
-		return FetchTasksForViewMsg(view)
-	}
-}
-
-type FetchTasksForListMsg string
-
-func FetchTasksForListCmd(list string) tea.Cmd {
-	return func() tea.Msg {
-		return FetchTasksForListMsg(list)
 	}
 }

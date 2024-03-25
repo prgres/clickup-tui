@@ -15,11 +15,10 @@ import (
 const WidgetId = "widgetTasksTable"
 
 type Model struct {
-	tasks             map[string][]clickup.Task
+	tasks             []clickup.Task
 	log               *log.Logger
 	ctx               *context.UserContext
 	WidgetId          common.WidgetId
-	SelectedParentId  string
 	requiredColsKeys  []string
 	columns           []table.Column
 	requiredCols      []table.Column
@@ -138,7 +137,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		columns:          columns,
 		requiredCols:     requiredCols,
 		requiredColsKeys: requiredColsKeys,
-		tasks:            map[string][]clickup.Task{},
+		tasks:            []clickup.Task{},
 		autoColumns:      false,
 		size:             size,
 		Focused:          true,
@@ -163,7 +162,7 @@ func (m *Model) GetColumnsKey() []string {
 
 func (m *Model) refreshTable() tea.Cmd {
 	m.log.Info("Synchonizing table...")
-	tasks := m.getSelectedViewTasks()
+	tasks := m.tasks
 
 	m.Hidden = false
 	if len(tasks) == 0 {
@@ -204,7 +203,7 @@ func (m *Model) refreshTable() tea.Cmd {
 
 func (m *Model) loadTasks(tasks []clickup.Task) {
 	m.log.Info("Reloading table")
-	m.tasks[m.SelectedParentId] = tasks
+	m.tasks = tasks
 }
 
 func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
@@ -212,7 +211,6 @@ func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
@@ -221,7 +219,7 @@ func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 				m.log.Info("Table is empty")
 				break
 			}
-			taskId := m.getSelectedViewTaskIdByIndex(index)
+			taskId := m.tasks[index].Id
 			m.log.Infof("Receive enter: %d", index)
 			cmds = append(cmds, TaskSelectedCmd(taskId))
 		case "p":
@@ -230,69 +228,12 @@ func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 				m.log.Info("Table is empty")
 				break
 			}
-			task := m.getSelectedViewTaskByIndex(index)
+			task := m.tasks[index]
 			m.log.Infof("Receive p: %d", index)
 			if err := common.OpenUrlInWebBrowser(task.Url); err != nil {
 				m.log.Fatal(err)
 			}
 		}
-
-	case TabChangedMsg:
-		tabId := string(msg)
-		m.log.Infof("Received TabChangedMsg: %s", tabId)
-
-		columns := []table.Column{}
-		columns = append(columns, m.requiredCols...)
-
-		// if m.autoColumns {
-		//      tab := viewtabs.Tab(msg)
-		// 	for _, field := range view.Columns.Fields {
-		// 		if field.Field == "name" || field.Field == "status" { // TODO: check if in requiredCols
-		// 			continue
-		// 		}
-		// 		columns = append(columns, table.Column{
-		// 			Title: field.Field,
-		// 			Width: 30,
-		// 		})
-		// 	}
-		// }
-
-		m.log.Infof("Columns: %d", len(columns))
-		m.columns = columns
-
-		m.SelectedParentId = tabId
-		tasks := m.tasks[m.SelectedParentId]
-
-		m.loadTasks(tasks)
-		cmd = m.refreshTable()
-		cmds = append(cmds, cmd)
-
-		if len(m.tasks[m.SelectedParentId]) != 0 { // TODO: store tasks list in var
-			taskId := m.getSelectedViewTaskIdByIndex(m.SelectedTaskIndex)
-			cmds = append(cmds, TaskSelectedCmd(taskId))
-		}
-
-		cmds = append(cmds, TasksListReadyCmd())
-
-	case FetchTasksForViewMsg:
-		m.log.Infof("Received: FetchTasksForViewMsg")
-		viewId := string(msg)
-		if err := m.fetchTasksForViewId(viewId); err != nil {
-			return m, common.ErrCmd(err)
-		}
-
-		cmd = m.refreshTable()
-		cmds = append(cmds, cmd)
-
-	case FetchTasksForListMsg:
-		m.log.Infof("Received: FetchTasksForListMsg")
-		listId := string(msg)
-		if err := m.fetchTasksForList(listId); err != nil {
-			return m, common.ErrCmd(err)
-		}
-
-		cmd = m.refreshTable()
-		cmds = append(cmds, cmd)
 	}
 
 	m.table, cmd = m.table.Update(msg)
@@ -324,26 +265,6 @@ func (m Model) Init() tea.Cmd {
 	return m.refreshTable()
 }
 
-func (m *Model) fetchTasksForViewId(viewId string) error {
-	m.log.Infof("Fetching tasks for the view: %s", viewId)
-	tasks, err := m.ctx.Api.GetTasksFromView(viewId)
-	if err != nil {
-		return err
-	}
-	m.tasks[viewId] = tasks
-	return nil
-}
-
-func (m *Model) fetchTasksForList(listId string) error {
-	m.log.Infof("Fetching tasks for the list: %s", listId)
-	tasks, err := m.ctx.Api.GetTasksFromList(listId)
-	if err != nil {
-		return err
-	}
-	m.tasks[listId] = tasks
-	return nil
-}
-
 func (m Model) GetFocused() bool {
 	return m.Focused
 }
@@ -360,4 +281,64 @@ func (m Model) GetHidden() bool {
 func (m Model) SetHidden(h bool) common.Widget {
 	m.Hidden = h
 	return m
+}
+
+func (m Model) TabChanged(tabId string) (common.Widget, tea.Cmd) {
+	var cmds []tea.Cmd
+
+	m.log.Infof("Received TabChangedMsg: %s", tabId)
+
+	columns := []table.Column{}
+	columns = append(columns, m.requiredCols...)
+
+	// if m.autoColumns {
+	//      tab := viewtabs.Tab(msg)
+	// 	for _, field := range view.Columns.Fields {
+	// 		if field.Field == "name" || field.Field == "status" { // TODO: check if in requiredCols
+	// 			continue
+	// 		}
+	// 		columns = append(columns, table.Column{
+	// 			Title: field.Field,
+	// 			Width: 30,
+	// 		})
+	// 	}
+	// }
+
+	m.log.Infof("Columns: %d", len(columns))
+	m.columns = columns
+	tasks := m.tasks
+
+	m.loadTasks(tasks)
+	cmds = append(cmds, m.refreshTable())
+
+	if len(m.tasks) != 0 { // TODO: store tasks list in var
+		taskId := m.tasks[m.SelectedTaskIndex].Id
+		cmds = append(cmds, TaskSelectedCmd(taskId))
+	}
+
+	cmds = append(cmds, TasksListReadyCmd())
+
+	return m, tea.Batch(cmds...)
+}
+
+func (m Model) FetchTasksForView(viewId string) (common.Widget, tea.Cmd) {
+	m.log.Infof("Fetching tasks for the view: %s", viewId)
+	tasks, err := m.ctx.Api.GetTasksFromView(viewId)
+	if err != nil {
+		return m, common.ErrCmd(err)
+	}
+	m.tasks = tasks
+
+	return m, m.refreshTable()
+}
+
+func (m Model) FetchTasksForList(listId string) (common.Widget, tea.Cmd) {
+	m.log.Infof("Fetching tasks for the list: %s", listId)
+	tasks, err := m.ctx.Api.GetTasksFromList(listId)
+	if err != nil {
+		return m, common.ErrCmd(err)
+	}
+	m.tasks = tasks
+
+	return m, m.refreshTable()
 }

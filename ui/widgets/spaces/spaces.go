@@ -74,17 +74,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case SpaceListReloadedMsg:
-		m.log.Info("Received: SpaceListReloadedMsg")
-		m.syncList(msg)
-		cmds = append(cmds, SpaceListReadyCmd())
-
-	case common.WorkspaceChangeMsg:
-		workspace := string(msg)
-		m.log.Infof("Received: WorkspaceChangeMsg: %s", workspace)
-		m.SelectedWorkspace = workspace
-		cmds = append(cmds, m.getSpacesCmd(workspace))
-
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
@@ -95,7 +84,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedSpace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
 			m.log.Infof("Selected space %s", selectedSpace)
 			m.SelectedSpace = selectedSpace
-			cmds = append(cmds, common.SpaceChangeCmd(selectedSpace))
+			cmds = append(cmds, SpaceChangedCmd(selectedSpace))
 		}
 	}
 
@@ -111,13 +100,28 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.log.Infof("Initializing...")
-	if m.ctx.Config.DefaultWorkspace != "" {
-		return m.getSpacesCmd(m.ctx.Config.DefaultWorkspace)
-	}
+	// if m.ctx.Config.DefaultWorkspace != "" {
+	// 	if err := m.WorkspaceChanged(m.ctx.Config.DefaultWorkspace); err != nil {
+	// 		return common.ErrCmd(err)
+	// 	}
+	// }
 	return nil
 }
 
 func (m Model) SetSize(s common.Size) Model {
 	m.list.SetSize(s.Width, s.Height)
 	return m
+}
+
+func (m *Model) WorkspaceChanged(id string) error {
+	m.log.Infof("Received: WorkspaceChangeMsg: %s", id)
+	m.SelectedWorkspace = id
+
+	spaces, err := m.ctx.Api.GetSpaces(id)
+	if err != nil {
+		return err
+	}
+
+	m.syncList(spaces)
+	return nil
 }

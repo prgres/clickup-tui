@@ -16,7 +16,7 @@ func WorkspaceListReadyCmd() tea.Cmd {
 	}
 }
 
-func (m Model) getWorkspacesCmd() tea.Cmd {
+func (m Model) initWorkspacesCmd() tea.Cmd {
 	return func() tea.Msg {
 		workspaces, err := m.ctx.Api.GetWorkspaces()
 		if err != nil {

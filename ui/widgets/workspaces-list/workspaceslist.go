@@ -59,6 +59,7 @@ func (m *Model) syncList(workspaces []clickup.Workspace) {
 	for i, item := range items {
 		if item.Description() == m.ctx.Config.DefaultWorkspace {
 			sre_index = i
+			m.SelectedWorkspace = item.Description()
 		}
 	}
 
@@ -75,12 +76,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case WorkspaceListReloadedMsg:
 		m.log.Info("Received: WorkspaceListReloadedMsg")
 		m.syncList(msg)
-		cmds = append(cmds, WorkspaceListReadyCmd())
+		cmds = append(cmds, WorkspaceListReadyCmd(), common.WorkspaceChangeCmd(m.SelectedWorkspace))
 
-	case common.WorkspaceChangeMsg:
-		m.log.Info("Received: WorkspaceChangeMsg")
-		m.SelectedWorkspace = string(msg)
-		cmds = append(cmds, m.getWorkspacesCmd())
+	// case common.WorkspaceChangeMsg:
+	// 	m.log.Info("Received: WorkspaceChangeMsg")
+	// 	m.SelectedWorkspace = string(msg)
+	// cmds = append(cmds, m.getWorkspacesCmd())
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
@@ -108,7 +109,7 @@ func (m Model) View() string {
 
 func (m Model) Init() tea.Cmd {
 	m.log.Infof("Initializing...")
-	return m.getWorkspacesCmd()
+	return m.initWorkspacesCmd()
 }
 
 func (m Model) SetSize(s common.Size) Model {

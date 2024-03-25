@@ -26,15 +26,15 @@ type ViewParent struct {
 
 type ViewGrouping struct {
 	Field     string   `json:"field"`
-	Dir       int      `json:"dir"`
 	Collapsed []string `json:"collapsed"`
+	Dir       int      `json:"dir"`
 	Ignore    bool     `json:"ignore"`
 }
 
 type ViewDivide struct {
 	Field     string   `json:"field"`
-	Dir       int      `json:"dir"`
 	Collapsed []string `json:"collapsed"`
+	Dir       int      `json:"dir"`
 }
 
 type ViewSorting struct {
@@ -43,8 +43,8 @@ type ViewSorting struct {
 
 type ViewFilter struct {
 	Op         string        `json:"op"`
-	Fields     []interface{} `json:"fields"`
 	Search     string        `json:"search"`
+	Fields     []interface{} `json:"fields"`
 	ShowClosed bool          `json:"show_closed"`
 }
 
@@ -63,11 +63,11 @@ func (v ViewColumns) GetColumnsFields() []string {
 
 type ColumnField struct {
 	Field   string `json:"field"`
+	Name    string `json:"name"`
+	Display string `json:"display"`
 	Idx     int    `json:"idx"`
 	Width   int    `json:"width"`
 	Hidden  bool   `json:"hidden"`
-	Name    string `json:"name"`
-	Display string `json:"display"`
 }
 
 type ViewTeamSidebar struct {
@@ -122,6 +122,7 @@ func (r RequiredViews) GetViews() []View {
 
 	return views // []View{r.List, r.Board, r.Box, r.Calendar}
 }
+
 func filterListViews(views []View) []View {
 	filteredViews := []View{}
 	for _, view := range views {
@@ -159,7 +160,6 @@ func (c *Client) GetViewsFromSpace(spaceId string) ([]View, error) {
 			return nil, fmt.Errorf(
 				"View id or name is empty, API response: %s", string(rawData))
 		}
-
 	}
 	if len(allViews) == 0 {
 		c.logger.Error("No views found in space",
@@ -238,7 +238,6 @@ func (c *Client) GetViewsFromList(listId string) ([]View, error) {
 			return nil, fmt.Errorf(errApiMsg,
 				listId, "View id or name is empty", string(rawData))
 		}
-
 	}
 
 	if len(allViews) == 0 {
