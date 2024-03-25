@@ -7,39 +7,39 @@ import (
 )
 
 type Task struct {
-	Id                  string        `json:"id"`
-	CustomId            string        `json:"custom_id"`
-	Name                string        `json:"name"`
-	TextContent         string        `json:"text_content"`
-	Description         string        `json:"description"`
-	MarkdownDescription string        `json:"markdown_description"`
-	Status              Status        `json:"status"`
-	Orderindex          string        `json:"orderindex"`
+	Startdate           interface{}   `json:"startdate"`
+	Duedate             interface{}   `json:"duedate"`
+	Priority            interface{}   `json:"priority"`
+	Parent              interface{}   `json:"parent"`
+	Timeestimate        interface{}   `json:"timeestimate"`
+	Timespent           interface{}   `json:"timespent"`
 	DateCreated         string        `json:"date_created"`
+	Orderindex          string        `json:"orderindex"`
+	Id                  string        `json:"id"`
 	DateUpdated         string        `json:"date_updated"`
 	DateClosed          string        `json:"date_closed"`
 	DateDone            string        `json:"date_done"`
+	Url                 string        `json:"url"`
+	Space               TaskSpace     `json:"space"`
+	MarkdownDescription string        `json:"markdown_description"`
+	Description         string        `json:"description"`
+	TextContent         string        `json:"text_content"`
+	Name                string        `json:"name"`
+	CustomId            string        `json:"custom_id"`
+	Status              Status        `json:"status"`
 	Creator             Creator       `json:"creator"`
-	Assignees           []Assignee    `json:"assignees"`
-	Checklists          []interface{} `json:"checklists"`
-	Tags                []TaskTag     `json:"tags"`
-	Parent              interface{}   `json:"parent"`
-	Priority            interface{}   `json:"priority"`
-	Duedate             interface{}   `json:"duedate"`
-	Startdate           interface{}   `json:"startdate"`
-	Timeestimate        interface{}   `json:"timeestimate"`
-	Timespent           interface{}   `json:"timespent"`
 	List                TaskList      `json:"list"`
 	Folder              TaskFolder    `json:"folder"`
-	Space               TaskSpace     `json:"space"`
-	Url                 string        `json:"url"`
+	Tags                []TaskTag     `json:"tags"`
+	Checklists          []interface{} `json:"checklists"`
+	Assignees           []Assignee    `json:"assignees"`
 }
 
 type TaskTag struct {
-	Created int64  `json:"created"`
 	Name    string `json:"name"`
 	Tag_bg  string `json:"tag_bg"`
 	Tag_fg  string `json:"tag_fg"`
+	Created int64  `json:"created"`
 }
 
 func (t Task) GetTags() string {
@@ -52,9 +52,9 @@ func (t Task) GetTags() string {
 }
 
 type TaskList struct {
-	Access bool   `json:"access"`
 	Id     string `json:"id"`
 	Name   string `json:"name"`
+	Access bool   `json:"access"`
 }
 
 func (t TaskList) String() string {
@@ -62,10 +62,10 @@ func (t TaskList) String() string {
 }
 
 type TaskFolder struct {
-	Access bool   `json:"access"`
-	Hidden bool   `json:"hidden"`
 	Id     string `json:"id"`
 	Name   string `json:"name"`
+	Access bool   `json:"access"`
+	Hidden bool   `json:"hidden"`
 }
 
 func (t TaskFolder) String() string {
@@ -85,37 +85,37 @@ func (t Task) GetAssignees() string {
 }
 
 type Assignee struct {
-	Id             uint   `json:"id"`
 	Username       string `json:"username"`
 	Color          string `json:"color"`
 	Initials       string `json:"initials"`
 	Email          string `json:"email"`
 	ProfilePicture string `json:"profilePicture"`
+	Id             uint   `json:"id"`
 }
 
 type Status struct {
 	Status     string `json:"status"`
 	Color      string `json:"color"`
-	Orderindex int    `json:"orderindex"`
 	Type       string `json:"type"`
+	Orderindex int    `json:"orderindex"`
 }
 
 type Creator struct {
-	Id             int    `json:"id"`
 	Username       string `json:"username"`
 	Color          string `json:"color"`
 	ProfilePicture string `json:"profilePicture"`
+	Id             int    `json:"id"`
 }
 
 type RequestGetTasks struct {
+	Err      string `json:"err"`
 	Tasks    []Task `json:"tasks"`
 	LastPage bool   `json:"last_page"`
-	Err      string `json:"err"`
 }
 
 type RequestGetTask struct {
-	Task Task   `json:"task"`
 	Err  string `json:"err"`
+	Task Task   `json:"task"`
 }
 
 func (c *Client) GetTasksFromView(viewId string) ([]Task, error) {
@@ -131,7 +131,7 @@ func (c *Client) GetTasksFromView(viewId string) ([]Task, error) {
 
 	if objmap.Err != "" {
 		return nil, fmt.Errorf(
-			"Error occurs while getting tasks from view: %s. API response: %s",
+			"error occurs while getting tasks from view: %s. API response: %s",
 			viewId, string(rawData))
 	}
 
@@ -151,7 +151,7 @@ func (c *Client) GetTasksFromList(listId string) ([]Task, error) {
 
 	if objmap.Err != "" {
 		return nil, fmt.Errorf(
-			"Error occurs while getting tasks from list: %s. API response: %s",
+			"error occurs while getting tasks from list: %s. API response: %s",
 			listId, string(rawData))
 	}
 

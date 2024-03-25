@@ -8,22 +8,22 @@ import (
 type Space struct {
 	Id                string
 	Name              string        `json:"name"`
-	Private           bool          `json:"private"`
 	Statuses          []SpaceStatus `json:"statuses"`
+	Features          []interface{} `json:"-"`
+	Private           bool          `json:"private"`
 	MultipleAssignees bool          `json:"multiple_assignees"`
-	Features          []interface{} `json:"-"` //	`json:"features"`
 }
 
 type SpaceStatus struct {
 	Status     string
 	Type       string
-	OrderIndex int
 	Color      string
+	OrderIndex int
 }
 
 type RequestGetSpaces struct {
-	Spaces []Space `json:"spaces"`
 	Err    string  `json:"err"`
+	Spaces []Space `json:"spaces"`
 }
 
 func (c *Client) GetSpaces(teamId string) ([]Space, error) {
@@ -40,5 +40,6 @@ func (c *Client) GetSpaces(teamId string) ([]Space, error) {
 	if objmap.Err != "" {
 		return nil, fmt.Errorf(objmap.Err)
 	}
+
 	return objmap.Spaces, nil
 }
