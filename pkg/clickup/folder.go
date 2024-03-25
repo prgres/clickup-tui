@@ -30,6 +30,7 @@ func (c *Client) GetFolders(spaceId string) ([]Folder, error) {
 	}
 
 	var objmap RequestGetFolders
+
 	if err := json.Unmarshal(rawData, &objmap); err != nil {
 		return nil, err
 	}

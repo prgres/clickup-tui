@@ -59,3 +59,23 @@ func (c *Client) GetListsFromFolder(folderId string) ([]List, error) {
 
 	return objmap.Lists, nil
 }
+
+type RequestGetList struct {
+	Err  string `json:"err"`
+	List List   `json:"list"`
+}
+
+func (c *Client) GetList(listId string) (List, error) {
+	rawData, err := c.requestGet("/list/" + listId)
+	if err != nil {
+		return List{}, err
+	}
+
+	var objmap List
+
+	if err := json.Unmarshal(rawData, &objmap); err != nil {
+		return List{}, err
+	}
+
+	return objmap, nil
+}

@@ -73,16 +73,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case FoldersListReloadedMsg:
-		m.log.Info("Received: FoldersListReloadedMsg")
-		m.syncList(msg)
-		cmds = append(cmds, FoldersListReadyCmd())
-
-	case common.SpaceChangeMsg:
-		m.log.Infof("Received: SpaceChangeMsg: %s", string(msg))
-		m.SelectedSpace = string(msg)
-		cmds = append(cmds, m.getFoldersCmd(m.SelectedSpace))
-
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
@@ -93,7 +83,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedFolder := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
 			m.log.Infof("Selected folder %s", selectedFolder)
 			m.SelectedFolder = selectedFolder
-			cmds = append(cmds, common.FolderChangeCmd(selectedFolder))
+			cmds = append(cmds, FolderChangeCmd(selectedFolder))
 		}
 	}
 
@@ -115,4 +105,17 @@ func (m Model) Init() tea.Cmd {
 func (m Model) SetSize(s common.Size) Model {
 	m.list.SetSize(s.Width, s.Height)
 	return m
+}
+
+func (m *Model) SpaceChange(id string) error {
+	m.log.Infof("Received: SpaceChangeMsg: %s", id)
+	m.SelectedSpace = id
+
+	folders, err := m.ctx.Api.GetFolders(id)
+	if err != nil {
+		return err
+	}
+
+	m.syncList(folders)
+	return nil
 }

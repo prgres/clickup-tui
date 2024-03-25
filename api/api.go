@@ -356,6 +356,32 @@ func (m *Api) GetViewsFromSpace(spaceId string) ([]clickup.View, error) {
 	return views, nil
 }
 
+func (m *Api) GetList(listId string) (clickup.List, error) {
+	m.logger.Debug("Getting a list",
+		"listId", listId)
+	cacheNamespace := CacheNamespaceLists
+	data, ok := m.Cache.Get(cacheNamespace, listId)
+	if ok {
+		var list clickup.List
+		if err := m.Cache.ParseData(data, &list); err != nil {
+			return clickup.List{}, err
+		}
+		return list, nil
+	}
+	client := m.Clickup
+	m.logger.Debug("Fetching list from API")
+
+	list, err := client.GetList(listId)
+	if err != nil {
+		return clickup.List{}, err
+	}
+	m.logger.Debugf("Found list %s", listId)
+
+	m.Cache.Set(cacheNamespace, listId, list)
+
+	return list, nil
+}
+
 //nolint:unused
 func (m *Api) getFromCache(namespace string, key string, v interface{}) (bool, error) {
 	data, ok := m.Cache.Get(namespace, key)

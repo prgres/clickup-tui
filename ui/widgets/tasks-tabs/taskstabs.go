@@ -9,7 +9,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/ui/common"
-	listitem "github.com/prgrs/clickup/ui/components/list-item"
 	"github.com/prgrs/clickup/ui/context"
 )
 
@@ -23,15 +22,14 @@ type Tab struct {
 }
 
 type Model struct {
-	ctx          *context.UserContext
-	tabs         map[string][]Tab
-	log          *log.Logger
-	SelectedList string
-	keyMap       KeyMap
-	size         common.Size
-	SelectedTab  int
-	Focused      bool
-	Hidden       bool
+	ctx         *context.UserContext
+	tabs        []Tab
+	log         *log.Logger
+	keyMap      KeyMap
+	size        common.Size
+	SelectedTab int
+	Focused     bool
+	Hidden      bool
 }
 
 func (m Model) SetSize(s common.Size) common.Widget {
@@ -66,7 +64,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 
 	return Model{
 		ctx:    ctx,
-		tabs:   map[string][]Tab{},
+		tabs:   []Tab{},
 		log:    log,
 		keyMap: DefaultKeyMap(),
 	}
@@ -82,79 +80,20 @@ func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "h", "left":
-			index := prevTab(m.tabs[m.SelectedList], m.SelectedTab)
-			m.tabs[m.SelectedList][m.SelectedTab].Active = false
+			index := prevTab(m.tabs, m.SelectedTab)
+			m.tabs[m.SelectedTab].Active = false
 			m.SelectedTab = index
-			m.tabs[m.SelectedList][index].Active = true
-			return m, TabChangedCmd(m.tabs[m.SelectedList][index])
+			m.tabs[index].Active = true
+			return m, TabChangedCmd(m.tabs[index])
 		case "l", "right":
-			index := nextTab(m.tabs[m.SelectedList], m.SelectedTab)
-			m.tabs[m.SelectedList][m.SelectedTab].Active = false
+			index := nextTab(m.tabs, m.SelectedTab)
+			m.tabs[m.SelectedTab].Active = false
 			m.SelectedTab = index
-			m.tabs[m.SelectedList][index].Active = true
-			return m, TabChangedCmd(m.tabs[m.SelectedList][index])
+			m.tabs[index].Active = true
+			return m, TabChangedCmd(m.tabs[index])
 
 		default:
 			return m, nil
-		}
-
-	case common.ListChangeMsg:
-		var cmds []tea.Cmd
-		var tabs []Tab
-
-		list := listitem.Item(msg)
-		m.log.Infof("Received: ListChangeMsg: %s", list.Description())
-
-		tabList := Tab{
-			Id:     list.Description(),
-			Name:   list.Title(),
-			Type:   "list",
-			Active: true,
-		}
-		tabs = append(tabs, tabList)
-
-		m.SelectedList = list.Description()
-		m.SelectedTab = 0
-
-		views, err := m.ctx.Api.GetViewsFromList(list.Description())
-		if err != nil {
-			return m, common.ErrCmd(err)
-		}
-		m.log.Infof("Found %d views found for the list", len(views))
-
-		if len(views) != 0 {
-			for _, view := range views {
-				tabView := Tab{
-					Name:   view.Name,
-					Type:   "view",
-					Id:     view.Id,
-					Active: false,
-				}
-				tabs = append(tabs, tabView)
-			}
-		}
-
-		m.tabs[m.SelectedList] = tabs
-
-		cmds = append(cmds,
-			FetchTasksForTabsCmd(tabs),
-			TabChangedCmd(tabList),
-		)
-
-		return m, tea.Batch(cmds...)
-
-	case common.FocusMsg:
-		m.log.Info("Received: FocusMsg")
-		return m, nil
-
-	case TabChangedMsg:
-		m.log.Info("Received: TabChangedMsg")
-		tab := Tab(msg)
-		tabs := m.tabs[m.SelectedList]
-		for _, t := range tabs {
-			if t.Id == tab.Id {
-				return m, tea.Batch(TabLoadedCmd(t))
-			}
 		}
 	}
 
@@ -165,13 +104,13 @@ func (m Model) View() string {
 	s := strings.Builder{}
 	s.WriteString(" Views |")
 
-	if len(m.tabs[m.SelectedList]) == 0 {
+	if len(m.tabs) == 0 {
 		s.WriteString(" ")
 		return s.String()
 	}
-	m.log.Debugf("Rendering %d tabs", len(m.tabs[m.SelectedList]))
+	m.log.Debugf("Rendering %d tabs", len(m.tabs))
 
-	for i, tab := range m.tabs[m.SelectedList] {
+	for i, tab := range m.tabs {
 		m.log.Debugf("Rendering tab: %s %s", tab.Name, tab.Id)
 		t := ""
 		tabContent := " " + tab.Name + " "
@@ -182,7 +121,7 @@ func (m Model) View() string {
 		}
 		s.WriteString(" " + t + " ")
 
-		if i != len(m.tabs[m.SelectedList])-1 {
+		if i != len(m.tabs)-1 {
 			s.WriteString("|")
 		}
 	}
@@ -253,4 +192,52 @@ func (m Model) GetHidden() bool {
 func (m Model) SetHidden(h bool) common.Widget {
 	m.Hidden = h
 	return m
+}
+
+func (m Model) ListChanged(id string) (common.Widget, tea.Cmd) {
+	var cmds []tea.Cmd
+	var tabs []Tab
+
+	m.log.Infof("Received: ListChangedMsg: %s", id)
+	list, err := m.ctx.Api.GetList(id)
+	if err != nil {
+		return m, common.ErrCmd(err)
+	}
+
+	tabList := Tab{
+		Id:     list.Id,
+		Name:   list.Name,
+		Type:   "list",
+		Active: true,
+	}
+	tabs = append(tabs, tabList)
+
+	m.SelectedTab = 0
+
+	views, err := m.ctx.Api.GetViewsFromList(list.Id)
+	if err != nil {
+		return m, common.ErrCmd(err)
+	}
+	m.log.Infof("Found %d views found for the list", len(views))
+
+	if len(views) != 0 {
+		for _, view := range views {
+			tabView := Tab{
+				Name:   view.Name,
+				Type:   "view",
+				Id:     view.Id,
+				Active: false,
+			}
+			tabs = append(tabs, tabView)
+		}
+	}
+
+	m.tabs = tabs
+
+	cmds = append(cmds,
+		FetchTasksForTabsCmd(tabs),
+		TabChangedCmd(tabList),
+	)
+
+	return m, tea.Batch(cmds...)
 }
