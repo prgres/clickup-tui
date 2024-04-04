@@ -121,7 +121,10 @@ func (m Model) View() string {
 		BorderRight(m.ifBorders).
 		BorderTop(m.ifBorders).
 		BorderLeft(m.ifBorders).
-		// MaxWidth(m.size.Width).
+		// Height(1).
+		// Height(1 + borderMaring).
+		MaxHeight(1 + borderMaring).
+		MaxWidth(m.size.Width).
 		Width(m.size.Width - borderMaring)
 
 	s := strings.Builder{}
@@ -143,16 +146,19 @@ func (m Model) View() string {
 		} else {
 			t = inactiveTabStyle.Render(tabContent)
 		}
-		s.WriteString(" " + t + " ")
+
+		content := " " + t + " "
+
+		if lipgloss.Width(s.String()+content+moreTabsIcon) >= m.size.Width-borderMaring {
+			s.WriteString(moreTabsIcon)
+			break
+		}
+		s.WriteString(content)
 
 		if i != len(m.tabs)-1 {
 			s.WriteString("|")
 		}
 
-		if s.Len()+len(moreTabsIcon) > m.ctx.WindowSize.Width {
-			s.WriteString(moreTabsIcon)
-			break
-		}
 	}
 
 	return style.Render(s.String())
