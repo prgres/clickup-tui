@@ -27,9 +27,9 @@ type Model struct {
 	ctx             *context.UserContext
 	log             *log.Logger
 	ViewId          common.ViewId
-	spinner         spinner.Model
 	size            common.Size
 	state           ListsState
+	spinner         spinner.Model
 	showSpinner     bool
 }
 

@@ -22,14 +22,15 @@ type Tab struct {
 }
 
 type Model struct {
-	ctx         *context.UserContext
-	log         *log.Logger
-	keyMap      KeyMap
-	tabs        []Tab
-	size        common.Size
-	SelectedTab int
-	Focused     bool
-	Hidden      bool
+	ctx            *context.UserContext
+	log            *log.Logger
+	keyMap         KeyMap
+	tabs           []Tab
+	size           common.Size
+	SelectedTabIdx int
+	SelectedTab    string
+	Focused        bool
+	Hidden         bool
 }
 
 func (m Model) SetSize(s common.Size) Model {
@@ -80,18 +81,20 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "h", "left":
-			index := prevTab(m.tabs, m.SelectedTab)
-			m.tabs[m.SelectedTab].Active = false
-			m.SelectedTab = index
-			m.tabs[index].Active = true
-			return m, TabChangedCmd(m.tabs[index])
+			index := prevTab(m.tabs, m.SelectedTabIdx)
+			// m.tabs[m.SelectedTab].Active = false
+			m.SelectedTabIdx = index
+			m.SelectedTab = m.tabs[index].Id
+			// m.tabs[index].Active = true
+			return m, TabChangedCmd(m.SelectedTab)
 
 		case "l", "right":
-			index := nextTab(m.tabs, m.SelectedTab)
-			m.tabs[m.SelectedTab].Active = false
-			m.SelectedTab = index
-			m.tabs[index].Active = true
-			return m, TabChangedCmd(m.tabs[index])
+			index := nextTab(m.tabs, m.SelectedTabIdx)
+			// m.tabs[m.SelectedTab].Active = false
+			m.SelectedTabIdx = index
+			m.SelectedTab = m.tabs[index].Id
+			// m.tabs[index].Active = true
+			return m, TabChangedCmd(m.SelectedTab)
 
 		default:
 			return m, nil
@@ -116,7 +119,7 @@ func (m Model) View() string {
 		m.log.Debugf("Rendering tab: %s %s", tab.Name, tab.Id)
 		t := ""
 		tabContent := " " + tab.Name + " "
-		if tab.Active {
+		if m.SelectedTab == tab.Id {
 			t = activeTabStyle.Render(tabContent)
 		} else {
 			t = inactiveTabStyle.Render(tabContent)
@@ -202,11 +205,10 @@ func (m Model) SetHidden(h bool) Model {
 	return m
 }
 
-func (m Model) SelectedTabId() string {
-	return m.tabs[m.SelectedTab].Id
-}
-
 func (m *Model) SetTabs(tabs []Tab) {
-	m.SelectedTab = 0
+	m.SelectedTabIdx = 0
 	m.tabs = tabs
+	if len(tabs) > 0 {
+		m.SelectedTab = tabs[0].Id
+	}
 }

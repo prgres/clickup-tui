@@ -10,7 +10,7 @@ type View struct {
 	Type          string          `json:"type"`
 	DateProtected string          `json:"date_protected"`
 	Id            string          `json:"id"`
-	ProtectedBy   string          `json:"protected_by"`
+	ProtectedBy   ViewProtectedBy `json:"protected_by"`
 	ProtectedNote string          `json:"protected_note"`
 	Visibility    string          `json:"visibility"`
 	DateCreated   string          `json:"date_created"`
@@ -25,6 +25,15 @@ type View struct {
 	Creator       int             `json:"creator"`
 	OrderIndex    int             `json:"order_index"`
 	Protected     bool            `json:"protected"`
+}
+
+type ViewProtectedBy struct {
+	Id             int    `json:"id"`
+	Username       string `json:"username"`
+	Email          string `json:"email"`
+	Color          string `json:"color"`
+	Initials       string `json:"initials"`
+	ProfilePicture string `json:"profilePicture"`
 }
 
 type ViewParent struct {

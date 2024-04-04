@@ -12,10 +12,10 @@ func FetchTasksForTabsCmd(tabs []Tab) tea.Cmd {
 	}
 }
 
-type TabChangedMsg Tab
+type TabChangedMsg string
 
-func TabChangedCmd(tab Tab) tea.Cmd {
+func TabChangedCmd(id string) tea.Cmd {
 	return func() tea.Msg {
-		return TabChangedMsg(tab)
+		return TabChangedMsg(id)
 	}
 }
