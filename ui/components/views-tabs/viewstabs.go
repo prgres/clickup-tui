@@ -24,19 +24,18 @@ type Tab struct {
 type Model struct {
 	ctx            *context.UserContext
 	log            *log.Logger
+	SelectedTab    string
 	keyMap         KeyMap
 	tabs           []Tab
 	size           common.Size
 	SelectedTabIdx int
-	SelectedTab    string
 	Focused        bool
 	Hidden         bool
+	ifBorders      bool
 }
 
-func (m Model) SetSize(s common.Size) Model {
+func (m *Model) SetSize(s common.Size) {
 	m.size = s
-
-	return m
 }
 
 func (m Model) KeyMap() help.KeyMap {
@@ -64,10 +63,11 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
 
 	return Model{
-		ctx:    ctx,
-		tabs:   []Tab{},
-		log:    log,
-		keyMap: DefaultKeyMap(),
+		ctx:       ctx,
+		tabs:      []Tab{},
+		log:       log,
+		keyMap:    DefaultKeyMap(),
+		ifBorders: true,
 	}
 }
 
@@ -105,12 +105,31 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	bColor := lipgloss.Color("#FFF")
+	if m.Focused {
+		bColor = lipgloss.Color("#8909FF")
+	}
+
+	borderMaring := 0
+	if m.ifBorders {
+		borderMaring = 2
+	}
+	style := lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(bColor).
+		BorderBottom(m.ifBorders).
+		BorderRight(m.ifBorders).
+		BorderTop(m.ifBorders).
+		BorderLeft(m.ifBorders).
+		// MaxWidth(m.size.Width).
+		Width(m.size.Width - borderMaring)
+
 	s := strings.Builder{}
 	s.WriteString(" Views |")
 
 	if len(m.tabs) == 0 {
 		s.WriteString(" ")
-		return s.String()
+		return style.Render(s.String())
 	}
 	m.log.Debugf("Rendering %d tabs", len(m.tabs))
 
@@ -130,28 +149,13 @@ func (m Model) View() string {
 			s.WriteString("|")
 		}
 
-		if s.Len()+len(moreTabsIcon)+2 > m.ctx.WindowSize.Width { // 2 is left and right border
+		if s.Len()+len(moreTabsIcon) > m.ctx.WindowSize.Width {
 			s.WriteString(moreTabsIcon)
 			break
 		}
 	}
 
-	bColor := lipgloss.Color("#FFF")
-	if m.Focused {
-		bColor = lipgloss.Color("#8909FF")
-	}
-
-	return lipgloss.NewStyle().
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(bColor).
-		BorderBottom(true).
-		BorderTop(true).
-		BorderRight(true).
-		BorderLeft(true).
-		MaxWidth(m.ctx.WindowSize.Width).
-		Render(
-			s.String(),
-		)
+	return style.Render(s.String())
 }
 
 func (m Model) Init() tea.Cmd {

@@ -172,7 +172,7 @@ func (m *Model) GetColumnsKey() []string {
 }
 
 func (m *Model) refreshTable() tea.Cmd {
-	m.log.Info("Synchonizing table...")
+	// m.log.Info("Synchonizing table...")
 	tasks := m.tasks
 
 	m.Hidden = false
@@ -183,42 +183,38 @@ func (m *Model) refreshTable() tea.Cmd {
 		// return HideTableCmd()
 	}
 
-	items := taskListToRows(tasks, m.GetColumnsKey())
+	// items := taskListToRows(tasks, m.GetColumnsKey())
 
-	m.log.Infof("!!Table items: %d", len(items))
 	m.SelectedTaskIndex = m.table.GetHighlightedRowIndex()
 
 	pageSize := m.size.Height
-	m.log.Infof("pageSize: %d", pageSize)
 	if m.table.GetHeaderVisibility() {
 		pageSize -= 1
 	}
+
 	if m.table.GetFooterVisibility() {
 		pageSize -= 1
 	}
+
 	pageSize -= 3 // TODO: why 3? fix
 	if pageSize < 0 {
 		pageSize = 1
 	}
 
-	m.log.Infof("WithTargetWidth: %d, WithMaxTotalWidth: %d, WithMinimumHeight: %d, WithPageSize: %d",
-		m.size.Width,
-		m.size.Width,
-		m.size.Height,
-		pageSize,
-	)
+	// m.log.Infof("WithTargetWidth: %d, WithMaxTotalWidth: %d, WithMinimumHeight: %d, WithPageSize: %d",
+	// 	m.size.Width,
+	// 	m.size.Width,
+	// 	m.size.Height,
+	// 	pageSize,
+	// )
 
-	m.log.Infof("pageSize: %d", pageSize)
 	m.table = m.table.
-		WithRows(items).
+		// WithRows(items).
 		WithColumns(m.columns).
 		WithTargetWidth(m.size.Width).
 		WithMaxTotalWidth(m.size.Width).
 		WithMinimumHeight(m.size.Height).
 		WithPageSize(pageSize)
-
-	m.log.Info("Table synchonized")
-	m.log.Infof("Table size: %v", len(m.table.GetVisibleRows()))
 
 	return nil
 }
@@ -340,7 +336,10 @@ func (m Model) TabChanged(tabId string) (Model, tea.Cmd) {
 
 func (m *Model) SetTasks(tasks []clickup.Task) {
 	m.tasks = tasks
-	m.refreshTable()
+	items := taskListToRows(tasks, m.GetColumnsKey())
+	m.table = m.table.
+		WithRows(items)
+	m.log.Info("Table synchonized", "size", len(m.table.GetVisibleRows()))
 }
 
 // func (m Model) FetchTasksForView(viewId string) (Model, tea.Cmd) {
