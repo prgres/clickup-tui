@@ -50,13 +50,7 @@ func (m *Model) GetTable() table.Model {
 }
 
 func (m *Model) SetSize(s common.Size) {
-	if m.size.Width == s.Width && m.size.Height == s.Height {
-		return
-	}
-
 	m.size = s
-
-	// m.SelectedTaskIndex = m.table.GetHighlightedRowIndex()
 }
 
 func (m *Model) setTableSize(s common.Size) {
@@ -156,8 +150,6 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		WithSelectedText(" ", "✓").
 		Focused(true).
 		WithPageSize(0).
-		// WithFooterVisibility(false).
-		// WithHeaderVisibility(false).
 		WithBaseStyle(
 			lipgloss.NewStyle().
 				Align(lipgloss.Left),
@@ -345,6 +337,10 @@ func (m *Model) SetTasks(tasks []clickup.Task) {
 	m.table = m.table.WithRows(items)
 	m.showSpinner = false
 	m.log.Info("Table synchonized", "size", len(m.table.GetVisibleRows()))
+}
+
+func (m *Model) SetSpinner(f bool) {
+	m.showSpinner = f
 }
 
 // func (m Model) FetchTasksForView(viewId string) (Model, tea.Cmd) {
