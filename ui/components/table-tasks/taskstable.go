@@ -50,17 +50,34 @@ func (m *Model) GetTable() table.Model {
 }
 
 func (m *Model) SetSize(s common.Size) {
-	// if m.ifBorders {
-	// 	s.Width -= 2  // two borders
-	// 	s.Height -= 2 // two borders
-	// }
-
 	if m.size.Width == s.Width && m.size.Height == s.Height {
 		return
 	}
 
 	m.size = s
-	m.refreshTable()
+
+	// m.SelectedTaskIndex = m.table.GetHighlightedRowIndex()
+}
+
+func (m *Model) setTableSize(s common.Size) {
+	pageSize := s.Height - 2
+	if m.table.GetHeaderVisibility() {
+		pageSize -= 2
+	}
+
+	if m.table.GetFooterVisibility() {
+		pageSize -= 2
+	}
+
+	if pageSize < 0 {
+		pageSize = 1
+	}
+
+	m.table = m.table.
+		WithTargetWidth(s.Width).
+		WithMaxTotalWidth(s.Width).
+		WithMinimumHeight(s.Height).
+		WithPageSize(pageSize)
 }
 
 func (m Model) KeyMap() help.KeyMap {
@@ -139,6 +156,8 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		WithSelectedText(" ", "✓").
 		Focused(true).
 		WithPageSize(0).
+		// WithFooterVisibility(false).
+		// WithHeaderVisibility(false).
 		WithBaseStyle(
 			lipgloss.NewStyle().
 				Align(lipgloss.Left),
@@ -169,10 +188,6 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
-func (m *Model) RefreshTable() tea.Cmd {
-	return m.refreshTable()
-}
-
 func (m *Model) GetColumnsKey() []string {
 	r := make([]string, len(m.columns))
 	for i, c := range m.columns {
@@ -180,54 +195,6 @@ func (m *Model) GetColumnsKey() []string {
 	}
 
 	return r
-}
-
-func (m *Model) refreshTable() tea.Cmd {
-	// m.log.Info("Synchonizing table...")
-	tasks := m.tasks
-
-	m.Hidden = false
-	if len(tasks) == 0 {
-		m.log.Info("Table is empty")
-		m.Hidden = true
-		return nil
-		// return HideTableCmd()
-	}
-
-	// items := taskListToRows(tasks, m.GetColumnsKey())
-
-	m.SelectedTaskIndex = m.table.GetHighlightedRowIndex()
-
-	pageSize := m.size.Height
-	if m.table.GetHeaderVisibility() {
-		pageSize -= 1
-	}
-
-	if m.table.GetFooterVisibility() {
-		pageSize -= 1
-	}
-
-	pageSize -= 3 // TODO: why 3? fix
-	if pageSize < 0 {
-		pageSize = 1
-	}
-
-	// m.log.Infof("WithTargetWidth: %d, WithMaxTotalWidth: %d, WithMinimumHeight: %d, WithPageSize: %d",
-	// 	m.size.Width,
-	// 	m.size.Width,
-	// 	m.size.Height,
-	// 	pageSize,
-	// )
-
-	m.table = m.table.
-		// WithRows(items).
-		WithColumns(m.columns).
-		WithTargetWidth(m.size.Width).
-		WithMaxTotalWidth(m.size.Width).
-		WithMinimumHeight(m.size.Height).
-		WithPageSize(pageSize)
-
-	return nil
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -300,12 +267,17 @@ func (m Model) View() string {
 		)
 	}
 
+	m.setTableSize(common.Size{
+		Width:  m.size.Width - borderMargin,
+		Height: m.size.Height - borderMargin,
+	})
+
 	return style.Render(m.table.View())
 }
 
 func (m Model) Init() tea.Cmd {
 	m.log.Info("Initializing...")
-	return m.refreshTable()
+	return nil
 }
 
 func (m Model) GetFocused() bool {
@@ -348,11 +320,8 @@ func (m Model) TabChanged(tabId string) (Model, tea.Cmd) {
 	// }
 
 	m.log.Infof("Columns: %d", len(columns))
-	m.columns = columns
-	tasks := m.tasks
-
-	m.SetTasks(tasks)
-	cmds = append(cmds, m.refreshTable())
+	m.setColumns(columns)
+	m.SetTasks(m.tasks)
 
 	if len(m.tasks) != 0 { // TODO: store tasks list in var
 		taskId := m.tasks[m.SelectedTaskIndex].Id
@@ -364,11 +333,17 @@ func (m Model) TabChanged(tabId string) (Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+func (m *Model) setColumns(columns []table.Column) {
+	m.columns = columns
+	m.table = m.table.
+		WithColumns(m.columns)
+}
+
 func (m *Model) SetTasks(tasks []clickup.Task) {
 	m.tasks = tasks
 	items := taskListToRows(tasks, m.GetColumnsKey())
-	m.table = m.table.
-		WithRows(items)
+	m.table = m.table.WithRows(items)
+	m.showSpinner = false
 	m.log.Info("Table synchonized", "size", len(m.table.GetVisibleRows()))
 }
 

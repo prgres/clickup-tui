@@ -449,14 +449,18 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 			cmds = append(cmds, common.ErrCmd(err))
 			return m, tea.Batch(cmds...)
 		}
+
+		//TODO: Add the case for LoadingTasksFromViewMsg
 		//
-		// 	m.widgetTasksTable, cmd = m.widgetTasksTable.(taskstable.Model).TabChanged(tab.Id)
-		// 	cmds = append(cmds, cmd)
+		// case LoadingTasksFromViewMsg:
+		// 	id := string(msg)
+		// 	m.log.Info("Received: LoadingTasksFromViewMsg", "id", id)
 		//
-		// 	cmds = append(cmds,
-		// 		cmd,
-		// 		m.spinner.Tick,
-		// 	)
+		// 	if err := m.reloadTasks(id); err != nil {
+		// 		cmds = append(cmds, common.ErrCmd(err))
+		// 		return m, tea.Batch(cmds...)
+		// 	}
+		// 	m.showSpinner = false
 	}
 
 	m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
