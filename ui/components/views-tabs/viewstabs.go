@@ -114,6 +114,7 @@ func (m Model) View() string {
 	if m.ifBorders {
 		borderMaring = 2
 	}
+
 	style := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(bColor).

@@ -1,8 +1,11 @@
 package tabletasks
 
 import (
+	"fmt"
+
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
@@ -29,6 +32,9 @@ type Model struct {
 	Focused           bool
 	Hidden            bool
 	ifBorders         bool
+
+	spinner     spinner.Model
+	showSpinner bool
 }
 
 func (m Model) GetTasks() []clickup.Task {
@@ -107,6 +113,9 @@ func (m Model) KeyMap() help.KeyMap {
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
+	s := spinner.New()
+	s.Spinner = spinner.Pulse
+
 	columns := []table.Column{}
 
 	requiredCols := []table.Column{
@@ -155,6 +164,8 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		Hidden:           false,
 		log:              log,
 		ifBorders:        true,
+		spinner:          s,
+		showSpinner:      true,
 	}
 }
 
@@ -261,16 +272,25 @@ func (m Model) View() string {
 		bColor = lipgloss.Color("#8909FF")
 	}
 
-	return lipgloss.NewStyle().
+	style := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(bColor).
 		BorderBottom(m.ifBorders).
 		BorderRight(m.ifBorders).
 		BorderTop(m.ifBorders).
-		BorderLeft(m.ifBorders).
-		Render(
-			m.table.View(),
+		BorderLeft(m.ifBorders)
+	if m.showSpinner {
+		return style.Render(
+			lipgloss.Place(
+				m.size.Width, m.size.Height,
+				lipgloss.Center,
+				lipgloss.Center,
+				fmt.Sprintf("%s Loading lists...", m.spinner.View()),
+			),
 		)
+	}
+
+	return style.Render(m.table.View())
 }
 
 func (m Model) Init() tea.Cmd {
