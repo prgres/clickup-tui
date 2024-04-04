@@ -1,4 +1,4 @@
-package workspaceslist
+package folderslist
 
 import (
 	"github.com/charmbracelet/bubbles/help"
@@ -11,22 +11,23 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const WidgetId = "workspacesList"
+const ComponentId = "widgetFoldersList"
 
 type Model struct {
-	list              list.Model
-	ctx               *context.UserContext
-	log               *log.Logger
-	WidgetId          common.WidgetId
-	SelectedWorkspace string
-	workspaces        []clickup.Workspace
+	list           list.Model
+	ctx            *context.UserContext
+	log            *log.Logger
+	ComponentId    common.ComponentId
+	SelectedSpace  string
+	SelectedFolder string
+	folders        []clickup.Folder
 }
 
 func (m Model) KeyMap() help.KeyMap {
 	return common.NewKeyMap(
 		m.list.FullHelp,
 		m.list.ShortHelp,
-	)
+	).With(common.KeyBindingBack)
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
@@ -36,39 +37,35 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	l.KeyMap.Quit.Unbind()
 	l.SetShowHelp(false)
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/" + ComponentId)
 
 	return Model{
-		WidgetId:          WidgetId,
-		list:              l,
-		ctx:               ctx,
-		SelectedWorkspace: "",
-		workspaces:        []clickup.Workspace{},
-		log:               log,
+		ComponentId:    ComponentId,
+		list:           l,
+		ctx:            ctx,
+		SelectedFolder: "",
+		SelectedSpace:  ctx.Config.DefaultSpace,
+		folders:        []clickup.Folder{},
+		log:            log,
 	}
 }
 
-func (m *Model) syncList(workspaces []clickup.Workspace) {
-	m.log.Info("Synchronizing list...")
-	m.workspaces = workspaces
+func (m *Model) syncList(folders []clickup.Folder) {
+	m.log.Info("Synchronizing list")
+	m.folders = folders
 
 	sre_index := 0
-	items := workspaceListToItems(workspaces)
+	items := folderListToItems(folders)
 	itemsList := listitem.ItemListToBubblesItems(items)
-	if len(items) == 0 {
-		panic("list is empty")
-	}
 
 	for i, item := range items {
-		if item.Description() == m.ctx.Config.DefaultWorkspace {
+		if item.Description() == m.ctx.Config.DefaultFolder {
 			sre_index = i
-			m.SelectedWorkspace = item.Description()
 		}
 	}
 
 	m.list.SetItems(itemsList)
 	m.list.Select(sre_index)
-	m.log.Info("List synchronized")
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -83,10 +80,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.log.Info("List is empty")
 				break
 			}
-			selectedWorkspace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.log.Info("Selected workspace", "workspace", selectedWorkspace)
-			m.SelectedWorkspace = selectedWorkspace
-			cmds = append(cmds, common.WorkspaceChangeCmd(selectedWorkspace))
+			selectedFolder := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
+			m.log.Infof("Selected folder %s", selectedFolder)
+			m.SelectedFolder = selectedFolder
+			cmds = append(cmds, FolderChangeCmd(selectedFolder))
 		}
 	}
 
@@ -101,7 +98,7 @@ func (m Model) View() string {
 }
 
 func (m Model) Init() tea.Cmd {
-	m.log.Infof("Initializing...")
+	m.log.Info("Initializing...")
 	return nil
 }
 
@@ -110,15 +107,15 @@ func (m Model) SetSize(s common.Size) Model {
 	return m
 }
 
-func (m *Model) InitWorkspaces() error {
-	m.log.Info("Received: InitWorkspacesMsg")
-	workspaces, err := m.ctx.Api.GetWorkspaces()
+func (m *Model) SpaceChange(id string) error {
+	m.log.Infof("Received: SpaceChangeMsg: %s", id)
+	m.SelectedSpace = id
+
+	folders, err := m.ctx.Api.GetFolders(id)
 	if err != nil {
 		return err
 	}
-	// panic(len(workspaces))
-	m.SelectedWorkspace = workspaces[0].Id
-	m.syncList(workspaces)
 
+	m.syncList(folders)
 	return nil
 }

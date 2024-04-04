@@ -14,6 +14,8 @@ type ViewId string
 
 type WidgetId string
 
+type ComponentId string
+
 type View interface {
 	View() string
 	KeyMap() help.KeyMap
