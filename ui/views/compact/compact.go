@@ -443,6 +443,7 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		initTab := m.widgetViewsTabs.SelectedTab
 		m.log.Info("Received: TabChangedMsg", "idx", idx, "id", initTab)
 		// m.showSpinner = true
+		// TODO reutrn LoadingListsFromFolderMsg
 
 		if err := m.reloadTasks(initTab); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
@@ -488,13 +489,15 @@ func (m Model) View() string {
 
 	m.widgetNavigator.SetSize(common.Size{
 		Width:  25,
-		Height: m.ctx.WindowSize.Height - m.ctx.WindowSize.MetaHeight - lipgloss.Height(widgetViewsTabsRendered) - 2,
+		Height: m.ctx.WindowSize.Height - lipgloss.Height(widgetViewsTabsRendered), // - 2,
+		// Height: m.ctx.WindowSize.Height - m.ctx.WindowSize.MetaHeight - lipgloss.Height(widgetViewsTabsRendered) - 2,
 	})
 	widgetNavigatorRendered := m.widgetNavigator.View()
 
 	m.widgetTasksTable.SetSize(common.Size{
-		Width:  m.ctx.WindowSize.Width - lipgloss.Width(widgetNavigatorRendered) - 0,
-		Height: m.ctx.WindowSize.Height - m.ctx.WindowSize.MetaHeight - lipgloss.Height(widgetViewsTabsRendered) - 1,
+		Width:  m.ctx.WindowSize.Width - lipgloss.Width(widgetNavigatorRendered),
+		Height: m.ctx.WindowSize.Height - lipgloss.Height(widgetViewsTabsRendered), // - 1,
+		// Height: m.ctx.WindowSize.Height - m.ctx.WindowSize.MetaHeight - lipgloss.Height(widgetViewsTabsRendered), // - 1,
 	})
 	widgetTasksTableRendered := m.widgetTasksTable.View()
 

@@ -318,18 +318,27 @@ func (m Model) View() string {
 		bColor = lipgloss.Color("#8909FF")
 	}
 
+	borderMargin := 0
+	if m.ifBorders {
+		borderMargin = 2
+	}
+
 	style := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(bColor).
 		BorderBottom(m.ifBorders).
 		BorderRight(m.ifBorders).
 		BorderTop(m.ifBorders).
-		BorderLeft(m.ifBorders)
+		BorderLeft(m.ifBorders).
+		Width(m.size.Width - borderMargin).
+		MaxWidth(m.size.Width + borderMargin).
+		Height(m.size.Height - borderMargin).
+		MaxHeight(m.size.Height + borderMargin)
 
 	if m.showSpinner {
 		return style.Render(
 			lipgloss.Place(
-				m.size.Width, m.size.Height,
+				m.size.Width-borderMargin, m.size.Height-borderMargin,
 				lipgloss.Center,
 				lipgloss.Center,
 				fmt.Sprintf("%s Loading lists...", m.spinner.View()),
@@ -337,15 +346,24 @@ func (m Model) View() string {
 		)
 	}
 
+	size := common.Size{
+		Width:  m.size.Width - borderMargin,
+		Height: m.size.Height - borderMargin,
+	}
+
 	var content string
 	switch m.state {
 	case workspaceslist.ComponentId:
+		m.componentWorkspacesList.SetSize(size)
 		content = m.componentWorkspacesList.View()
 	case spaceslist.ComponentId:
+		m.componentSpacesList.SetSize(size)
 		content = m.componentSpacesList.View()
 	case folderslist.ComponentId:
+		m.componentFoldersList.SetSize(size)
 		content = m.componentFoldersList.View()
 	case listslist.ComponentId:
+		m.componentListsList.SetSize(size)
 		content = m.componentListsList.View()
 	default:
 		content = "Unknown state"
@@ -361,11 +379,6 @@ func (m Model) SetFocused(f bool) Model {
 
 func (m *Model) SetSize(s common.Size) {
 	m.size = s
-	// TODO: move size into view singnature maybe
-	m.componentWorkspacesList.SetSize(s)
-	m.componentSpacesList.SetSize(s)
-	m.componentFoldersList.SetSize(s)
-	m.componentListsList.SetSize(s)
 }
 
 func (m Model) GetWorkspace() string {

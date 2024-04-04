@@ -9,3 +9,11 @@ func InitCompactCmd() tea.Cmd {
 		return InitCompactMsg("")
 	}
 }
+
+type LoadingTasksFromViewMsg string
+
+func LoadingTasksFromViewCmd(id string) tea.Cmd {
+	return func() tea.Msg {
+		return LoadingTasksFromViewMsg(id)
+	}
+}

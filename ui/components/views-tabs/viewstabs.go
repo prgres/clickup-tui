@@ -110,9 +110,9 @@ func (m Model) View() string {
 		bColor = lipgloss.Color("#8909FF")
 	}
 
-	borderMaring := 0
+	borderMargin := 0
 	if m.ifBorders {
-		borderMaring = 2
+		borderMargin = 2
 	}
 
 	style := lipgloss.NewStyle().
@@ -122,11 +122,10 @@ func (m Model) View() string {
 		BorderRight(m.ifBorders).
 		BorderTop(m.ifBorders).
 		BorderLeft(m.ifBorders).
-		// Height(1).
-		// Height(1 + borderMaring).
-		MaxHeight(1 + borderMaring).
-		MaxWidth(m.size.Width).
-		Width(m.size.Width - borderMaring)
+		Height(1).
+		MaxHeight(1 + borderMargin).
+		Width(m.size.Width - borderMargin).
+		MaxWidth(m.size.Width + borderMargin)
 
 	s := strings.Builder{}
 	s.WriteString(" Views |")
@@ -150,7 +149,7 @@ func (m Model) View() string {
 
 		content := " " + t + " "
 
-		if lipgloss.Width(s.String()+content+moreTabsIcon) >= m.size.Width-borderMaring {
+		if lipgloss.Width(s.String()+content+moreTabsIcon) >= m.size.Width-borderMargin {
 			s.WriteString(moreTabsIcon)
 			break
 		}

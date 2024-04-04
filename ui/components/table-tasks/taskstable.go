@@ -50,10 +50,10 @@ func (m *Model) GetTable() table.Model {
 }
 
 func (m *Model) SetSize(s common.Size) {
-	if m.ifBorders {
-		s.Width -= 2  // two borders
-		s.Height -= 2 // two borders
-	}
+	// if m.ifBorders {
+	// 	s.Width -= 2  // two borders
+	// 	s.Height -= 2 // two borders
+	// }
 
 	if m.size.Width == s.Width && m.size.Height == s.Height {
 		return
@@ -272,17 +272,27 @@ func (m Model) View() string {
 		bColor = lipgloss.Color("#8909FF")
 	}
 
+	borderMargin := 0
+	if m.ifBorders {
+		borderMargin = 2
+	}
+
 	style := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(bColor).
 		BorderBottom(m.ifBorders).
 		BorderRight(m.ifBorders).
 		BorderTop(m.ifBorders).
-		BorderLeft(m.ifBorders)
+		BorderLeft(m.ifBorders).
+		Width(m.size.Width - borderMargin).
+		MaxWidth(m.size.Width + borderMargin).
+		Height(m.size.Height - borderMargin).
+		MaxHeight(m.size.Height + borderMargin)
+
 	if m.showSpinner {
 		return style.Render(
 			lipgloss.Place(
-				m.size.Width, m.size.Height,
+				m.size.Width-borderMargin, m.size.Height-borderMargin,
 				lipgloss.Center,
 				lipgloss.Center,
 				fmt.Sprintf("%s Loading lists...", m.spinner.View()),
