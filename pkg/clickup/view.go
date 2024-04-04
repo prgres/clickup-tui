@@ -6,17 +6,25 @@ import (
 )
 
 type View struct {
-	Id          string          `json:"id"`
-	Name        string          `json:"name"`
-	Type        string          `json:"type"`
-	Parent      ViewParent      `json:"parent"`
-	Sorting     ViewSorting     `json:"sorting"`
-	Columns     ViewColumns     `json:"columns"`
-	Filter      ViewFilter      `json:"filters"`
-	Divide      ViewDivide      `json:"divide"`
-	TeamSidebar ViewTeamSidebar `json:"team_sidebar"`
-	Grouping    ViewGrouping    `json:"grouping"`
-	Settings    ViewSettings    `json:"settings"`
+	Name          string          `json:"name"`
+	Type          string          `json:"type"`
+	DateProtected string          `json:"date_protected"`
+	Id            string          `json:"id"`
+	ProtectedBy   string          `json:"protected_by"`
+	ProtectedNote string          `json:"protected_note"`
+	Visibility    string          `json:"visibility"`
+	DateCreated   string          `json:"date_created"`
+	Parent        ViewParent      `json:"parent"`
+	Sorting       ViewSorting     `json:"sorting"`
+	Columns       ViewColumns     `json:"columns"`
+	Filter        ViewFilter      `json:"filters"`
+	Divide        ViewDivide      `json:"divide"`
+	TeamSidebar   ViewTeamSidebar `json:"team_sidebar"`
+	Grouping      ViewGrouping    `json:"grouping"`
+	Settings      ViewSettings    `json:"settings"`
+	Creator       int             `json:"creator"`
+	OrderIndex    int             `json:"order_index"`
+	Protected     bool            `json:"protected"`
 }
 
 type ViewParent struct {
@@ -133,6 +141,44 @@ func filterListViews(views []View) []View {
 	return filteredViews
 }
 
+func (c *Client) GetViewsFromWorkspace(workspaceId string) ([]View, error) {
+	errMsg := "Error occurs while getting views from workspace: %s. Error: %s. Raw data: %s"
+
+	errApiMsg := errMsg + " API response: %s"
+
+	rawData, err := c.requestGet("/team/" + workspaceId + "/view")
+	if err != nil {
+		return nil, fmt.Errorf(errMsg, workspaceId, err, "none")
+	}
+
+	var objmap RequestGetViews
+	if err := json.Unmarshal(rawData, &objmap); err != nil {
+		return nil, fmt.Errorf(
+			errApiMsg, workspaceId, err, string(rawData))
+	}
+
+	if objmap.Err != "" {
+		return nil, fmt.Errorf(
+			errApiMsg, workspaceId, objmap.Err, string(rawData))
+	}
+
+	allViews := append(objmap.Views, objmap.RequiredViews.GetViews()...)
+	for _, v := range allViews {
+		if v.Id == "" || v.Name == "" {
+			return nil, fmt.Errorf(
+				"View id or name is empty, API response: %s", string(rawData))
+		}
+	}
+
+	if len(allViews) == 0 {
+		c.logger.Error("No views found in workspace",
+			"workspace", workspaceId)
+		return []View{}, nil
+	}
+
+	return allViews, nil
+}
+
 func (c *Client) GetViewsFromSpace(spaceId string) ([]View, error) {
 	errMsg := "Error occurs while getting views from space: %s. Error: %s. Raw data: %s"
 
@@ -155,21 +201,24 @@ func (c *Client) GetViewsFromSpace(spaceId string) ([]View, error) {
 	}
 
 	allViews := append(objmap.Views, objmap.RequiredViews.GetViews()...)
+	// TODO: find out why it was needed
 	for _, v := range allViews {
 		if v.Id == "" || v.Name == "" {
 			return nil, fmt.Errorf(
 				"View id or name is empty, API response: %s", string(rawData))
 		}
 	}
+
 	if len(allViews) == 0 {
 		c.logger.Error("No views found in space",
 			"space", spaceId)
 		return []View{}, nil
 	}
 
-	filteredViews := filterListViews(allViews)
+	// filteredViews := filterListViews(allViews)
 
-	return append(filteredViews, objmap.RequiredViews.GetViews()...), nil
+	return objmap.RequiredViews.GetViews(), nil
+	// return append(filteredViews, objmap.RequiredViews.GetViews()...), nil
 }
 
 func (c *Client) GetViewsFromFolder(folderId string) ([]View, error) {
@@ -244,8 +293,8 @@ func (c *Client) GetViewsFromList(listId string) ([]View, error) {
 		return []View{}, nil
 	}
 
-	filteredViews := filterListViews(allViews)
+	// filteredViews := filterListViews(allViews)
 
-	return filteredViews, nil
+	return allViews, nil
 	// return append(filteredViews, objmap.RequiredViews.GetViews()...), nil //TODO: find out why it was needed
 }
