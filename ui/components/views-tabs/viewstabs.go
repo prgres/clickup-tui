@@ -80,20 +80,31 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		case "h", "left":
+		case "H", "shift+left":
 			index := prevTab(m.tabs, m.SelectedTabIdx)
-			// m.tabs[m.SelectedTab].Active = false
 			m.SelectedTabIdx = index
 			m.SelectedTab = m.tabs[index].Id
-			// m.tabs[index].Active = true
 			return m, TabChangedCmd(m.SelectedTab)
+
+		case "L", "shift+right":
+			index := nextTab(m.tabs, m.SelectedTabIdx)
+			m.SelectedTabIdx = index
+			m.SelectedTab = m.tabs[index].Id
+			return m, TabChangedCmd(m.SelectedTab)
+
+		case "h", "left":
+			index := prevTab(m.tabs, m.SelectedTabIdx)
+			m.SelectedTabIdx = index
+			m.SelectedTab = m.tabs[index].Id
+			return m, nil
 
 		case "l", "right":
 			index := nextTab(m.tabs, m.SelectedTabIdx)
-			// m.tabs[m.SelectedTab].Active = false
 			m.SelectedTabIdx = index
 			m.SelectedTab = m.tabs[index].Id
-			// m.tabs[index].Active = true
+			return m, nil
+
+		case "enter":
 			return m, TabChangedCmd(m.SelectedTab)
 
 		default:
