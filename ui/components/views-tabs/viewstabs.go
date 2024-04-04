@@ -105,6 +105,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			return m, nil
 
 		case "enter":
+			index := nextTab(m.tabs, m.SelectedTabIdx)
+			m.SelectedTabIdx = index
+			m.SelectedTab = m.tabs[index].Id
 			return m, TabChangedCmd(m.SelectedTab)
 
 		default:

@@ -99,8 +99,36 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedWorkspace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
 			m.log.Info("Selected workspace", "workspace", selectedWorkspace)
 			m.SelectedWorkspace = selectedWorkspace
-			cmds = append(cmds, common.WorkspaceChangeCmd(selectedWorkspace))
+			return m, common.WorkspaceChangeCmd(selectedWorkspace)
+
+		case "J", "shift+down":
+			m.list.CursorDown()
+			if m.list.SelectedItem() == nil {
+				m.log.Info("List is empty")
+				break
+			}
+			selectedWorkspace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
+			m.log.Info("Selected workspace", "workspace", selectedWorkspace)
+			m.SelectedWorkspace = selectedWorkspace
+			return m, common.WorkspacePreviewCmd(selectedWorkspace)
+
+		case "K", "shift+up":
+			m.list.CursorUp()
+			if m.list.SelectedItem() == nil {
+				m.log.Info("List is empty")
+				break
+			}
+			selectedWorkspace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
+			m.log.Info("Selected workspace", "workspace", selectedWorkspace)
+			m.SelectedWorkspace = selectedWorkspace
+			return m, common.WorkspacePreviewCmd(selectedWorkspace)
 		}
+
+		// switch {
+		// case key.Matches(msg, m.list.KeyMap.CursorDown):
+		// 	m.list.CursorUp()
+		// 	return m, nil
+		// }
 	}
 
 	m.list, cmd = m.list.Update(msg)
@@ -146,7 +174,7 @@ func (m *Model) InitWorkspaces() error {
 	if err != nil {
 		return err
 	}
-	// panic(len(workspaces))
+
 	m.SelectedWorkspace = workspaces[0].Id
 	m.syncList(workspaces)
 

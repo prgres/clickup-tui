@@ -84,7 +84,29 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedSpace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
 			m.log.Infof("Selected space %s", selectedSpace)
 			m.SelectedSpace = selectedSpace
-			cmds = append(cmds, SpaceChangedCmd(selectedSpace))
+			return m, SpaceChangedCmd(selectedSpace)
+
+		case "J", "shift+down":
+			m.list.CursorDown()
+			if m.list.SelectedItem() == nil {
+				m.log.Info("List is empty")
+				break
+			}
+			selectedSpace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
+			m.log.Info("Selected space", "space", selectedSpace)
+			m.SelectedSpace = selectedSpace
+			return m, common.SpacePreviewCmd(selectedSpace)
+
+		case "K", "shift+up":
+			m.list.CursorUp()
+			if m.list.SelectedItem() == nil {
+				m.log.Info("List is empty")
+				break
+			}
+			selectedSpace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
+			m.log.Info("Selected space", "space", selectedSpace)
+			m.SelectedSpace = selectedSpace
+			return m, common.SpacePreviewCmd(selectedSpace)
 		}
 	}
 

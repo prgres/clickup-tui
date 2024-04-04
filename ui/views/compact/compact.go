@@ -273,7 +273,6 @@ func (m Model) Init() tea.Cmd {
 	m.log.Info("Initializing...")
 	return tea.Batch(
 		m.spinner.Tick,
-		// m.widgetTasksTable.Init(),
 		InitCompactCmd(),
 	)
 }
@@ -363,69 +362,45 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 			cmds = append(cmds, cmd)
 		}
 
+	case common.WorkspacePreviewMsg:
+		id := string(msg)
+		m.log.Infof("Received: WorkspaceChangeMsg: %s", id)
+		return m, m.handleFolderChangePreview(id)
+
 	case common.WorkspaceChangeMsg:
 		id := string(msg)
 		m.log.Infof("Received: WorkspaceChangeMsg: %s", id)
+		cmds = append(cmds, m.handleFolderChangePreview(id))
 
-		views, err := m.ctx.Api.GetViewsFromWorkspace(id)
-		if err != nil {
-			cmds = append(cmds, common.ErrCmd(err))
-			return m, tea.Batch(cmds...)
-		}
-		tabs := viewsToTabs(views)
-		m.widgetViewsTabs.SetTabs(tabs)
-
-		initTab := m.widgetViewsTabs.SelectedTab
-		m.widgetTasksTable.SetSpinner(true)
-		cmds = append(cmds, LoadingTasksFromViewCmd(initTab))
+	case common.SpacePreviewMsg:
+		id := string(msg)
+		m.log.Infof("Received: received SpaceChangeMsg: %s", id)
+		return m, m.handleSpaceChangePreview(id)
 
 	case common.SpaceChangeMsg:
 		id := string(msg)
 		m.log.Infof("Received: received SpaceChangeMsg: %s", id)
+		cmds = append(cmds, m.handleSpaceChangePreview(id))
 
-		views, err := m.ctx.Api.GetViewsFromSpace(id)
-		if err != nil {
-			cmds = append(cmds, common.ErrCmd(err))
-			return m, tea.Batch(cmds...)
-		}
-		tabs := viewsToTabs(views)
-		m.widgetViewsTabs.SetTabs(tabs)
-
-		initTab := m.widgetViewsTabs.SelectedTab
-		m.widgetTasksTable.SetSpinner(true)
-		cmds = append(cmds, LoadingTasksFromViewCmd(initTab))
+	case common.FolderPreviewMsg:
+		id := string(msg)
+		m.log.Infof("Received: FolderChangeMsg: %s", id)
+		return m, m.handleFolderChangePreview(id)
 
 	case common.FolderChangeMsg:
 		id := string(msg)
 		m.log.Infof("Received: FolderChangeMsg: %s", id)
+		cmds = append(cmds, m.handleFolderChangePreview(id))
 
-		views, err := m.ctx.Api.GetViewsFromFolder(id)
-		if err != nil {
-			cmds = append(cmds, common.ErrCmd(err))
-			return m, tea.Batch(cmds...)
-		}
-		tabs := viewsToTabs(views)
-		m.widgetViewsTabs.SetTabs(tabs)
-
-		initTab := m.widgetViewsTabs.SelectedTab
-		m.widgetTasksTable.SetSpinner(true)
-		cmds = append(cmds, LoadingTasksFromViewCmd(initTab))
+	case common.ListPreviewMsg:
+		id := string(msg)
+		m.log.Infof("Received: ListChangeMsg: %s", id)
+		cmds = append(cmds, m.handleListChangePreview(id))
 
 	case common.ListChangeMsg:
 		id := string(msg)
 		m.log.Info("Received: ListChangeMsg", "id", id)
-
-		views, err := m.ctx.Api.GetViewsFromList(id)
-		if err != nil {
-			cmds = append(cmds, common.ErrCmd(err))
-			return m, tea.Batch(cmds...)
-		}
-		tabs := viewsToTabs(views)
-		m.widgetViewsTabs.SetTabs(tabs)
-
-		initTab := m.widgetViewsTabs.SelectedTab
-		m.widgetTasksTable.SetSpinner(true)
-		cmds = append(cmds, LoadingTasksFromViewCmd(initTab))
+		return m, m.handleListChangePreview(id)
 
 	case viewstabs.TabChangedMsg:
 		idx := string(msg)
@@ -546,4 +521,60 @@ func (m *Model) reloadTasks(viewId string) error {
 	}
 	m.widgetTasksTable.SetTasks(tasks)
 	return nil
+}
+
+func (m *Model) handleWorkspaceChangePreview(id string) tea.Cmd {
+	views, err := m.ctx.Api.GetViewsFromWorkspace(id)
+	if err != nil {
+		return common.ErrCmd(err)
+	}
+	tabs := viewsToTabs(views)
+	m.widgetViewsTabs.SetTabs(tabs)
+
+	initTab := m.widgetViewsTabs.SelectedTab
+	m.widgetTasksTable.SetSpinner(true)
+
+	return LoadingTasksFromViewCmd(initTab)
+}
+
+func (m *Model) handleSpaceChangePreview(id string) tea.Cmd {
+	views, err := m.ctx.Api.GetViewsFromSpace(id)
+	if err != nil {
+		return common.ErrCmd(err)
+	}
+	tabs := viewsToTabs(views)
+	m.widgetViewsTabs.SetTabs(tabs)
+
+	initTab := m.widgetViewsTabs.SelectedTab
+	m.widgetTasksTable.SetSpinner(true)
+
+	return LoadingTasksFromViewCmd(initTab)
+}
+
+func (m *Model) handleFolderChangePreview(id string) tea.Cmd {
+	views, err := m.ctx.Api.GetViewsFromFolder(id)
+	if err != nil {
+		return common.ErrCmd(err)
+	}
+	tabs := viewsToTabs(views)
+	m.widgetViewsTabs.SetTabs(tabs)
+
+	initTab := m.widgetViewsTabs.SelectedTab
+	m.widgetTasksTable.SetSpinner(true)
+
+	return LoadingTasksFromViewCmd(initTab)
+}
+
+func (m *Model) handleListChangePreview(id string) tea.Cmd {
+	views, err := m.ctx.Api.GetViewsFromList(id)
+	if err != nil {
+		return common.ErrCmd(err)
+	}
+	tabs := viewsToTabs(views)
+	m.widgetViewsTabs.SetTabs(tabs)
+
+	initTab := m.widgetViewsTabs.SelectedTab
+	m.widgetTasksTable.SetSpinner(true)
+
+	return LoadingTasksFromViewCmd(initTab)
 }

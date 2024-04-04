@@ -210,7 +210,29 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedFolder := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
 			m.log.Infof("Selected folder %s", selectedFolder)
 			m.SelectedFolder = selectedFolder
-			cmds = append(cmds, FolderChangeCmd(selectedFolder))
+			return m, FolderChangeCmd(selectedFolder)
+
+		case "J", "shift+down":
+			m.list.CursorDown()
+			if m.list.SelectedItem() == nil {
+				m.log.Info("List is empty")
+				break
+			}
+			selectedFolder := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
+			m.log.Infof("Selected folder %s", selectedFolder)
+			m.SelectedFolder = selectedFolder
+			return m, common.FolderPreviewCmd(selectedFolder)
+
+		case "K", "shift+up":
+			m.list.CursorUp()
+			if m.list.SelectedItem() == nil {
+				m.log.Info("List is empty")
+				break
+			}
+			selectedFolder := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
+			m.log.Infof("Selected folder %s", selectedFolder)
+			m.SelectedFolder = selectedFolder
+			return m, common.FolderPreviewCmd(selectedFolder)
 		}
 	}
 

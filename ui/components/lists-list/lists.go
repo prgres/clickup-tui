@@ -77,7 +77,29 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedList := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
 			m.log.Infof("Selected list %s", selectedList)
 			m.SelectedList = selectedList
-			cmds = append(cmds, ListChangedCmd(m.SelectedList))
+			return m, ListChangedCmd(m.SelectedList)
+
+		case "J", "shift+down":
+			m.list.CursorDown()
+			if m.list.SelectedItem() == nil {
+				m.log.Info("List is empty")
+				break
+			}
+			selectedList := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
+			m.log.Infof("Selected list %s", selectedList)
+			m.SelectedList = selectedList
+			return m, common.ListPreviewCmd(m.SelectedList)
+
+		case "K", "shift+up":
+			m.list.CursorUp()
+			if m.list.SelectedItem() == nil {
+				m.log.Info("List is empty")
+				break
+			}
+			selectedList := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
+			m.log.Infof("Selected list %s", selectedList)
+			m.SelectedList = selectedList
+			return m, common.ListPreviewCmd(m.SelectedList)
 		}
 	}
 

@@ -67,9 +67,9 @@ func (m *Api) GetSpaces(teamId string) ([]clickup.Space, error) {
 	}
 	m.logger.Debugf("Found %d spaces for team: %s", len(spaces), teamId)
 
-	if len(spaces) > 0 {
-		m.Cache.Set(cacheNamespace, teamId, spaces)
-	}
+	// if len(spaces) > 0 {
+	m.Cache.Set(cacheNamespace, teamId, spaces)
+	// }
 
 	return spaces, nil
 }
@@ -102,9 +102,9 @@ func (m *Api) GetTeams() ([]clickup.Team, error) {
 	}
 	m.logger.Debugf("Found %d teams", len(teams))
 
-	if len(teams) == 0 {
-		m.Cache.Set(cacheNamespace, "teams", teams)
-	}
+	// if len(teams) == 0 {
+	m.Cache.Set(cacheNamespace, "teams", teams)
+	// }
 
 	return teams, nil
 }
@@ -133,9 +133,9 @@ func (m *Api) GetFolders(spaceId string) ([]clickup.Folder, error) {
 	}
 	m.logger.Debugf("Found %d folders for space: %s", len(folders), spaceId)
 
-	if len(folders) > 0 {
-		m.Cache.Set(cacheNamespace, spaceId, folders)
-	}
+	// if len(folders) > 0 {
+	m.Cache.Set(cacheNamespace, spaceId, folders)
+	// }
 
 	return folders, nil
 }
@@ -164,9 +164,9 @@ func (m *Api) GetLists(folderId string) ([]clickup.List, error) {
 	}
 	m.logger.Debugf("Found %d lists for folder: %s", len(lists), folderId)
 
-	if len(lists) > 0 {
-		m.Cache.Set(cacheNamespace, folderId, lists)
-	}
+	// if len(lists) > 0 {
+	m.Cache.Set(cacheNamespace, folderId, lists)
+	// }
 
 	return lists, nil
 }
@@ -224,9 +224,9 @@ func (m *Api) GetTasksFromList(listId string) ([]clickup.Task, error) {
 	}
 	m.logger.Debugf("Found %d tasks in list %s", len(tasks), listId)
 
-	if len(tasks) > 0 {
-		m.Cache.Set(cacheNamespace, listId, tasks)
-	}
+	// if len(tasks) > 0 {
+	m.Cache.Set(cacheNamespace, listId, tasks)
+	// }
 
 	return tasks, nil
 }
@@ -255,9 +255,9 @@ func (m *Api) GetTasksFromView(viewId string) ([]clickup.Task, error) {
 	}
 	m.logger.Debugf("Found %d tasks in view %s", len(tasks), viewId)
 
-	if len(tasks) > 0 {
-		m.Cache.Set(cacheNamespace, viewId, tasks)
-	}
+	// if len(tasks) > 0 {
+	m.Cache.Set(cacheNamespace, viewId, tasks)
+	// }
 
 	return tasks, nil
 }
@@ -286,9 +286,9 @@ func (m *Api) GetViewsFromFolder(folderId string) ([]clickup.View, error) {
 	}
 	m.logger.Debugf("Found %d views in folder %s", len(views), folderId)
 
-	if len(views) > 0 {
-		m.Cache.Set(cacheNamespace, folderId, views)
-	}
+	// if len(views) > 0 {
+	m.Cache.Set(cacheNamespace, folderId, views)
+	// }
 
 	return views, nil
 }
@@ -317,9 +317,9 @@ func (m *Api) GetViewsFromList(listId string) ([]clickup.View, error) {
 	}
 	m.logger.Debugf("Found %d views in folder %s", len(views), listId)
 
-	if len(views) > 0 {
-		m.Cache.Set(cacheNamespace, listId, views)
-	}
+	// if len(views) > 0 {
+	m.Cache.Set(cacheNamespace, listId, views)
+	// }
 
 	return views, nil
 }
@@ -349,9 +349,9 @@ func (m *Api) GetViewsFromSpace(spaceId string) ([]clickup.View, error) {
 	}
 	m.logger.Debugf("Found %d views in space %s", len(views), spaceId)
 
-	if len(views) > 0 {
-		m.Cache.Set(cacheNamespace, spaceId, views)
-	}
+	// if len(views) > 0 {
+	m.Cache.Set(cacheNamespace, spaceId, views)
+	// }
 
 	return views, nil
 }
@@ -401,9 +401,9 @@ func (m *Api) GetViewsFromWorkspace(workspaceId string) ([]clickup.View, error) 
 		return nil, err
 	}
 	m.logger.Debugf("Found %d views in workspace %s", len(views), workspaceId)
-	if len(views) > 0 {
-		m.Cache.Set(cacheNamespace, workspaceId, views)
-	}
+	// if len(views) > 0 {
+	m.Cache.Set(cacheNamespace, workspaceId, views)
+	// }
 	return views, nil
 }
 
