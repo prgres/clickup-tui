@@ -22,16 +22,19 @@ type Tab struct {
 }
 
 type Model struct {
-	ctx            *context.UserContext
-	log            *log.Logger
-	SelectedTab    string
-	keyMap         KeyMap
-	tabs           []Tab
-	size           common.Size
+	ctx         *context.UserContext
+	log         *log.Logger
+	SelectedTab string
+	keyMap      KeyMap
+	tabs        []Tab
+	size        common.Size
+	Focused     bool
+	Hidden      bool
+	ifBorders   bool
+
+	StartIdx       int
+	EndIdx         int
 	SelectedTabIdx int
-	Focused        bool
-	Hidden         bool
-	ifBorders      bool
 }
 
 func (m *Model) SetSize(s common.Size) {
@@ -68,6 +71,10 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		log:       log,
 		keyMap:    DefaultKeyMap(),
 		ifBorders: true,
+
+		StartIdx:       0,
+		EndIdx:         0,
+		SelectedTabIdx: 0,
 	}
 }
 
@@ -141,42 +148,112 @@ func (m Model) View() string {
 		Width(m.size.Width - borderMargin).
 		MaxWidth(m.size.Width + borderMargin)
 
-	s := strings.Builder{}
-	s.WriteString(" Views |")
+	var s []string
+	tabPrefix := " Views |"
+	// s = append(s, " Views |")
 
 	if len(m.tabs) == 0 {
-		s.WriteString(" ")
-		return style.Render(s.String())
+		s = append(s, " ")
+		return style.Render(strings.Join(s, ""))
 	}
 	m.log.Debugf("Rendering %d tabs", len(m.tabs))
 
 	moreTabsIcon := " + "
+
+	selectedTabVisible := false
 	for i, tab := range m.tabs {
 		m.log.Debugf("Rendering tab: %s %s", tab.Name, tab.Id)
+		// m.EndIdx = i
+
 		t := ""
 		tabContent := " " + tab.Name + " "
 		if m.SelectedTab == tab.Id {
 			t = activeTabStyle.Render(tabContent)
+			selectedTabVisible = true
 		} else {
 			t = inactiveTabStyle.Render(tabContent)
 		}
 
 		content := " " + t + " "
 
-		if lipgloss.Width(s.String()+content+moreTabsIcon) >= m.size.Width-borderMargin {
-			s.WriteString(moreTabsIcon)
-			break
+		if lipgloss.Width(tabPrefix+strings.Join(s, "")+content+moreTabsIcon) >= m.size.Width-borderMargin {
+			// if selectedTabVisible {
+				break
+			// }
+			// s = s[4:]
 		}
-		s.WriteString(content)
+		s = append(s, content)
 
 		if i != len(m.tabs)-1 {
-			s.WriteString("|")
+			s = append(s, "|")
 		}
-
 	}
 
-	return style.Render(s.String())
+	return style.Render(
+		tabPrefix + strings.Join(s, "") + moreTabsIcon,
+	)
 }
+
+// func (m Model) View() string {
+// 	bColor := lipgloss.Color("#FFF")
+// 	if m.Focused {
+// 		bColor = lipgloss.Color("#8909FF")
+// 	}
+//
+// 	borderMargin := 0
+// 	if m.ifBorders {
+// 		borderMargin = 2
+// 	}
+//
+// 	style := lipgloss.NewStyle().
+// 		BorderStyle(lipgloss.RoundedBorder()).
+// 		BorderForeground(bColor).
+// 		BorderBottom(m.ifBorders).
+// 		BorderRight(m.ifBorders).
+// 		BorderTop(m.ifBorders).
+// 		BorderLeft(m.ifBorders).
+// 		Height(1).
+// 		MaxHeight(1 + borderMargin).
+// 		Width(m.size.Width - borderMargin).
+// 		MaxWidth(m.size.Width + borderMargin)
+//
+// 	s := new(strings.Builder)
+// 	s.WriteString(" Views |")
+//
+// 	if len(m.tabs) == 0 {
+// 		s.WriteString(" ")
+// 		return style.Render(s.String())
+// 	}
+// 	m.log.Debugf("Rendering %d tabs", len(m.tabs))
+//
+// 	moreTabsIcon := " + "
+// 	for i, tab := range m.tabs {
+// 		m.log.Debugf("Rendering tab: %s %s", tab.Name, tab.Id)
+// 		// m.EndIdx = i
+//
+// 		t := ""
+// 		tabContent := " " + tab.Name + " "
+// 		if m.SelectedTab == tab.Id {
+// 			t = activeTabStyle.Render(tabContent)
+// 		} else {
+// 			t = inactiveTabStyle.Render(tabContent)
+// 		}
+//
+// 		content := " " + t + " "
+//
+// 		if lipgloss.Width(s.String()+content+moreTabsIcon) >= m.size.Width-borderMargin {
+// 			s.WriteString(moreTabsIcon)
+// 			break
+// 		}
+// 		s.WriteString(content)
+//
+// 		if i != len(m.tabs)-1 {
+// 			s.WriteString("|")
+// 		}
+// 	}
+//
+// 	return style.Render(s.String())
+// }
 
 func (m Model) Init() tea.Cmd {
 	m.log.Info("Initializing...")
@@ -235,4 +312,23 @@ func (m *Model) SetTabs(tabs []Tab) {
 	if len(tabs) > 0 {
 		m.SelectedTab = tabs[0].Id
 	}
+}
+
+func (m *Model) asd(s []string, content string, visible bool) []string {
+	tabPrefix := " Views |"
+	moreTabsIcon := " + "
+	borderMargin := 2
+
+	if lipgloss.Width(tabPrefix+strings.Join(s, "")+content+moreTabsIcon) >= m.size.Width-borderMargin {
+		if visible {
+			return s
+		}
+
+    // if lipgloss.Width(tabPrefix+strings.Join(s[2:], "")+content+moreTabsIcon) > m.size.Width-borderMargin {
+      s = s[2:]
+    // }
+	}
+
+	s = append(s, content)
+	return s
 }
