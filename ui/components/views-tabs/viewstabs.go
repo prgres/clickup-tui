@@ -154,13 +154,15 @@ func (m Model) View() string {
 
 	if len(m.tabs) == 0 {
 		s = append(s, " ")
-		return style.Render(strings.Join(s, ""))
+		return style.Render(
+			tabPrefix + strings.Join(s, ""),
+		)
 	}
 	m.log.Debugf("Rendering %d tabs", len(m.tabs))
 
 	moreTabsIcon := " + "
 
-	selectedTabVisible := false
+	// selectedTabVisible := false
 	for i, tab := range m.tabs {
 		m.log.Debugf("Rendering tab: %s %s", tab.Name, tab.Id)
 		// m.EndIdx = i
@@ -169,7 +171,7 @@ func (m Model) View() string {
 		tabContent := " " + tab.Name + " "
 		if m.SelectedTab == tab.Id {
 			t = activeTabStyle.Render(tabContent)
-			selectedTabVisible = true
+			// selectedTabVisible = true
 		} else {
 			t = inactiveTabStyle.Render(tabContent)
 		}
@@ -178,7 +180,7 @@ func (m Model) View() string {
 
 		if lipgloss.Width(tabPrefix+strings.Join(s, "")+content+moreTabsIcon) >= m.size.Width-borderMargin {
 			// if selectedTabVisible {
-				break
+			break
 			// }
 			// s = s[4:]
 		}
@@ -309,9 +311,12 @@ func (m Model) SetHidden(h bool) Model {
 func (m *Model) SetTabs(tabs []Tab) {
 	m.SelectedTabIdx = 0
 	m.tabs = tabs
+
+	selectedTabId := ""
 	if len(tabs) > 0 {
-		m.SelectedTab = tabs[0].Id
+		selectedTabId = tabs[0].Id
 	}
+	m.SelectedTab = selectedTabId
 }
 
 func (m *Model) asd(s []string, content string, visible bool) []string {
@@ -324,9 +329,9 @@ func (m *Model) asd(s []string, content string, visible bool) []string {
 			return s
 		}
 
-    // if lipgloss.Width(tabPrefix+strings.Join(s[2:], "")+content+moreTabsIcon) > m.size.Width-borderMargin {
-      s = s[2:]
-    // }
+		// if lipgloss.Width(tabPrefix+strings.Join(s[2:], "")+content+moreTabsIcon) > m.size.Width-borderMargin {
+		s = s[2:]
+		// }
 	}
 
 	s = append(s, content)

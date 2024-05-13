@@ -343,14 +343,21 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 			cmds = append(cmds, common.ErrCmd(err))
 			return m, tea.Batch(cmds...)
 		}
-		tabs := viewsToTabs(views)
-		m.widgetViewsTabs.SetTabs(tabs)
 
-		initTab := m.widgetViewsTabs.SelectedTab
+		if len(views) == 0 {
+			m.widgetTasksTable.SetTasks(nil)
+			m.widgetViewsTabs.SetTabs(nil)
+		} else {
+			m.log.Info("ASD")
+			tabs := viewsToTabs(views)
+			m.widgetViewsTabs.SetTabs(tabs)
 
-		if err := m.reloadTasks(initTab); err != nil {
-			cmds = append(cmds, common.ErrCmd(err))
-			return m, tea.Batch(cmds...)
+			initTab := m.widgetViewsTabs.SelectedTab
+
+			if err := m.reloadTasks(initTab); err != nil {
+				cmds = append(cmds, common.ErrCmd(err))
+				return m, tea.Batch(cmds...)
+			}
 		}
 
 		m.showSpinner = false
@@ -412,13 +419,19 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 
 	case LoadingTasksFromViewMsg:
 		id := string(msg)
-		m.log.Info("Received: LoadingTasksFromViewMsg", "id", id)
+		m.widgetTasksTable.SetSpinner(false)
 
+		if id == "" {
+			m.log.Info("Received: LoadingTasksFromViewMsg empty")
+			m.widgetTasksTable.SetTasks(nil)
+			break
+		}
+
+		m.log.Info("Received: LoadingTasksFromViewMsg", "id", id)
 		if err := m.reloadTasks(id); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
 			return m, tea.Batch(cmds...)
 		}
-		m.widgetTasksTable.SetSpinner(false)
 	}
 
 	m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)

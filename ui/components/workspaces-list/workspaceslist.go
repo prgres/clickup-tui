@@ -65,22 +65,20 @@ func (m *Model) syncList(workspaces []clickup.Workspace) {
 	m.log.Info("Synchronizing list...")
 	m.workspaces = workspaces
 
-	sre_index := 0
 	items := workspaceListToItems(workspaces)
 	itemsList := listitem.ItemListToBubblesItems(items)
 	if len(items) == 0 {
 		panic("list is empty")
 	}
 
-	for i, item := range items {
+	for _, item := range items {
 		if item.Description() == m.ctx.Config.DefaultWorkspace {
-			sre_index = i
 			m.SelectedWorkspace = item.Description()
 		}
 	}
 
 	m.list.SetItems(itemsList)
-	m.list.Select(sre_index)
+	m.list.Select(0)
 	m.log.Info("List synchronized")
 }
 

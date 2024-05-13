@@ -248,10 +248,15 @@ func (m Model) View() string {
 		Height(m.size.Height - borderMargin).
 		MaxHeight(m.size.Height + borderMargin)
 
+	size := common.Size{
+		Width:  m.size.Width - borderMargin,
+		Height: m.size.Height - borderMargin,
+	}
+
 	if m.showSpinner {
 		return style.Render(
 			lipgloss.Place(
-				m.size.Width-borderMargin, m.size.Height-borderMargin,
+				size.Width, size.Height,
 				lipgloss.Center,
 				lipgloss.Center,
 				fmt.Sprintf("%s Loading lists...", m.spinner.View()),
@@ -259,10 +264,18 @@ func (m Model) View() string {
 		)
 	}
 
-	m.setTableSize(common.Size{
-		Width:  m.size.Width - borderMargin,
-		Height: m.size.Height - borderMargin,
-	})
+	if m.table.TotalRows() == 0 {
+		return style.Render(
+			lipgloss.Place(
+				size.Width, size.Height,
+				lipgloss.Center,
+				lipgloss.Center,
+				"No tasks found",
+			),
+		)
+	}
+
+	m.setTableSize(size)
 
 	return style.Render(m.table.View())
 }

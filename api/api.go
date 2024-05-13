@@ -396,14 +396,15 @@ func (m *Api) GetViewsFromWorkspace(workspaceId string) ([]clickup.View, error) 
 	}
 	client := m.Clickup
 	m.logger.Debug("Fetching views from API")
+
 	views, err := client.GetViewsFromWorkspace(workspaceId)
 	if err != nil {
 		return nil, err
 	}
 	m.logger.Debugf("Found %d views in workspace %s", len(views), workspaceId)
-	// if len(views) > 0 {
+
 	m.Cache.Set(cacheNamespace, workspaceId, views)
-	// }
+
 	return views, nil
 }
 
