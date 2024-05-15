@@ -11,7 +11,7 @@
 //	"github.com/charmbracelet/log"
 //	"github.com/prgrs/clickup/pkg/clickup"
 //	"github.com/prgrs/clickup/ui/common"
-//	tabletasks "github.com/prgrs/clickup/ui/components/table-tasks"
+//	tasks "github.com/prgrs/clickup/ui/components/table-tasks"
 //	viewstabs "github.com/prgrs/clickup/ui/components/views-tabs"
 //	"github.com/prgrs/clickup/ui/context"
 //	"github.com/prgrs/clickup/ui/widgets/navigator"
@@ -28,7 +28,7 @@
 //		widgetNavigator  navigator.Model
 //		spinner          spinner.Model
 //		widgetViewsTabs  viewstabs.Model
-//		widgetTasksTable tabletasks.Model
+//		widgetTasks tasks.Model
 //		size             common.Size
 //		showSpinner      bool
 //	}
@@ -45,7 +45,7 @@
 //		m.log.Info("Initializing...")
 //		return tea.Batch(
 //			m.spinner.Tick,
-//			// m.widgetTasksTable.Init(),
+//			// m.widgetTasks.Init(),
 //			InitCompactCmd(),
 //		)
 //	}
@@ -73,18 +73,18 @@
 //			case "tab":
 //				switch m.state {
 //				case navigator.WidgetId:
-//					m.state = tabletasks.WidgetId
-//					m.widgetTasksTable = m.widgetTasksTable.SetFocused(true)
+//					m.state = tasks.WidgetId
+//					m.widgetTasks = m.widgetTasks.SetFocused(true)
 //					m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 //					m.widgetNavigator = m.widgetNavigator.SetFocused(false)
 //				case viewstabs.WidgetId:
 //					m.state = navigator.WidgetId
-//					m.widgetTasksTable = m.widgetTasksTable.SetFocused(false)
+//					m.widgetTasks = m.widgetTasks.SetFocused(false)
 //					m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 //					m.widgetNavigator = m.widgetNavigator.SetFocused(true)
-//				case tabletasks.WidgetId:
+//				case tasks.WidgetId:
 //					m.state = viewstabs.WidgetId
-//					m.widgetTasksTable = m.widgetTasksTable.SetFocused(false)
+//					m.widgetTasks = m.widgetTasks.SetFocused(false)
 //					m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(true)
 //					m.widgetNavigator = m.widgetNavigator.SetFocused(false)
 //				}
@@ -95,8 +95,8 @@
 //				m.widgetNavigator, cmd = m.widgetNavigator.Update(msg)
 //			case viewstabs.WidgetId:
 //				m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
-//			case tabletasks.WidgetId:
-//				m.widgetTasksTable, cmd = m.widgetTasksTable.Update(msg)
+//			case tasks.WidgetId:
+//				m.widgetTasks, cmd = m.widgetTasks.Update(msg)
 //			}
 //
 //			cmds = append(cmds, cmd)
@@ -126,7 +126,7 @@
 //				cmds = append(cmds, common.ErrCmd(err))
 //				return m, tea.Batch(cmds...)
 //			}
-//			m.widgetTasksTable.SetTasks(tasks)
+//			m.widgetTasks.SetTasks(tasks)
 //
 //			m.showSpinner = false
 //
@@ -143,7 +143,7 @@
 //		m.widgetNavigator, cmd = m.widgetNavigator.Update(msg)
 //		cmds = append(cmds, cmd)
 //
-//		m.widgetTasksTable, cmd = m.widgetTasksTable.Update(msg)
+//		m.widgetTasks, cmd = m.widgetTasks.Update(msg)
 //		cmds = append(cmds, cmd)
 //
 //		return m, tea.Batch(cmds...)
@@ -167,11 +167,11 @@
 //		})
 //		widgetNavigatorRendered := m.widgetNavigator.View()
 //
-//		m.widgetTasksTable.SetSize(common.Size{
+//		m.widgetTasks.SetSize(common.Size{
 //			Width:  m.ctx.WindowSize.Width - lipgloss.Width(widgetNavigatorRendered) - 0,
 //			Height: m.ctx.WindowSize.Height - m.ctx.WindowSize.MetaHeight - lipgloss.Height(widgetViewsTabsRendered) - 1,
 //		})
-//		widgetTasksTableRendered := m.widgetTasksTable.View()
+//		widgetTasksRendered := m.widgetTasks.View()
 //
 //		return lipgloss.JoinVertical(
 //			lipgloss.Top,
@@ -179,7 +179,7 @@
 //			lipgloss.JoinHorizontal(
 //				lipgloss.Left,
 //				widgetNavigatorRendered,
-//				widgetTasksTableRendered,
+//				widgetTasksRendered,
 //			),
 //		)
 //	}
@@ -192,7 +192,7 @@
 //
 //		var (
 //			widgetViewsTabs  = viewstabs.InitialModel(ctx, log)
-//			widgetTasksTable = tabletasks.InitialModel(ctx, log)
+//			widgetTasks = tasks.InitialModel(ctx, log)
 //			widgetNavigator  = navigator.InitialModel(ctx, log).SetFocused(true)
 //		)
 //
@@ -204,7 +204,7 @@
 //			log:              log,
 //			widgetViewsTabs:  widgetViewsTabs,
 //			widgetNavigator:  widgetNavigator,
-//			widgetTasksTable: widgetTasksTable,
+//			widgetTasks: widgetTasks,
 //			state:            widgetNavigator.WidgetId,
 //		}
 //	}
@@ -238,10 +238,10 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
-	tabletasks "github.com/prgrs/clickup/ui/components/table-tasks"
 	viewstabs "github.com/prgrs/clickup/ui/components/views-tabs"
 	"github.com/prgrs/clickup/ui/context"
 	"github.com/prgrs/clickup/ui/widgets/navigator"
+	"github.com/prgrs/clickup/ui/widgets/tasks"
 )
 
 const ViewId = "viewCompact"
@@ -256,9 +256,9 @@ type Model struct {
 	spinner     spinner.Model
 	showSpinner bool
 
-	widgetNavigator  navigator.Model
-	widgetViewsTabs  viewstabs.Model
-	widgetTasksTable tabletasks.Model
+	widgetNavigator navigator.Model
+	widgetViewsTabs viewstabs.Model
+	widgetTasks     tasks.Model
 }
 
 func (m Model) GetSize() common.Size {
@@ -300,18 +300,18 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		case "tab":
 			switch m.state {
 			case navigator.WidgetId:
-				m.state = tabletasks.WidgetId
-				m.widgetTasksTable = m.widgetTasksTable.SetFocused(true)
+				m.state = tasks.WidgetId
+				m.widgetTasks = m.widgetTasks.SetFocused(true)
 				m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 				m.widgetNavigator = m.widgetNavigator.SetFocused(false)
 			case viewstabs.WidgetId:
 				m.state = navigator.WidgetId
-				m.widgetTasksTable = m.widgetTasksTable.SetFocused(false)
+				m.widgetTasks = m.widgetTasks.SetFocused(false)
 				m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 				m.widgetNavigator = m.widgetNavigator.SetFocused(true)
-			case tabletasks.WidgetId:
+			case tasks.WidgetId:
 				m.state = viewstabs.WidgetId
-				m.widgetTasksTable = m.widgetTasksTable.SetFocused(false)
+				m.widgetTasks = m.widgetTasks.SetFocused(false)
 				m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(true)
 				m.widgetNavigator = m.widgetNavigator.SetFocused(false)
 			}
@@ -322,8 +322,8 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 			m.widgetNavigator, cmd = m.widgetNavigator.Update(msg)
 		case viewstabs.WidgetId:
 			m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
-		case tabletasks.WidgetId:
-			m.widgetTasksTable, cmd = m.widgetTasksTable.Update(msg)
+		case tasks.WidgetId:
+			m.widgetTasks, cmd = m.widgetTasks.Update(msg)
 		}
 
 		cmds = append(cmds, cmd)
@@ -345,10 +345,9 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		}
 
 		if len(views) == 0 {
-			m.widgetTasksTable.SetTasks(nil)
+			m.widgetTasks.SetTasks(nil)
 			m.widgetViewsTabs.SetTabs(nil)
 		} else {
-			m.log.Info("ASD")
 			tabs := viewsToTabs(views)
 			m.widgetViewsTabs.SetTabs(tabs)
 
@@ -414,16 +413,16 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		initTab := m.widgetViewsTabs.SelectedTab
 		m.log.Info("Received: TabChangedMsg", "idx", idx, "id", initTab)
 
-		m.widgetTasksTable.SetSpinner(true)
+		m.widgetTasks.SetSpinner(true)
 		cmds = append(cmds, LoadingTasksFromViewCmd(initTab))
 
 	case LoadingTasksFromViewMsg:
 		id := string(msg)
-		m.widgetTasksTable.SetSpinner(false)
+		m.widgetTasks.SetSpinner(false)
 
 		if id == "" {
 			m.log.Info("Received: LoadingTasksFromViewMsg empty")
-			m.widgetTasksTable.SetTasks(nil)
+			m.widgetTasks.SetTasks(nil)
 			break
 		}
 
@@ -440,7 +439,7 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 	m.widgetNavigator, cmd = m.widgetNavigator.Update(msg)
 	cmds = append(cmds, cmd)
 
-	m.widgetTasksTable, cmd = m.widgetTasksTable.Update(msg)
+	m.widgetTasks, cmd = m.widgetTasks.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
@@ -469,12 +468,12 @@ func (m Model) View() string {
 	})
 	widgetNavigatorRendered := m.widgetNavigator.View()
 
-	m.widgetTasksTable.SetSize(common.Size{
+	m.widgetTasks.SetSize(common.Size{
 		Width:  m.ctx.WindowSize.Width - lipgloss.Width(widgetNavigatorRendered),
 		Height: m.ctx.WindowSize.Height - lipgloss.Height(widgetViewsTabsRendered), // - 1,
 		// Height: m.ctx.WindowSize.Height - m.ctx.WindowSize.MetaHeight - lipgloss.Height(widgetViewsTabsRendered), // - 1,
 	})
-	widgetTasksTableRendered := m.widgetTasksTable.View()
+	widgetTasksRendered := m.widgetTasks.View()
 
 	return lipgloss.JoinVertical(
 		lipgloss.Top,
@@ -482,7 +481,7 @@ func (m Model) View() string {
 		lipgloss.JoinHorizontal(
 			lipgloss.Left,
 			widgetNavigatorRendered,
-			widgetTasksTableRendered,
+			widgetTasksRendered,
 		),
 	)
 }
@@ -494,21 +493,21 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) common.View {
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + ViewId)
 
 	var (
-		widgetViewsTabs  = viewstabs.InitialModel(ctx, log)
-		widgetTasksTable = tabletasks.InitialModel(ctx, log)
-		widgetNavigator  = navigator.InitialModel(ctx, log).SetFocused(true)
+		widgetViewsTabs = viewstabs.InitialModel(ctx, log)
+		widgetTasks     = tasks.InitialModel(ctx, log)
+		widgetNavigator = navigator.InitialModel(ctx, log).SetFocused(true)
 	)
 
 	return Model{
-		ViewId:           ViewId,
-		ctx:              ctx,
-		spinner:          s,
-		showSpinner:      true,
-		log:              log,
-		widgetViewsTabs:  widgetViewsTabs,
-		widgetNavigator:  widgetNavigator,
-		widgetTasksTable: widgetTasksTable,
-		state:            widgetNavigator.WidgetId,
+		ViewId:          ViewId,
+		ctx:             ctx,
+		spinner:         s,
+		showSpinner:     true,
+		log:             log,
+		widgetViewsTabs: widgetViewsTabs,
+		widgetNavigator: widgetNavigator,
+		widgetTasks:     widgetTasks,
+		state:           widgetNavigator.WidgetId,
 	}
 }
 
@@ -532,7 +531,7 @@ func (m *Model) reloadTasks(viewId string) error {
 	if err != nil {
 		return err
 	}
-	m.widgetTasksTable.SetTasks(tasks)
+	m.widgetTasks.SetTasks(tasks)
 	return nil
 }
 
@@ -545,7 +544,7 @@ func (m *Model) handleWorkspaceChangePreview(id string) tea.Cmd {
 	m.widgetViewsTabs.SetTabs(tabs)
 
 	initTab := m.widgetViewsTabs.SelectedTab
-	m.widgetTasksTable.SetSpinner(true)
+	m.widgetTasks.SetSpinner(true)
 
 	return LoadingTasksFromViewCmd(initTab)
 }
@@ -559,7 +558,7 @@ func (m *Model) handleSpaceChangePreview(id string) tea.Cmd {
 	m.widgetViewsTabs.SetTabs(tabs)
 
 	initTab := m.widgetViewsTabs.SelectedTab
-	m.widgetTasksTable.SetSpinner(true)
+	m.widgetTasks.SetSpinner(true)
 
 	return LoadingTasksFromViewCmd(initTab)
 }
@@ -573,7 +572,7 @@ func (m *Model) handleFolderChangePreview(id string) tea.Cmd {
 	m.widgetViewsTabs.SetTabs(tabs)
 
 	initTab := m.widgetViewsTabs.SelectedTab
-	m.widgetTasksTable.SetSpinner(true)
+	m.widgetTasks.SetSpinner(true)
 
 	return LoadingTasksFromViewCmd(initTab)
 }
@@ -587,7 +586,7 @@ func (m *Model) handleListChangePreview(id string) tea.Cmd {
 	m.widgetViewsTabs.SetTabs(tabs)
 
 	initTab := m.widgetViewsTabs.SelectedTab
-	m.widgetTasksTable.SetSpinner(true)
+	m.widgetTasks.SetSpinner(true)
 
 	return LoadingTasksFromViewCmd(initTab)
 }

@@ -163,7 +163,8 @@ func (m Model) View() string {
 	moreTabsIcon := " + "
 
 	// selectedTabVisible := false
-	for i, tab := range m.tabs {
+	for _, tab := range m.tabs {
+		// for i, tab := range m.tabs {
 		m.log.Debugf("Rendering tab: %s %s", tab.Name, tab.Id)
 		// m.EndIdx = i
 
@@ -187,9 +188,9 @@ func (m Model) View() string {
 		}
 		s = append(s, content)
 
-		if i != len(m.tabs)-1 {
-			s = append(s, "|")
-		}
+		// if i != len(m.tabs)-1 {
+		s = append(s, "|")
+		// }
 	}
 
 	return style.Render(

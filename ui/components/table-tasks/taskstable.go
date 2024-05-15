@@ -1,8 +1,6 @@
 package tabletasks
 
 import (
-	"fmt"
-
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -15,13 +13,13 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const WidgetId = "widgetTasksTable"
+const ComponentId = "componenetTasksTable"
 
 type Model struct {
 	tasks             []clickup.Task
 	log               *log.Logger
 	ctx               *context.UserContext
-	WidgetId          common.WidgetId
+	ComponentId       common.ComponentId
 	requiredColsKeys  []string
 	columns           []table.Column
 	requiredCols      []table.Column
@@ -51,6 +49,7 @@ func (m *Model) GetTable() table.Model {
 
 func (m *Model) SetSize(s common.Size) {
 	m.size = s
+	m.setTableSize(s)
 }
 
 func (m *Model) setTableSize(s common.Size) {
@@ -124,9 +123,6 @@ func (m Model) KeyMap() help.KeyMap {
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
-	s := spinner.New()
-	s.Spinner = spinner.Pulse
-
 	columns := []table.Column{}
 
 	requiredCols := []table.Column{
@@ -159,10 +155,10 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 				Bold(true).
 				Foreground(lipgloss.Color("212")))
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/" + ComponentId)
 
 	return Model{
-		WidgetId:         WidgetId,
+		ComponentId:      ComponentId,
 		ctx:              ctx,
 		table:            t,
 		columns:          columns,
@@ -175,7 +171,6 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		Hidden:           false,
 		log:              log,
 		ifBorders:        true,
-		spinner:          s,
 		showSpinner:      true,
 	}
 }
@@ -226,56 +221,18 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	bColor := lipgloss.Color("#FFF")
-	if m.Focused {
-		bColor = lipgloss.Color("#8909FF")
-	}
-
-	borderMargin := 0
-	if m.ifBorders {
-		borderMargin = 2
-	}
-
-	style := lipgloss.NewStyle().
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(bColor).
-		BorderBottom(m.ifBorders).
-		BorderRight(m.ifBorders).
-		BorderTop(m.ifBorders).
-		BorderLeft(m.ifBorders).
-		Width(m.size.Width - borderMargin).
-		MaxWidth(m.size.Width + borderMargin).
-		Height(m.size.Height - borderMargin).
-		MaxHeight(m.size.Height + borderMargin)
-
-	size := common.Size{
-		Width:  m.size.Width - borderMargin,
-		Height: m.size.Height - borderMargin,
-	}
-
-	if m.showSpinner {
-		return style.Render(
-			lipgloss.Place(
-				size.Width, size.Height,
-				lipgloss.Center,
-				lipgloss.Center,
-				fmt.Sprintf("%s Loading lists...", m.spinner.View()),
-			),
-		)
-	}
+	style := lipgloss.NewStyle()
 
 	if m.table.TotalRows() == 0 {
 		return style.Render(
 			lipgloss.Place(
-				size.Width, size.Height,
+				m.size.Width, m.size.Height,
 				lipgloss.Center,
 				lipgloss.Center,
 				"No tasks found",
 			),
 		)
 	}
-
-	m.setTableSize(size)
 
 	return style.Render(m.table.View())
 }
