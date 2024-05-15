@@ -180,6 +180,7 @@ func (m Model) View() string {
 
 		if lipgloss.Width(tabPrefix+strings.Join(s, "")+content+moreTabsIcon) >= m.size.Width-borderMargin {
 			// if selectedTabVisible {
+			s = append(s, moreTabsIcon)
 			break
 			// }
 			// s = s[4:]
@@ -192,7 +193,7 @@ func (m Model) View() string {
 	}
 
 	return style.Render(
-		tabPrefix + strings.Join(s, "") + moreTabsIcon,
+		tabPrefix + strings.Join(s, ""),
 	)
 }
 
