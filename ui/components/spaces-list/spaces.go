@@ -36,6 +36,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		0, 0)
 	l.KeyMap.Quit.Unbind()
 	l.SetShowHelp(false)
+	l.Title = "Spaces"
 
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + ComponentId)
 
