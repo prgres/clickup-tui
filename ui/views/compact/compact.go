@@ -406,6 +406,11 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 	case common.ListChangeMsg:
 		id := string(msg)
 		m.log.Info("Received: ListChangeMsg", "id", id)
+		// TODO: make state change as func
+		m.state = m.widgetTasks.WidgetId
+		m.widgetTasks = m.widgetTasks.SetFocused(true)
+		m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
+		m.widgetNavigator = m.widgetNavigator.SetFocused(false)
 		return m, m.handleListChangePreview(id)
 
 	case viewstabs.TabChangedMsg:
