@@ -248,13 +248,11 @@ func (m Model) View() string {
 		bColor = m.ctx.Theme.BordersColorActive
 	}
 
+	styleBorders := m.ctx.Style.Borders.Copy().
+		BorderForeground(bColor)
+
 	return lipgloss.NewStyle().
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(bColor).
-		BorderBottom(m.ifBorders).
-		BorderRight(m.ifBorders).
-		BorderTop(m.ifBorders).
-		BorderLeft(m.ifBorders).
+		Inherit(styleBorders).
 		Render(
 			m.table.View(),
 		)

@@ -136,13 +136,11 @@ func (m Model) View() string {
 		borderMargin = 2
 	}
 
+	styleBorders := m.ctx.Style.Borders.Copy().
+		BorderForeground(bColor)
+
 	style := lipgloss.NewStyle().
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(bColor).
-		BorderBottom(m.ifBorders).
-		BorderRight(m.ifBorders).
-		BorderTop(m.ifBorders).
-		BorderLeft(m.ifBorders).
+		Inherit(styleBorders).
 		Height(1).
 		MaxHeight(1 + borderMargin).
 		Width(m.size.Width - borderMargin).

@@ -290,12 +290,10 @@ func (m Model) View() string {
 		)
 	}
 
+	styleBorders := m.ctx.Style.Borders.Copy()
+
 	return lipgloss.NewStyle().
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderRight(m.ifBorders).
-		BorderBottom(m.ifBorders).
-		BorderTop(m.ifBorders).
-		BorderLeft(m.ifBorders).
+		Inherit(styleBorders).
 		Render(lipgloss.JoinVertical(
 			lipgloss.Top,
 			widgetViewsTabsRendered,
