@@ -3,6 +3,7 @@ package navigator
 import (
 	"fmt"
 
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -73,6 +74,21 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 
 		spinner:     s,
 		showSpinner: false,
+	}
+}
+
+func (m Model) KeyMap() help.KeyMap {
+	switch m.state {
+	case workspaceslist.ComponentId:
+		return m.componentWorkspacesList.KeyMap()
+	case spaceslist.ComponentId:
+		return m.componentSpacesList.KeyMap()
+	case folderslist.ComponentId:
+		return m.componentFoldersList.KeyMap()
+	case listslist.ComponentId:
+		return m.componentListsList.KeyMap()
+	default:
+		return common.NewEmptyKeyMap()
 	}
 }
 

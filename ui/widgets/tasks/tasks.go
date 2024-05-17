@@ -3,6 +3,7 @@ package tasks
 import (
 	"fmt"
 
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -60,6 +61,15 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 
 		spinner:     s,
 		showSpinner: false,
+	}
+}
+
+func (m Model) KeyMap() help.KeyMap {
+	switch m.state {
+	case m.componenetTasksTable.ComponentId:
+		return m.componenetTasksTable.KeyMap()
+	default:
+		return common.NewEmptyKeyMap()
 	}
 }
 

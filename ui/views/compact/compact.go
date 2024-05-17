@@ -49,8 +49,17 @@ func (m Model) Init() tea.Cmd {
 	)
 }
 
-func (Model) KeyMap() help.KeyMap {
-	return common.NewEmptyKeyMap()
+func (m Model) KeyMap() help.KeyMap {
+	switch m.state {
+	case navigator.WidgetId:
+		return m.widgetNavigator.KeyMap()
+	case viewstabs.WidgetId:
+		return m.widgetTasks.KeyMap()
+	case tasks.WidgetId:
+		return m.widgetTasks.KeyMap()
+	default:
+		return common.NewEmptyKeyMap()
+	}
 }
 
 func (m Model) Ready() bool {

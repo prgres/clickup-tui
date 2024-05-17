@@ -177,7 +177,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ctx.WindowSize.Height = msg.Height
 		m.ctx.WindowSize.Height = msg.Height
 
-		return m, nil
+		// return m, nil
 
 		// case common.WorkspaceChangeMsg:
 		// 	workspace := string(msg)
@@ -303,8 +303,8 @@ func (m Model) View() string {
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		viewToRender.View(),
-		// divider,
-		// footer,
+		divider,
+		footer,
 	)
 }
 
