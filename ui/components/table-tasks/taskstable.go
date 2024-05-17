@@ -140,7 +140,14 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 
 	columns = append(columns, requiredCols...)
+
+	tableKeyMap := table.DefaultKeyMap()
+	tableKeyMap.RowSelectToggle = key.NewBinding(
+		key.WithKeys(" "),
+	)
+
 	t := table.New(columns).
+		WithKeyMap(tableKeyMap).
 		WithTargetWidth(size.Width).
 		SelectableRows(true).
 		WithSelectedText(" ", "✓").
