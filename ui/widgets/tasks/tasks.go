@@ -49,7 +49,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 	var (
 		componenetTasksTable   = tabletasks.InitialModel(ctx, log)
-		componenetTasksSidebar = taskssidebar.InitialModel(ctx, log)
+		componenetTasksSidebar = taskssidebar.InitialModel(ctx, log).SetHidden(true)
 	)
 
 	return Model{
@@ -175,10 +175,16 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 		m.state = m.componenetTasksSidebar.ComponentId
 
-		m.componenetTasksSidebar = m.componenetTasksSidebar.SetFocused(true)
+		m.componenetTasksSidebar = m.componenetTasksSidebar.
+			SetFocused(true).
+			SetHidden(false)
+
 		m.componenetTasksTable = m.componenetTasksTable.SetFocused(false)
 
-		m.componenetTasksSidebar, cmd = m.componenetTasksSidebar.TaskSelected(id)
+		if err := m.componenetTasksSidebar.SetTask(id); err != nil {
+			cmds = append(cmds, common.ErrCmd(err))
+		}
+
 		cmds = append(cmds, cmd)
 	}
 
@@ -194,6 +200,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 func (m *Model) SetTasks(tasks []clickup.Task) {
 	m.showSpinner = false
 	m.componenetTasksTable.SetTasks(tasks)
+
+	if len(tasks) == 0 {
+		m.componenetTasksSidebar = m.componenetTasksSidebar.SetHidden(true)
+	}
+
+	// m.componenetTasksSidebar = m.componenetTasksSidebar.SetHidden(false)
 }
 
 func (m Model) View() string {
