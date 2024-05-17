@@ -152,12 +152,12 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 	case common.WorkspacePreviewMsg:
 		id := string(msg)
 		m.log.Infof("Received: WorkspacePreviewMsg: %s", id)
-		return m, m.handleFolderChangePreview(id)
+		return m, m.handleWorkspaceChangePreview(id)
 
 	case common.WorkspaceChangeMsg:
 		id := string(msg)
 		m.log.Infof("Received: WorkspaceChangeMsg: %s", id)
-		cmds = append(cmds, m.handleFolderChangePreview(id))
+		cmds = append(cmds, m.handleWorkspaceChangePreview(id))
 
 	case common.SpacePreviewMsg:
 		id := string(msg)
