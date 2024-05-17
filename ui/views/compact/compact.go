@@ -253,25 +253,18 @@ func (m Model) View() string {
 
 	m.widgetViewsTabs.SetSize(common.Size{
 		Width: size.Width,
-		// Width: m.ctx.WindowSize.Width,
-		// // Height: m.ctx.WindowSize.Height - m.ctx.WindowSize.MetaHeight - lipgloss.Height(widgetViewsTabsRendered) - 2,
 	})
 	widgetViewsTabsRendered := m.widgetViewsTabs.View()
 
 	m.widgetNavigator.SetSize(common.Size{
 		Width:  25,
-		Height: size.Height - lipgloss.Height(widgetViewsTabsRendered), // - 2,
-		// Height: m.ctx.WindowSize.Height - lipgloss.Height(widgetViewsTabsRendered), // - 2,
-		// // Height: m.ctx.WindowSize.Height - m.ctx.WindowSize.MetaHeight - lipgloss.Height(widgetViewsTabsRendered) - 2,
+		Height: size.Height - lipgloss.Height(widgetViewsTabsRendered),
 	})
 	widgetNavigatorRendered := m.widgetNavigator.View()
 
 	m.widgetTasks.SetSize(common.Size{
 		Width:  size.Width - lipgloss.Width(widgetNavigatorRendered),
-		Height: size.Height - lipgloss.Height(widgetViewsTabsRendered), // - 1,
-		// Width:  m.ctx.WindowSize.Width - lipgloss.Width(widgetNavigatorRendered),
-		// Height: m.ctx.WindowSize.Height - lipgloss.Height(widgetViewsTabsRendered), // - 1,
-		// // Height: m.ctx.WindowSize.Height - m.ctx.WindowSize.MetaHeight - lipgloss.Height(widgetViewsTabsRendered), // - 1,
+		Height: size.Height - lipgloss.Height(widgetViewsTabsRendered),
 	})
 	widgetTasksRendered := m.widgetTasks.View()
 
