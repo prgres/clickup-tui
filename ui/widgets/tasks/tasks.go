@@ -205,7 +205,6 @@ func (m *Model) SetTasks(tasks []clickup.Task) {
 		m.componenetTasksSidebar = m.componenetTasksSidebar.SetHidden(true)
 	}
 
-	// m.componenetTasksSidebar = m.componenetTasksSidebar.SetHidden(false)
 }
 
 func (m Model) View() string {
@@ -213,18 +212,6 @@ func (m Model) View() string {
 	if m.Focused {
 		bColor = m.ctx.Theme.BordersColorActive
 	}
-
-	// style := lipgloss.NewStyle().
-	// 	BorderStyle(lipgloss.RoundedBorder()).
-	// 	BorderForeground(bColor).
-	// 	BorderBottom(m.ifBorders).
-	// 	BorderRight(m.ifBorders).
-	// 	BorderTop(m.ifBorders).
-	// 	BorderLeft(m.ifBorders).
-	// 	Width(m.size.Width - borderMargin).
-	// 	MaxWidth(m.size.Width + borderMargin).
-	// 	Height(m.size.Height - borderMargin).
-	// 	MaxHeight(m.size.Height + borderMargin)
 
 	style := lipgloss.NewStyle().
 		Width(m.size.Width).
@@ -338,16 +325,14 @@ func (m Model) View() string {
 
 func (m Model) SetFocused(f bool) Model {
 	m.Focused = f
-	// m.componenetTasksSidebar = m.componenetTasksSidebar.SetFocused(false)
-	// m.componenetTasksTable = m.componenetTasksTable.SetFocused(false)
-	// if f {
+
 	switch m.state {
 	case m.componenetTasksSidebar.ComponentId:
 		m.componenetTasksSidebar = m.componenetTasksSidebar.SetFocused(f)
 	case m.componenetTasksTable.ComponentId:
 		m.componenetTasksTable = m.componenetTasksTable.SetFocused(f)
 	}
-	// }
+
 	return m
 }
 
