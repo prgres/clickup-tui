@@ -17,8 +17,8 @@ type Model struct {
 	ctx         *context.UserContext
 	viewCompact common.View
 	log         *log.Logger
-	KeyMap KeyMap
 	dialogHelp  help.Model
+	keyMap      KeyMap
 }
 
 type KeyMap struct {
@@ -47,7 +47,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		log:         log,
 		viewCompact: compact.InitialModel(ctx, log),
 		dialogHelp:  help.InitialModel(ctx, log),
-		KeyMap:      DefaultKeyMap(),
+		keyMap:      DefaultKeyMap(),
 	}
 }
 
@@ -62,10 +62,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, m.KeyMap.ForceQuit):
+		case key.Matches(msg, m.keyMap.ForceQuit):
 			return m, tea.Quit
 
-		case key.Matches(msg, m.KeyMap.Refresh):
+		case key.Matches(msg, m.keyMap.Refresh):
 			m.log.Info("Refreshing...")
 			if err := m.ctx.Api.InvalidateCache(); err != nil {
 				m.log.Error("Failed to invalidate cache", "error", err)
@@ -101,13 +101,16 @@ func (m Model) View() string {
 	viewToRender = m.viewCompact
 
 	viewKm := viewToRender.KeyMap()
+
 	km := common.NewKeyMap(
 		func() [][]key.Binding {
-			return append(viewKm.FullHelp(), [][]key.Binding{
-				{
-					m.KeyMap.Refresh,
-				},
-			}...)
+			return append(
+				viewKm.FullHelp(),
+				[][]key.Binding{
+					{
+						m.keyMap.Refresh,
+					},
+				}...)
 		},
 		viewKm.ShortHelp,
 	)
