@@ -207,7 +207,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			taskId := m.tasks[index].Id
 			m.log.Infof("Receive enter: %d", index)
 			cmds = append(cmds, TaskSelectedCmd(taskId))
-		case "p":
+		case "u":
 			index := m.table.GetHighlightedRowIndex()
 			if m.table.TotalRows() == 0 {
 				m.log.Info("Table is empty")
