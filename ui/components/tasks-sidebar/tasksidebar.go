@@ -72,7 +72,6 @@ func (m Model) KeyMap() help.KeyMap {
 				},
 				{
 					switchFocusToTasks,
-					common.KeyBindingOpenInBrowser,
 				},
 			}
 		},
@@ -83,7 +82,6 @@ func (m Model) KeyMap() help.KeyMap {
 				km.PageDown,
 				km.PageUp,
 				switchFocusToTasks,
-				common.KeyBindingOpenInBrowser,
 			}
 		},
 	)
@@ -115,31 +113,11 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
-var KeyPreviewInWebBrowser = key.NewBinding(
-	key.WithKeys("p"),
-	key.WithHelp("p", "preview in web browser"),
-)
-
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
 		cmds []tea.Cmd
 	)
-
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch {
-		case key.Matches(msg, KeyPreviewInWebBrowser):
-			if !m.Ready {
-				m.log.Debug("Received: p, but Not ready yet")
-				break
-			}
-			m.log.Debug("Received: p")
-			if err := common.OpenUrlInWebBrowser(m.SelectedTask.Url); err != nil {
-				panic(err)
-			}
-		}
-	}
 
 	m.viewport, cmd = m.viewport.Update(msg)
 	cmds = append(cmds, cmd)
@@ -209,19 +187,20 @@ func (m Model) SetHidden(h bool) Model {
 	return m
 }
 
-func (m Model) TaskSelected(id string) (Model, tea.Cmd) {
+func (m *Model) SetTask(id string) error {
 	m.log.Infof("Received: TaskSelectedMsg: %s", id)
 	m.Ready = false
 
 	task, err := m.ctx.Api.GetTask(id)
 	if err != nil {
-		return m, common.ErrCmd(err)
+		return err
 	}
+
 	m.SelectedTask = task
 	m.viewport.SetContent(m.renderTask(task))
 
 	_ = m.viewport.GotoTop()
 	m.Ready = true
 
-	return m, nil
+	return nil
 }

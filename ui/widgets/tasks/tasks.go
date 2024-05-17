@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -25,6 +26,7 @@ type Model struct {
 	Focused   bool
 	Hidden    bool
 	ifBorders bool
+	keyMap    KeyMap
 
 	state common.ComponentId
 
@@ -56,6 +58,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		size:      size,
 		Focused:   false,
 		Hidden:    false,
+		keyMap:    DefaultKeyMap(),
 		log:       log,
 		ifBorders: true,
 
@@ -69,15 +72,52 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
+type KeyMap struct {
+	OpenTicketInWebBrowser key.Binding
+	ToggleSidebar          key.Binding
+}
+
+func DefaultKeyMap() KeyMap {
+	return KeyMap{
+		OpenTicketInWebBrowser: key.NewBinding(
+			key.WithKeys("u"),
+			key.WithHelp("u", "open in web browser"),
+		),
+		ToggleSidebar: key.NewBinding(
+			key.WithKeys("p"),
+			key.WithHelp("p", "toggle sidebar"),
+		),
+	}
+}
+
 func (m Model) KeyMap() help.KeyMap {
+	var km help.KeyMap
+
 	switch m.state {
 	case m.componenetTasksSidebar.ComponentId:
-		return m.componenetTasksSidebar.KeyMap()
+		km = m.componenetTasksSidebar.KeyMap()
 	case m.componenetTasksTable.ComponentId:
-		return m.componenetTasksTable.KeyMap()
-	default:
-		return common.NewEmptyKeyMap()
+		km = m.componenetTasksTable.KeyMap()
 	}
+
+	return common.NewKeyMap(
+		func() [][]key.Binding {
+			return append(
+				km.FullHelp(),
+				[]key.Binding{
+					m.keyMap.OpenTicketInWebBrowser,
+					m.keyMap.ToggleSidebar,
+				},
+			)
+		},
+		func() []key.Binding {
+			return append(
+				km.ShortHelp(),
+				m.keyMap.OpenTicketInWebBrowser,
+				m.keyMap.ToggleSidebar,
+			)
+		},
+	)
 }
 
 func (m *Model) SetSpinner(f bool) {
@@ -90,6 +130,16 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		switch {
+		case key.Matches(msg, m.keyMap.OpenTicketInWebBrowser):
+			task := m.componenetTasksTable.GetHighlightedTask()
+			if err := common.OpenUrlInWebBrowser(task.Url); err != nil {
+				m.log.Fatal(err)
+			}
+		case key.Matches(msg, m.keyMap.ToggleSidebar):
+			m.componenetTasksSidebar = m.componenetTasksSidebar.SetHidden(!m.componenetTasksSidebar.GetHidden())
+		}
+
 		switch keypress := msg.String(); keypress {
 		case "esc":
 			switch m.state {
@@ -108,8 +158,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				cmds = append(cmds, LostFocusCmd())
 				return m, tea.Batch(cmds...)
 			}
-		case "p":
-			m.componenetTasksSidebar = m.componenetTasksSidebar.SetHidden(!m.componenetTasksSidebar.GetHidden())
 		}
 
 		switch m.state {

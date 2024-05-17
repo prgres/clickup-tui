@@ -28,6 +28,7 @@ type Model struct {
 	autoColumns       bool
 	Focused           bool
 	Hidden            bool
+	keyMap            KeyMap
 	ifBorders         bool
 }
 
@@ -99,7 +100,6 @@ func (m Model) KeyMap() help.KeyMap {
 				{
 					common.KeyBindingWithHelp(km.ScrollRight, "scroll right"),
 					common.KeyBindingWithHelp(km.ScrollLeft, "scroll left"),
-					common.KeyBindingOpenInBrowser,
 					switchFocusToListView,
 				},
 			}
@@ -111,7 +111,6 @@ func (m Model) KeyMap() help.KeyMap {
 				common.KeyBindingWithHelp(km.RowSelectToggle, "select"),
 				common.KeyBindingWithHelp(km.PageDown, "next page"),
 				common.KeyBindingWithHelp(km.PageUp, "previous page"),
-				common.KeyBindingOpenInBrowser,
 				switchFocusToListView,
 			}
 		},
@@ -202,17 +201,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			taskId := m.tasks[index].Id
 			m.log.Infof("Receive enter: %d", index)
 			cmds = append(cmds, TaskSelectedCmd(taskId))
-		case "u":
-			index := m.table.GetHighlightedRowIndex()
-			if m.table.TotalRows() == 0 {
-				m.log.Info("Table is empty")
-				break
-			}
-			task := m.tasks[index]
-			m.log.Infof("Receive p: %d", index)
-			if err := common.OpenUrlInWebBrowser(task.Url); err != nil {
-				m.log.Fatal(err)
-			}
 		}
 	}
 
@@ -220,6 +208,16 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
+}
+
+func (m Model) GetHighlightedTask() *clickup.Task {
+	index := m.table.GetHighlightedRowIndex()
+	if m.table.TotalRows() == 0 {
+		m.log.Info("Table is empty")
+		return nil
+	}
+
+	return &m.tasks[index]
 }
 
 func (m Model) TotalRows() int {
