@@ -318,22 +318,3 @@ func (m *Model) SetTabs(tabs []Tab) {
 	}
 	m.SelectedTab = selectedTabId
 }
-
-func (m *Model) asd(s []string, content string, visible bool) []string {
-	tabPrefix := " Views |"
-	moreTabsIcon := " + "
-	borderMargin := 2
-
-	if lipgloss.Width(tabPrefix+strings.Join(s, "")+content+moreTabsIcon) >= m.size.Width-borderMargin {
-		if visible {
-			return s
-		}
-
-		// if lipgloss.Width(tabPrefix+strings.Join(s[2:], "")+content+moreTabsIcon) > m.size.Width-borderMargin {
-		s = s[2:]
-		// }
-	}
-
-	s = append(s, content)
-	return s
-}
