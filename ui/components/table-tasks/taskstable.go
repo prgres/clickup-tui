@@ -3,7 +3,6 @@ package tabletasks
 import (
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
@@ -30,9 +29,6 @@ type Model struct {
 	Focused           bool
 	Hidden            bool
 	ifBorders         bool
-
-	spinner     spinner.Model
-	showSpinner bool
 }
 
 func (m Model) GetTasks() []clickup.Task {
@@ -178,7 +174,6 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		Hidden:           false,
 		log:              log,
 		ifBorders:        true,
-		showSpinner:      true,
 	}
 }
 
@@ -227,20 +222,24 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+func (m Model) TotalRows() int {
+	return m.table.TotalRows()
+}
+
 func (m Model) View() string {
 	style := lipgloss.NewStyle()
 
-	if m.table.TotalRows() == 0 {
-		return style.Render(
-			lipgloss.Place(
-				m.size.Width, m.size.Height,
-				lipgloss.Center,
-				lipgloss.Center,
-				"No tasks found",
-			),
-		)
-	}
-
+	// if m.table.TotalRows() == 0 {
+	// 	return style.Render(
+	// 		lipgloss.Place(
+	// 			m.size.Width, m.size.Height,
+	// 			lipgloss.Center,
+	// 			lipgloss.Center,
+	// 			"No tasks found",
+	// 		),
+	// 	)
+	// }
+	//
 	return style.Render(m.table.View())
 }
 
@@ -312,12 +311,7 @@ func (m *Model) SetTasks(tasks []clickup.Task) {
 	m.tasks = tasks
 	items := taskListToRows(tasks, m.GetColumnsKey())
 	m.table = m.table.WithRows(items)
-	m.showSpinner = false
 	m.log.Info("Table synchonized", "size", len(m.table.GetVisibleRows()))
-}
-
-func (m *Model) SetSpinner(f bool) {
-	m.showSpinner = f
 }
 
 // func (m Model) FetchTasksForView(viewId string) (Model, tea.Cmd) {
