@@ -243,9 +243,9 @@ func (m Model) Update(msg tea.Msg) (common.Widget, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	bColor := lipgloss.Color("#FFF")
+	bColor := m.ctx.Theme.BordersColorInactive
 	if m.Focused {
-		bColor = lipgloss.Color("#8909FF")
+		bColor = m.ctx.Theme.BordersColorActive
 	}
 
 	return lipgloss.NewStyle().
