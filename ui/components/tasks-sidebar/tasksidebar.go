@@ -50,11 +50,6 @@ func (m *Model) SetSize(s common.Size) {
 func (m Model) KeyMap() help.KeyMap {
 	km := m.viewport.KeyMap
 
-	switchFocusToTasks := key.NewBinding(
-		key.WithKeys("escape"),
-		key.WithHelp("escape", "switch focus to tasks table"),
-	)
-
 	return common.NewKeyMap(
 		func() [][]key.Binding {
 			return [][]key.Binding{
@@ -70,9 +65,6 @@ func (m Model) KeyMap() help.KeyMap {
 					km.HalfPageUp,
 					km.HalfPageDown,
 				},
-				{
-					switchFocusToTasks,
-				},
 			}
 		},
 		func() []key.Binding {
@@ -81,7 +73,6 @@ func (m Model) KeyMap() help.KeyMap {
 				km.Up,
 				km.PageDown,
 				km.PageUp,
-				switchFocusToTasks,
 			}
 		},
 	)

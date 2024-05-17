@@ -73,11 +73,6 @@ func (m *Model) setTableSize(s common.Size) {
 func (m Model) KeyMap() help.KeyMap {
 	km := m.table.KeyMap()
 
-	switchFocusToListView := key.NewBinding(
-		key.WithKeys("escape"),
-		key.WithHelp("escape", "switch to list view"),
-	)
-
 	return common.NewKeyMap(
 		func() [][]key.Binding {
 			return [][]key.Binding{
@@ -100,7 +95,6 @@ func (m Model) KeyMap() help.KeyMap {
 				{
 					common.KeyBindingWithHelp(km.ScrollRight, "scroll right"),
 					common.KeyBindingWithHelp(km.ScrollLeft, "scroll left"),
-					switchFocusToListView,
 				},
 			}
 		},
@@ -111,7 +105,6 @@ func (m Model) KeyMap() help.KeyMap {
 				common.KeyBindingWithHelp(km.RowSelectToggle, "select"),
 				common.KeyBindingWithHelp(km.PageDown, "next page"),
 				common.KeyBindingWithHelp(km.PageUp, "previous page"),
-				switchFocusToListView,
 			}
 		},
 	)
@@ -227,17 +220,6 @@ func (m Model) TotalRows() int {
 func (m Model) View() string {
 	style := lipgloss.NewStyle()
 
-	// if m.table.TotalRows() == 0 {
-	// 	return style.Render(
-	// 		lipgloss.Place(
-	// 			m.size.Width, m.size.Height,
-	// 			lipgloss.Center,
-	// 			lipgloss.Center,
-	// 			"No tasks found",
-	// 		),
-	// 	)
-	// }
-	//
 	return style.Render(m.table.View())
 }
 
