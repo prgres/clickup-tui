@@ -117,7 +117,9 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 			cmds = append(cmds, common.ErrCmd(err))
 			return m, tea.Batch(cmds...)
 		}
+
 		initWorkspace := m.widgetNavigator.GetWorkspace()
+		cmds = append(cmds, common.WorkspacePreviewCmd(initWorkspace))
 
 		views, err := m.ctx.Api.GetViewsFromWorkspace(initWorkspace)
 		if err != nil {
