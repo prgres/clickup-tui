@@ -28,7 +28,6 @@ type Model struct {
 	autoColumns       bool
 	Focused           bool
 	Hidden            bool
-	keyMap            KeyMap
 	ifBorders         bool
 }
 
