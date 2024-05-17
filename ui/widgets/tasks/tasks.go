@@ -203,8 +203,14 @@ func (m *Model) SetTasks(tasks []clickup.Task) {
 
 	if len(tasks) == 0 {
 		m.componenetTasksSidebar = m.componenetTasksSidebar.SetHidden(true)
+		return
 	}
 
+	// TODO: check if it should yield at all or move it to cmd
+	id := tasks[0].Id
+	if err := m.componenetTasksSidebar.SetTask(id); err != nil {
+		m.log.Fatal(err)
+	}
 }
 
 func (m Model) View() string {
