@@ -287,6 +287,32 @@ func (c *Cache) Invalidate() error {
 	// Clear the in-memory cache
 	c.data = make(map[string]Data)
 
+	contents, err := filepath.Glob(c.path + "/*")
+	if err != nil {
+		return err
+	}
+
+	for _, item := range contents {
+		if strings.Contains(item, ".gitkeep") {
+			continue
+		}
+
+		c.logger.Debug("Removing:", "path", item)
+
+		if err = os.RemoveAll(item); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *Cache) Invalidate_Deprecated() error {
+	c.logger.Debug("Invalidating all cache entries")
+
+	// Clear the in-memory cache
+	c.data = make(map[string]Data)
+
 	// Remove subdirectories and nested files within the cache directory
 	subdirs, err := os.ReadDir(c.path)
 	if err != nil {
