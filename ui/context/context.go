@@ -10,7 +10,8 @@ import (
 type UserContext struct {
 	Api        *api.Api
 	Config     *config.Config
-	Style      theme.Style
+	Style      *theme.Style
+	Theme      *theme.Theme
 	WindowSize WindowSize
 }
 
@@ -22,7 +23,8 @@ type WindowSize struct {
 
 func NewUserContext(logger *log.Logger, api *api.Api, config *config.Config) UserContext {
 	return UserContext{
-		Style: theme.NewStyle(*theme.DefaultTheme),
+		Style: theme.DefautlStyle,
+		Theme: theme.DefaultTheme,
 		WindowSize: WindowSize{
 			Width:      0,
 			Height:     0,

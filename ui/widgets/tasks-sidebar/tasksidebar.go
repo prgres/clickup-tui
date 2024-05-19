@@ -166,18 +166,16 @@ func (m Model) renderTask(task clickup.Task) string {
 }
 
 func (m Model) View() string {
-	bColor := lipgloss.Color("#FFF")
+	bColor := m.ctx.Theme.BordersColorInactive
 	if m.Focused {
-		bColor = lipgloss.Color("#8909FF")
+		bColor = m.ctx.Theme.BordersColorActive
 	}
 
+	styleBorders := m.ctx.Style.Borders.Copy().
+		BorderForeground(bColor)
+
 	return lipgloss.NewStyle().
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(bColor).
-		BorderRight(m.ifBorders).
-		BorderBottom(m.ifBorders).
-		BorderTop(m.ifBorders).
-		BorderLeft(m.ifBorders).
+		Inherit(styleBorders).
 		Render(
 			m.viewport.View(),
 		)
