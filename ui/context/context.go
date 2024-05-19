@@ -23,7 +23,6 @@ type WindowSize struct {
 
 func NewUserContext(logger *log.Logger, api *api.Api, config *config.Config) UserContext {
 	return UserContext{
-		// Style: theme.NewStyle(*theme.DefaultTheme),
 		Style: theme.DefautlStyle,
 		Theme: theme.DefaultTheme,
 		WindowSize: WindowSize{
