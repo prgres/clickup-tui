@@ -364,6 +364,32 @@ func (m *Api) GetList(listId string) (clickup.List, error) {
 	return list, nil
 }
 
+func (m *Api) GetViewsFromWorkspace(workspaceId string) ([]clickup.View, error) {
+	m.logger.Debug("Getting views for workspace",
+		"workspaceId", workspaceId)
+	cacheNamespace := CacheNamespaceViews
+	data, ok := m.Cache.Get(cacheNamespace, workspaceId)
+	if ok {
+		var views []clickup.View
+		if err := m.Cache.ParseData(data, &views); err != nil {
+			return nil, err
+		}
+		return views, nil
+	}
+	client := m.Clickup
+	m.logger.Debug("Fetching views from API")
+
+	views, err := client.GetViewsFromWorkspace(workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	m.logger.Debugf("Found %d views in workspace %s", len(views), workspaceId)
+
+	m.Cache.Set(cacheNamespace, workspaceId, views)
+
+	return views, nil
+}
+
 //nolint:unused
 func (m *Api) getFromCache(namespace string, key string, v interface{}) (bool, error) {
 	data, ok := m.Cache.Get(namespace, key)
