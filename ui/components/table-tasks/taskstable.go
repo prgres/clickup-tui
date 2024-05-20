@@ -120,6 +120,10 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 			Column: table.NewFlexColumn("url", "url", 0),
 			Hidden: true,
 		},
+		{
+			Column: table.NewFlexColumn("id", "id", 0),
+			Hidden: true,
+		},
 	}
 	columnsVisible := []Column{
 		{

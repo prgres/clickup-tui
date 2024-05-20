@@ -23,6 +23,8 @@ func taskToRow(task clickup.Task, columns []string) table.Row {
 			values[column] = task.Name
 		case "url":
 			values[column] = task.Url
+		case "id":
+			values[column] = task.Id
 			// After migration from charm to evertras/bubble-table I temporary removed all columns
 			// except "status" and "name" since they are not supported yet. See autoColumns feature
 			// case "assignee":
@@ -71,6 +73,8 @@ func rowToTask(row table.Row, columns []string) clickup.Task {
 			// 	values = append(values, task.Space.Id)
 			// case "id":
 			// 	values = append(values, task.Id)
+		case "id":
+			task.Id = data[column].(string)
 		}
 	}
 
