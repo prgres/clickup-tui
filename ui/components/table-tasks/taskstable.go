@@ -19,13 +19,20 @@ type Model struct {
 	log               *log.Logger
 	ctx               *context.UserContext
 	ComponentId       common.ComponentId
-	columns           []table.Column
+	columns           []Column
+	columnsVisible    []Column
+	columnsHidden     []Column
 	table             table.Model
 	size              common.Size
 	SelectedTaskIndex int
 	Focused           bool
 	Hidden            bool
 	ifBorders         bool
+}
+
+type Column struct {
+	table.Column
+	Hidden bool
 }
 
 func (m Model) GetTasks() []clickup.Task {
@@ -107,12 +114,29 @@ func (m Model) KeyMap() help.KeyMap {
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
-	columns := []table.Column{
-		table.NewFlexColumn("name", "Name", 70),
-		table.NewFlexColumn("status", "Status", 5).
-			WithStyle(
-				lipgloss.NewStyle().Align(lipgloss.Center),
-			),
+	// TODO: do better
+	columnsHidden := []Column{
+		{
+			Column: table.NewFlexColumn("url", "url", 0),
+			Hidden: true,
+		},
+	}
+	columnsVisible := []Column{
+		{
+			Column: table.NewFlexColumn("name", "Name", 70),
+			Hidden: false,
+		},
+		{
+			Column: table.NewFlexColumn("status", "Status", 5).
+				WithStyle(lipgloss.NewStyle().Align(lipgloss.Center)),
+			Hidden: false,
+		},
+	}
+	columns := append(columnsVisible, columnsHidden...)
+
+	tableColumns := make([]table.Column, len(columnsVisible))
+	for i := range columnsVisible {
+		tableColumns[i] = columns[i].Column
 	}
 
 	size := common.Size{
@@ -125,7 +149,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		key.WithKeys(" "),
 	)
 
-	t := table.New(columns).
+	t := table.New(tableColumns).
 		WithKeyMap(tableKeyMap).
 		WithTargetWidth(size.Width).
 		SelectableRows(true).
@@ -144,23 +168,33 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + ComponentId)
 
 	return Model{
-		ComponentId: ComponentId,
-		ctx:         ctx,
-		table:       t,
-		columns:     columns,
-		tasks:       []clickup.Task{},
-		size:        size,
-		Focused:     false,
-		Hidden:      false,
-		log:         log,
-		ifBorders:   true,
+		ComponentId:    ComponentId,
+		ctx:            ctx,
+		table:          t,
+		columns:        columns,
+		columnsVisible: columnsVisible,
+		columnsHidden:  columnsHidden,
+		tasks:          []clickup.Task{},
+		size:           size,
+		Focused:        false,
+		Hidden:         false,
+		log:            log,
+		ifBorders:      true,
 	}
 }
 
+func (m *Model) GetVisibleColumnsKey() []string {
+	return m.getColumnsKey(m.columnsVisible)
+}
+
 func (m *Model) GetColumnsKey() []string {
-	r := make([]string, len(m.columns))
-	for i, c := range m.columns {
-		r[i] = c.Key()
+	return m.getColumnsKey(m.columns)
+}
+
+func (m *Model) getColumnsKey(cols []Column) []string {
+	r := make([]string, len(cols))
+	for i := range cols {
+		r[i] = cols[i].Key()
 	}
 
 	return r
@@ -199,6 +233,18 @@ func (m Model) GetHighlightedTask() *clickup.Task {
 	}
 
 	return &m.tasks[index]
+}
+
+func (m Model) GetSelectedTasks() []*clickup.Task {
+	rows := m.table.SelectedRows()
+	tasks := make([]*clickup.Task, len(rows))
+
+	for i := range rows {
+		task := rowToTask(rows[i], m.GetColumnsKey())
+		tasks[i] = &task
+	}
+
+	return tasks
 }
 
 func (m Model) TotalRows() int {
