@@ -251,12 +251,6 @@ func (m Model) TabChanged(tabId string) (Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *Model) setColumns(columns []table.Column) {
-	m.columns = columns
-	m.table = m.table.
-		WithColumns(m.columns)
-}
-
 func (m *Model) SetTasks(tasks []clickup.Task) {
 	m.tasks = tasks
 	items := taskListToRows(tasks, m.GetColumnsKey())
