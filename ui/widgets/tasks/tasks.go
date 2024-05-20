@@ -49,7 +49,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 	var (
 		componenetTasksTable   = tabletasks.InitialModel(ctx, log)
-		componenetTasksSidebar = taskssidebar.InitialModel(ctx, log).SetHidden(true)
+		componenetTasksSidebar = taskssidebar.InitialModel(ctx, log).WithHidden(true)
 	)
 
 	return Model{
@@ -153,19 +153,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			}
 
 		case key.Matches(msg, m.keyMap.ToggleSidebar):
-			m.componenetTasksSidebar = m.componenetTasksSidebar.SetHidden(!m.componenetTasksSidebar.GetHidden())
-		}
+			m.log.Debug("Toggle sidebar")
+			m.componenetTasksSidebar.SetHidden(!m.componenetTasksSidebar.GetHidden())
 
 		switch keypress := msg.String(); keypress {
 		case "esc":
 			switch m.state {
 			case m.componenetTasksSidebar.ComponentId:
 				m.state = m.componenetTasksTable.ComponentId
-				m.componenetTasksSidebar = m.componenetTasksSidebar.SetFocused(false)
-				m.componenetTasksTable = m.componenetTasksTable.SetFocused(true)
+				m.componenetTasksSidebar.SetFocused(false)
+				m.componenetTasksTable.SetFocused(true)
 			case m.componenetTasksTable.ComponentId:
-				m.componenetTasksSidebar = m.componenetTasksSidebar.SetFocused(false)
-				m.componenetTasksTable = m.componenetTasksTable.SetFocused(false)
 
 				m.componenetTasksSidebar, cmd = m.componenetTasksSidebar.Update(msg)
 				cmds = append(cmds, cmd)
@@ -173,6 +171,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				cmds = append(cmds, cmd)
 				cmds = append(cmds, LostFocusCmd())
 				return m, tea.Batch(cmds...)
+				m.componenetTasksSidebar.SetFocused(false)
+				m.componenetTasksTable.SetFocused(false)
 			}
 		}
 
@@ -191,11 +191,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 		m.state = m.componenetTasksSidebar.ComponentId
 
-		m.componenetTasksSidebar = m.componenetTasksSidebar.
+		m.componenetTasksSidebar.
 			SetFocused(true).
 			SetHidden(false)
 
-		m.componenetTasksTable = m.componenetTasksTable.SetFocused(false)
+		m.componenetTasksTable.SetFocused(false)
 
 		if err := m.componenetTasksSidebar.SetTask(id); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
@@ -218,7 +218,7 @@ func (m *Model) SetTasks(tasks []clickup.Task) {
 	m.componenetTasksTable.SetTasks(tasks)
 
 	if len(tasks) == 0 {
-		m.componenetTasksSidebar = m.componenetTasksSidebar.SetHidden(true)
+		m.componenetTasksSidebar.SetHidden(true)
 		return
 	}
 
@@ -350,9 +350,9 @@ func (m Model) SetFocused(f bool) Model {
 
 	switch m.state {
 	case m.componenetTasksSidebar.ComponentId:
-		m.componenetTasksSidebar = m.componenetTasksSidebar.SetFocused(f)
+		m.componenetTasksSidebar.SetFocused(f)
 	case m.componenetTasksTable.ComponentId:
-		m.componenetTasksTable = m.componenetTasksTable.SetFocused(f)
+		m.componenetTasksTable.SetFocused(f)
 	}
 
 	return m
