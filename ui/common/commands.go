@@ -88,6 +88,28 @@ type ErrMsg error
 
 func ErrCmd(err ErrMsg) tea.Cmd {
 	return func() tea.Msg {
-		return err
+		return ErrMsg(err)
+	}
+}
+
+type ShowDialogMsg struct {
+	Id   string
+	Data string
+}
+
+func ShowDialogCmd(id string, dialog string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDialogMsg{
+			Id:   id,
+			Data: dialog,
+		}
+	}
+}
+
+type HideDialogMsg string
+
+func HideDialogCmd(id string) tea.Cmd {
+	return func() tea.Msg {
+		return HideDialogMsg(id)
 	}
 }
