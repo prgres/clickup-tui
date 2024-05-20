@@ -19,7 +19,6 @@ type Model struct {
 	log               *log.Logger
 	ctx               *context.UserContext
 	ComponentId       common.ComponentId
-	requiredColsKeys  []string
 	columns           []table.Column
 	requiredCols      []table.Column
 	table             table.Model
@@ -119,7 +118,6 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 				lipgloss.NewStyle().Align(lipgloss.Center),
 			),
 	}
-	requiredColsKeys := []string{"name", "status"}
 
 	size := common.Size{
 		Width:  0,
@@ -152,19 +150,18 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + ComponentId)
 
 	return Model{
-		ComponentId:      ComponentId,
-		ctx:              ctx,
-		table:            t,
-		columns:          columns,
-		requiredCols:     requiredCols,
-		requiredColsKeys: requiredColsKeys,
-		tasks:            []clickup.Task{},
-		autoColumns:      false,
-		size:             size,
-		Focused:          false,
-		Hidden:           false,
-		log:              log,
-		ifBorders:        true,
+		ComponentId:  ComponentId,
+		ctx:          ctx,
+		table:        t,
+		columns:      columns,
+		requiredCols: requiredCols,
+		tasks:        []clickup.Task{},
+		autoColumns:  false,
+		size:         size,
+		Focused:      false,
+		Hidden:       false,
+		log:          log,
+		ifBorders:    true,
 	}
 }
 
