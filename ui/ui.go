@@ -19,6 +19,7 @@ type Model struct {
 	log         *log.Logger
 	dialogHelp  help.Model
 	keyMap      KeyMap
+	dialogs     map[string]string
 }
 
 type KeyMap struct {
@@ -48,6 +49,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		viewCompact: compact.InitialModel(ctx, log),
 		dialogHelp:  help.InitialModel(ctx, log),
 		keyMap:      DefaultKeyMap(),
+		dialogs:     map[string]string{},
 	}
 }
 
@@ -80,6 +82,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			"height", msg.Height)
 		m.ctx.WindowSize.Set(msg.Width, msg.Height)
 
+	case common.ShowDialogMsg:
+		dialog := msg
+		m.log.Debug(
+			"Received: common.ShowDialogMsg",
+			"id", dialog.Id)
+		m.dialogs[dialog.Id] = dialog.Data
+
+	case common.HideDialogMsg:
+		id := string(msg)
+		m.log.Debug(
+			"Received: common.HideDialogMsg",
+			"id", id)
+		delete(m.dialogs, id)
 	}
 
 	m.viewCompact, cmd = m.viewCompact.Update(msg)
@@ -134,12 +149,25 @@ func (m Model) View() string {
 
 	m.ctx.WindowSize.MetaHeight = lipgloss.Height(divider) + footerHeight
 
-	return lipgloss.JoinVertical(
+	rendered := lipgloss.JoinVertical(
 		lipgloss.Left,
 		viewToRender.View(),
 		divider,
 		footer,
 	)
+
+	if len(m.dialogs) != 0 {
+		for _, d := range m.dialogs {
+			rendered = common.PlaceOverlay(
+				m.ctx.WindowSize.Width/2-lipgloss.Width(d)/2,
+				m.ctx.WindowSize.Height/2-lipgloss.Height(d)/2,
+				d,
+				rendered,
+			)
+		}
+	}
+
+	return rendered
 }
 
 func (m Model) Init() tea.Cmd {

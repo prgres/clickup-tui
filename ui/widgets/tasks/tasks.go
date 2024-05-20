@@ -14,6 +14,7 @@ import (
 	tabletasks "github.com/prgrs/clickup/ui/components/table-tasks"
 	taskssidebar "github.com/prgrs/clickup/ui/components/tasks-sidebar"
 	"github.com/prgrs/clickup/ui/context"
+	"github.com/prgrs/clickup/ui/theme"
 	"golang.design/x/clipboard"
 )
 
@@ -194,20 +195,24 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				task := m.componenetTasksTable.GetHighlightedTask()
 				clipboard.Write(clipboard.FmtText, []byte(task.Id))
 				m.copyMode = false
+				cmds = append(cmds, common.HideDialogCmd("TEST_ID"))
 
 			case key.Matches(msg, m.keyMap.CopyTaskUrl):
 				task := m.componenetTasksTable.GetHighlightedTask()
 				clipboard.Write(clipboard.FmtText, []byte(task.Url))
 				m.copyMode = false
+				cmds = append(cmds, common.HideDialogCmd("TEST_ID"))
 
 			case key.Matches(msg, m.keyMap.CopyTaskUrlMd):
 				task := m.componenetTasksTable.GetHighlightedTask()
 				md := fmt.Sprintf("[[#%s] - %s](%s)", task.Id, task.Name, task.Url)
 				clipboard.Write(clipboard.FmtText, []byte(md))
 				m.copyMode = false
+				cmds = append(cmds, common.HideDialogCmd("TEST_ID"))
 
 			case key.Matches(msg, m.keyMap.LostFocus):
 				m.copyMode = false
+				cmds = append(cmds, common.HideDialogCmd("TEST_ID"))
 			}
 
 			return m, tea.Batch(cmds...)
@@ -237,6 +242,27 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case key.Matches(msg, m.keyMap.CopyMode):
 			m.log.Debug("Toggle copy mode")
 			m.copyMode = true
+			dialogSize := common.Size{
+				Width:  m.ctx.WindowSize.Width / 4,
+				Height: m.ctx.WindowSize.Height / 4,
+			}
+			borderMargin := 2
+			dialogCopyMode := m.ctx.Style.Borders.Copy().
+				BorderForeground(m.ctx.Theme.BordersColorActive).
+				Width(dialogSize.Width).
+				MaxWidth(dialogSize.Width + borderMargin).
+				Height(dialogSize.Height).
+				MaxHeight(dialogSize.Height + borderMargin).
+				Background(theme.ColorWhite).
+				Foreground(theme.ColorWhite).
+				Render(
+					lipgloss.Place(0, 0, // doesnt matter
+						lipgloss.Center,
+						lipgloss.Center,
+						"ZXC",
+					),
+				)
+			cmds = append(cmds, common.ShowDialogCmd("TEST_ID", dialogCopyMode))
 
 		case key.Matches(msg, m.keyMap.LostFocus):
 			switch m.state {
@@ -428,12 +454,47 @@ func (m Model) View() string {
 		contentTasksSidebar = m.componenetTasksSidebar.View()
 	}
 
-	return style.Render(
+	render := style.Render(
 		lipgloss.JoinHorizontal(
 			lipgloss.Left,
 			contentTasksTable,
 			contentTasksSidebar,
 		))
+
+	// if m.copyMode {
+	// 	dialogSize := common.Size{
+	// 		Width:  m.ctx.WindowSize.Width / 4,
+	// 		Height: m.ctx.WindowSize.Height / 4,
+	// 	}
+	// 	fg := m.ctx.Style.Borders.Copy().
+	// 		BorderForeground(bColor).
+	// 		Width(dialogSize.Width).
+	// 		MaxWidth(dialogSize.Width + borderMargin).
+	// 		Height(dialogSize.Height).
+	// 		MaxHeight(dialogSize.Height + borderMargin).
+	// 		Background(theme.ColorWhite).
+	// 		Foreground(theme.ColorWhite).
+	// 		Render(
+	// 			lipgloss.Place(
+	// 				dialogSize.Width,
+	// 				dialogSize.Height,
+	// 				lipgloss.Center,
+	// 				lipgloss.Center,
+	// 				"ZXC",
+	// 			),
+	// 		)
+	//
+	// 	bg := render
+	//
+	// 	render = common.PlaceOverlay(
+	// 		m.ctx.WindowSize.Width/2,
+	// 		m.ctx.WindowSize.Height/2,
+	// 		fg,
+	// 		bg,
+	// 	)
+	// }
+
+	return render
 }
 
 func (m Model) SetFocused(f bool) Model {
