@@ -4,6 +4,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const (
+	ColorWhite = lipgloss.Color("#FFFFFF")
+	ColorBlack = lipgloss.Color("#000000")
+)
+
 type Theme struct {
 	BordersColorActive   lipgloss.Color
 	BordersColorInactive lipgloss.Color
