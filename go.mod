@@ -1,6 +1,6 @@
 module github.com/prgrs/clickup
 
-go 1.18
+go 1.21
 
 require (
 	github.com/charmbracelet/bubbletea v0.24.2
@@ -8,6 +8,7 @@ require (
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/charmbracelet/log v0.3.1
 	github.com/spf13/pflag v1.0.5
+	golang.design/x/clipboard v0.7.0
 	golang.org/x/term v0.13.0
 )
 
@@ -24,7 +25,6 @@ require (
 	github.com/sahilm/fuzzy v0.1.1-0.20230530133925-c48e322e2a8f // indirect
 	github.com/yuin/goldmark v1.5.2 // indirect
 	github.com/yuin/goldmark-emoji v1.0.1 // indirect
-	golang.design/x/clipboard v0.7.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/exp/shiny v0.0.0-20240506185415-9bf2ced13842 // indirect
 	golang.org/x/image v0.14.0 // indirect
@@ -46,7 +46,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.15
 	github.com/muesli/ansi v0.0.0-20211018074035-2e021307bc4b // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
-	github.com/muesli/reflow v0.3.0 // indirect
+	github.com/muesli/reflow v0.3.0
 	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	golang.org/x/sync v0.5.0
