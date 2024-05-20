@@ -19,16 +19,20 @@ type Model struct {
 	log               *log.Logger
 	ctx               *context.UserContext
 	ComponentId       common.ComponentId
-	requiredColsKeys  []string
-	columns           []table.Column
-	requiredCols      []table.Column
+	columns           []Column
+	columnsVisible    []Column
+	columnsHidden     []Column
 	table             table.Model
 	size              common.Size
 	SelectedTaskIndex int
-	autoColumns       bool
 	Focused           bool
 	Hidden            bool
 	ifBorders         bool
+}
+
+type Column struct {
+	table.Column
+	Hidden bool
 }
 
 func (m Model) GetTasks() []clickup.Task {
@@ -110,30 +114,42 @@ func (m Model) KeyMap() help.KeyMap {
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
-	columns := []table.Column{}
-
-	requiredCols := []table.Column{
-		table.NewFlexColumn("name", "Name", 70),
-		table.NewFlexColumn("status", "Status", 5).
-			WithStyle(
-				lipgloss.NewStyle().Align(lipgloss.Center),
-			),
+	// TODO: do better
+	columnsHidden := []Column{
+		{
+			Column: table.NewFlexColumn("url", "url", 0),
+			Hidden: true,
+		},
 	}
-	requiredColsKeys := []string{"name", "status"}
+	columnsVisible := []Column{
+		{
+			Column: table.NewFlexColumn("name", "Name", 70),
+			Hidden: false,
+		},
+		{
+			Column: table.NewFlexColumn("status", "Status", 5).
+				WithStyle(lipgloss.NewStyle().Align(lipgloss.Center)),
+			Hidden: false,
+		},
+	}
+	columns := append(columnsVisible, columnsHidden...)
+
+	tableColumns := make([]table.Column, len(columnsVisible))
+	for i := range columnsVisible {
+		tableColumns[i] = columns[i].Column
+	}
 
 	size := common.Size{
 		Width:  0,
 		Height: 0,
 	}
 
-	columns = append(columns, requiredCols...)
-
 	tableKeyMap := table.DefaultKeyMap()
 	tableKeyMap.RowSelectToggle = key.NewBinding(
 		key.WithKeys(" "),
 	)
 
-	t := table.New(columns).
+	t := table.New(tableColumns).
 		WithKeyMap(tableKeyMap).
 		WithTargetWidth(size.Width).
 		SelectableRows(true).
@@ -152,26 +168,33 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + ComponentId)
 
 	return Model{
-		ComponentId:      ComponentId,
-		ctx:              ctx,
-		table:            t,
-		columns:          columns,
-		requiredCols:     requiredCols,
-		requiredColsKeys: requiredColsKeys,
-		tasks:            []clickup.Task{},
-		autoColumns:      false,
-		size:             size,
-		Focused:          false,
-		Hidden:           false,
-		log:              log,
-		ifBorders:        true,
+		ComponentId:    ComponentId,
+		ctx:            ctx,
+		table:          t,
+		columns:        columns,
+		columnsVisible: columnsVisible,
+		columnsHidden:  columnsHidden,
+		tasks:          []clickup.Task{},
+		size:           size,
+		Focused:        false,
+		Hidden:         false,
+		log:            log,
+		ifBorders:      true,
 	}
 }
 
+func (m *Model) GetVisibleColumnsKey() []string {
+	return m.getColumnsKey(m.columnsVisible)
+}
+
 func (m *Model) GetColumnsKey() []string {
-	r := make([]string, len(m.columns))
-	for i, c := range m.columns {
-		r[i] = c.Key()
+	return m.getColumnsKey(m.columns)
+}
+
+func (m *Model) getColumnsKey(cols []Column) []string {
+	r := make([]string, len(cols))
+	for i := range cols {
+		r[i] = cols[i].Key()
 	}
 
 	return r
@@ -212,6 +235,18 @@ func (m Model) GetHighlightedTask() *clickup.Task {
 	return &m.tasks[index]
 }
 
+func (m Model) GetSelectedTasks() []*clickup.Task {
+	rows := m.table.SelectedRows()
+	tasks := make([]*clickup.Task, len(rows))
+
+	for i := range rows {
+		task := rowToTask(rows[i], m.GetColumnsKey())
+		tasks[i] = &task
+	}
+
+	return tasks
+}
+
 func (m Model) TotalRows() int {
 	return m.table.TotalRows()
 }
@@ -250,24 +285,6 @@ func (m Model) TabChanged(tabId string) (Model, tea.Cmd) {
 
 	m.log.Infof("Received TabChangedMsg: %s", tabId)
 
-	columns := []table.Column{}
-	columns = append(columns, m.requiredCols...)
-
-	// if m.autoColumns {
-	//      tab := viewtabs.Tab(msg)
-	// 	for _, field := range view.Columns.Fields {
-	// 		if field.Field == "name" || field.Field == "status" { // TODO: check if in requiredCols
-	// 			continue
-	// 		}
-	// 		columns = append(columns, table.Column{
-	// 			Title: field.Field,
-	// 			Width: 30,
-	// 		})
-	// 	}
-	// }
-
-	m.log.Infof("Columns: %d", len(columns))
-	m.setColumns(columns)
 	m.SetTasks(m.tasks)
 
 	if len(m.tasks) != 0 { // TODO: store tasks list in var
@@ -278,12 +295,6 @@ func (m Model) TabChanged(tabId string) (Model, tea.Cmd) {
 	cmds = append(cmds, TasksListReadyCmd())
 
 	return m, tea.Batch(cmds...)
-}
-
-func (m *Model) setColumns(columns []table.Column) {
-	m.columns = columns
-	m.table = m.table.
-		WithColumns(m.columns)
 }
 
 func (m *Model) SetTasks(tasks []clickup.Task) {

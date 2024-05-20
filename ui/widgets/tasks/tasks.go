@@ -73,12 +73,17 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 }
 
 type KeyMap struct {
-	OpenTicketInWebBrowser key.Binding
-	ToggleSidebar          key.Binding
+	OpenTicketInWebBrowserBatch key.Binding
+	OpenTicketInWebBrowser      key.Binding
+	ToggleSidebar               key.Binding
 }
 
 func DefaultKeyMap() KeyMap {
 	return KeyMap{
+		OpenTicketInWebBrowserBatch: key.NewBinding(
+			key.WithKeys("U"),
+			key.WithHelp("U", "batch open in web browser"),
+		),
 		OpenTicketInWebBrowser: key.NewBinding(
 			key.WithKeys("u"),
 			key.WithHelp("u", "open in web browser"),
@@ -131,11 +136,22 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
+		case key.Matches(msg, m.keyMap.OpenTicketInWebBrowserBatch):
+			tasks := m.componenetTasksTable.GetSelectedTasks()
+			for _, task := range tasks {
+				m.log.Debug("Opening task in the web browser", "url", task.Url)
+				if err := common.OpenUrlInWebBrowser(task.Url); err != nil {
+					m.log.Fatal(err)
+				}
+			}
+
 		case key.Matches(msg, m.keyMap.OpenTicketInWebBrowser):
 			task := m.componenetTasksTable.GetHighlightedTask()
+			m.log.Debug("Opening task in the web browser", "url", task.Url)
 			if err := common.OpenUrlInWebBrowser(task.Url); err != nil {
 				m.log.Fatal(err)
 			}
+
 		case key.Matches(msg, m.keyMap.ToggleSidebar):
 			m.componenetTasksSidebar = m.componenetTasksSidebar.SetHidden(!m.componenetTasksSidebar.GetHidden())
 		}
