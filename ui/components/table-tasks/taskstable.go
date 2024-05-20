@@ -20,7 +20,6 @@ type Model struct {
 	ctx               *context.UserContext
 	ComponentId       common.ComponentId
 	columns           []table.Column
-	requiredCols      []table.Column
 	table             table.Model
 	size              common.Size
 	SelectedTaskIndex int
@@ -109,9 +108,7 @@ func (m Model) KeyMap() help.KeyMap {
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
-	columns := []table.Column{}
-
-	requiredCols := []table.Column{
+	columns := []table.Column{
 		table.NewFlexColumn("name", "Name", 70),
 		table.NewFlexColumn("status", "Status", 5).
 			WithStyle(
@@ -123,8 +120,6 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		Width:  0,
 		Height: 0,
 	}
-
-	columns = append(columns, requiredCols...)
 
 	tableKeyMap := table.DefaultKeyMap()
 	tableKeyMap.RowSelectToggle = key.NewBinding(
@@ -154,7 +149,6 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		ctx:          ctx,
 		table:        t,
 		columns:      columns,
-		requiredCols: requiredCols,
 		tasks:        []clickup.Task{},
 		autoColumns:  false,
 		size:         size,
@@ -247,9 +241,6 @@ func (m Model) TabChanged(tabId string) (Model, tea.Cmd) {
 
 	m.log.Infof("Received TabChangedMsg: %s", tabId)
 
-	columns := []table.Column{}
-	columns = append(columns, m.requiredCols...)
-
 	// if m.autoColumns {
 	//      tab := viewtabs.Tab(msg)
 	// 	for _, field := range view.Columns.Fields {
@@ -262,9 +253,6 @@ func (m Model) TabChanged(tabId string) (Model, tea.Cmd) {
 	// 		})
 	// 	}
 	// }
-
-	m.log.Infof("Columns: %d", len(columns))
-	m.setColumns(columns)
 	m.SetTasks(m.tasks)
 
 	if len(m.tasks) != 0 { // TODO: store tasks list in var
