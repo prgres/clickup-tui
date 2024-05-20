@@ -120,6 +120,10 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 			Column: table.NewFlexColumn("url", "url", 0),
 			Hidden: true,
 		},
+		{
+			Column: table.NewFlexColumn("id", "id", 0),
+			Hidden: true,
+		},
 	}
 	columnsVisible := []Column{
 		{
@@ -266,7 +270,12 @@ func (m Model) GetFocused() bool {
 	return m.Focused
 }
 
-func (m Model) SetFocused(f bool) Model {
+func (m Model) WithFocused(f bool) Model {
+	m.Focused = f
+	return m
+}
+
+func (m *Model) SetFocused(f bool) *Model {
 	m.Focused = f
 	return m
 }

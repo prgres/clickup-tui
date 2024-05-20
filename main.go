@@ -16,6 +16,7 @@ import (
 	"github.com/prgrs/clickup/ui"
 	"github.com/prgrs/clickup/ui/context"
 	"github.com/spf13/pflag"
+	"golang.design/x/clipboard"
 )
 
 const (
@@ -140,7 +141,13 @@ func main() {
 		}
 	}
 
+	logger.Info("Loading cache...")
 	if err := cache.Load(); err != nil {
+		termLogger.Fatal(err)
+	}
+
+	logger.Info("Initializing clipboard...")
+	if err := clipboard.Init(); err != nil {
 		termLogger.Fatal(err)
 	}
 

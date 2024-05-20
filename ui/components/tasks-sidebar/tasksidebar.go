@@ -164,7 +164,12 @@ func (m Model) GetFocused() bool {
 	return m.Focused
 }
 
-func (m Model) SetFocused(f bool) Model {
+func (m Model) WithFocused(f bool) Model {
+	m.Focused = f
+	return m
+}
+
+func (m *Model) SetFocused(f bool) *Model {
 	m.Focused = f
 	return m
 }
@@ -173,7 +178,12 @@ func (m Model) GetHidden() bool {
 	return m.Hidden
 }
 
-func (m Model) SetHidden(h bool) Model {
+func (m *Model) SetHidden(h bool) *Model {
+	m.Hidden = h
+	return m
+}
+
+func (m Model) WithHidden(h bool) Model {
 	m.Hidden = h
 	return m
 }

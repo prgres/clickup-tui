@@ -21,6 +21,11 @@ type WindowSize struct {
 	MetaHeight int
 }
 
+func (w *WindowSize) Set(width, height int) {
+	w.Width = width
+	w.Height = height
+}
+
 func NewUserContext(logger *log.Logger, api *api.Api, config *config.Config) UserContext {
 	return UserContext{
 		Style: theme.DefautlStyle,
