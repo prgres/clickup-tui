@@ -14,6 +14,7 @@ import (
 	tabletasks "github.com/prgrs/clickup/ui/components/table-tasks"
 	taskssidebar "github.com/prgrs/clickup/ui/components/tasks-sidebar"
 	"github.com/prgrs/clickup/ui/context"
+	"golang.design/x/clipboard"
 )
 
 const WidgetId = "tasks"
@@ -35,6 +36,8 @@ type Model struct {
 
 	componenetTasksTable   tabletasks.Model
 	componenetTasksSidebar taskssidebar.Model
+
+	copyMode bool // TODO make as a widget
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
@@ -69,6 +72,8 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 
 		spinner:     s,
 		showSpinner: false,
+
+		copyMode: false,
 	}
 }
 
@@ -76,6 +81,11 @@ type KeyMap struct {
 	OpenTicketInWebBrowserBatch key.Binding
 	OpenTicketInWebBrowser      key.Binding
 	ToggleSidebar               key.Binding
+	CopyMode                    key.Binding
+	CopyTaskId                  key.Binding
+	CopyTaskUrl                 key.Binding
+	CopyTaskUrlMd               key.Binding
+	LostFocus                   key.Binding
 }
 
 func DefaultKeyMap() KeyMap {
@@ -92,11 +102,54 @@ func DefaultKeyMap() KeyMap {
 			key.WithKeys("p"),
 			key.WithHelp("p", "toggle sidebar"),
 		),
+		CopyMode: key.NewBinding(
+			key.WithKeys("y"),
+			key.WithHelp("y", "toggle copy mode"),
+		),
+		CopyTaskId: key.NewBinding(
+			key.WithKeys("i"),
+			key.WithHelp("i", "copy task id to clipboard"),
+		),
+		CopyTaskUrl: key.NewBinding(
+			key.WithKeys("u"),
+			key.WithHelp("u", "copy task url to clipboard"),
+		),
+		CopyTaskUrlMd: key.NewBinding(
+			key.WithKeys("m"),
+			key.WithHelp("m", "copy task url as markdown to clipboard"),
+		),
+		LostFocus: key.NewBinding(
+			key.WithKeys("esc"),
+			key.WithHelp("esc", "lost pane focus"),
+		),
 	}
 }
 
 func (m Model) KeyMap() help.KeyMap {
 	var km help.KeyMap
+
+	if m.copyMode {
+		return common.NewKeyMap(
+			func() [][]key.Binding {
+				return [][]key.Binding{
+					{
+						m.keyMap.CopyTaskId,
+						m.keyMap.CopyTaskUrl,
+						m.keyMap.CopyTaskUrlMd,
+						m.keyMap.LostFocus,
+					},
+				}
+			},
+			func() []key.Binding {
+				return []key.Binding{
+					m.keyMap.CopyTaskId,
+					m.keyMap.CopyTaskUrl,
+					m.keyMap.CopyTaskUrlMd,
+					m.keyMap.LostFocus,
+				}
+			},
+		)
+	}
 
 	switch m.state {
 	case m.componenetTasksSidebar.ComponentId:
@@ -119,7 +172,7 @@ func (m Model) KeyMap() help.KeyMap {
 			return append(
 				km.ShortHelp(),
 				m.keyMap.OpenTicketInWebBrowser,
-				m.keyMap.ToggleSidebar,
+				m.keyMap.CopyMode,
 			)
 		},
 	)
@@ -135,6 +188,31 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if m.copyMode {
+			switch {
+			case key.Matches(msg, m.keyMap.CopyTaskId):
+				task := m.componenetTasksTable.GetHighlightedTask()
+				clipboard.Write(clipboard.FmtText, []byte(task.Id))
+				m.copyMode = false
+
+			case key.Matches(msg, m.keyMap.CopyTaskUrl):
+				task := m.componenetTasksTable.GetHighlightedTask()
+				clipboard.Write(clipboard.FmtText, []byte(task.Url))
+				m.copyMode = false
+
+			case key.Matches(msg, m.keyMap.CopyTaskUrlMd):
+				task := m.componenetTasksTable.GetHighlightedTask()
+				md := fmt.Sprintf("[[#%s] - %s](%s)", task.Id, task.Name, task.Url)
+				clipboard.Write(clipboard.FmtText, []byte(md))
+				m.copyMode = false
+
+			case key.Matches(msg, m.keyMap.LostFocus):
+				m.copyMode = false
+			}
+
+			break
+		}
+
 		switch {
 		case key.Matches(msg, m.keyMap.OpenTicketInWebBrowserBatch):
 			tasks := m.componenetTasksTable.GetSelectedTasks()
@@ -156,24 +234,29 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.log.Debug("Toggle sidebar")
 			m.componenetTasksSidebar.SetHidden(!m.componenetTasksSidebar.GetHidden())
 
-		switch keypress := msg.String(); keypress {
-		case "esc":
+		case key.Matches(msg, m.keyMap.CopyMode):
+			m.log.Debug("Toggle copy mode")
+			m.copyMode = true
+
+		case key.Matches(msg, m.keyMap.LostFocus):
 			switch m.state {
 			case m.componenetTasksSidebar.ComponentId:
 				m.state = m.componenetTasksTable.ComponentId
 				m.componenetTasksSidebar.SetFocused(false)
 				m.componenetTasksTable.SetFocused(true)
-			case m.componenetTasksTable.ComponentId:
 
-				m.componenetTasksSidebar, cmd = m.componenetTasksSidebar.Update(msg)
-				cmds = append(cmds, cmd)
-				m.componenetTasksTable, cmd = m.componenetTasksTable.Update(msg)
-				cmds = append(cmds, cmd)
-				cmds = append(cmds, LostFocusCmd())
-				return m, tea.Batch(cmds...)
+			case m.componenetTasksTable.ComponentId:
 				m.componenetTasksSidebar.SetFocused(false)
 				m.componenetTasksTable.SetFocused(false)
 			}
+
+			m.componenetTasksSidebar, cmd = m.componenetTasksSidebar.Update(msg)
+			cmds = append(cmds, cmd)
+			m.componenetTasksTable, cmd = m.componenetTasksTable.Update(msg)
+			cmds = append(cmds, cmd)
+
+			cmds = append(cmds, LostFocusCmd())
+			return m, tea.Batch(cmds...)
 		}
 
 		switch m.state {
@@ -182,7 +265,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case m.componenetTasksTable.ComponentId:
 			m.componenetTasksTable, cmd = m.componenetTasksTable.Update(msg)
 		}
+
 		cmds = append(cmds, cmd)
+
 		return m, tea.Batch(cmds...)
 
 	case tabletasks.TaskSelectedMsg:
@@ -233,6 +318,9 @@ func (m Model) View() string {
 	bColor := m.ctx.Theme.BordersColorInactive
 	if m.Focused {
 		bColor = m.ctx.Theme.BordersColorActive
+	}
+	if m.copyMode {
+		bColor = m.ctx.Theme.BordersColorCopyMode
 	}
 
 	style := lipgloss.NewStyle().
@@ -291,6 +379,9 @@ func (m Model) View() string {
 	tasksTableBorders := m.ctx.Theme.BordersColorInactive
 	if m.componenetTasksTable.GetFocused() {
 		tasksTableBorders = m.ctx.Theme.BordersColorActive
+	}
+	if m.copyMode {
+		tasksTableBorders = m.ctx.Theme.BordersColorCopyMode
 	}
 
 	tmpStyle := style.Copy().
