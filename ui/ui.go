@@ -78,12 +78,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			"Received: tea.WindowSizeMsg",
 			"width", msg.Width,
 			"height", msg.Height)
+		m.ctx.WindowSize.Set(msg.Width, msg.Height)
 
-		m.ctx.WindowSize.Width = msg.Width
-		m.ctx.WindowSize.Height = msg.Height
-		m.ctx.WindowSize.Height = msg.Height
-		m.ctx.WindowSize.Height = msg.Height
-		m.ctx.WindowSize.Height = msg.Height
 	}
 
 	m.viewCompact, cmd = m.viewCompact.Update(msg)
