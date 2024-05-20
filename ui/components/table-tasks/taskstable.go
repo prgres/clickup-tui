@@ -23,7 +23,6 @@ type Model struct {
 	table             table.Model
 	size              common.Size
 	SelectedTaskIndex int
-	autoColumns       bool
 	Focused           bool
 	Hidden            bool
 	ifBorders         bool
@@ -145,17 +144,16 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + ComponentId)
 
 	return Model{
-		ComponentId:  ComponentId,
-		ctx:          ctx,
-		table:        t,
-		columns:      columns,
-		tasks:        []clickup.Task{},
-		autoColumns:  false,
-		size:         size,
-		Focused:      false,
-		Hidden:       false,
-		log:          log,
-		ifBorders:    true,
+		ComponentId: ComponentId,
+		ctx:         ctx,
+		table:       t,
+		columns:     columns,
+		tasks:       []clickup.Task{},
+		size:        size,
+		Focused:     false,
+		Hidden:      false,
+		log:         log,
+		ifBorders:   true,
 	}
 }
 
@@ -241,18 +239,6 @@ func (m Model) TabChanged(tabId string) (Model, tea.Cmd) {
 
 	m.log.Infof("Received TabChangedMsg: %s", tabId)
 
-	// if m.autoColumns {
-	//      tab := viewtabs.Tab(msg)
-	// 	for _, field := range view.Columns.Fields {
-	// 		if field.Field == "name" || field.Field == "status" { // TODO: check if in requiredCols
-	// 			continue
-	// 		}
-	// 		columns = append(columns, table.Column{
-	// 			Title: field.Field,
-	// 			Width: 30,
-	// 		})
-	// 	}
-	// }
 	m.SetTasks(m.tasks)
 
 	if len(m.tasks) != 0 { // TODO: store tasks list in var
