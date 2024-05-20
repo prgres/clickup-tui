@@ -210,7 +210,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.copyMode = false
 			}
 
-			break
+			return m, tea.Batch(cmds...)
 		}
 
 		switch {
@@ -396,8 +396,8 @@ func (m Model) View() string {
 		m.componenetTasksTable.SetSize(size)
 
 		tmpStyle = tmpStyle.Copy().
-			Width(size.Width).
 			BorderForeground(tasksTableBorders).
+			Width(size.Width).
 			MaxWidth(size.Width + borderMargin).
 			Height(size.Height).
 			MaxHeight(m.size.Height + borderMargin)
