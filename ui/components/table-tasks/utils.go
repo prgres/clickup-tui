@@ -57,22 +57,6 @@ func rowToTask(row table.Row, columns []string) clickup.Task {
 			task.Name = data[column].(string)
 		case "url":
 			task.Url = data[column].(string)
-			// After migration from charm to evertras/bubble-table I temporary removed all columns
-			// except "status" and "name" since they are not supported yet. See autoColumns feature
-			// case "assignee":
-			// 	values = append(values, task.GetAssignees())
-			// case "list":
-			// 	values = append(values, task.List.String())
-			// case "tags":
-			// 	values = append(values, task.GetTags())
-			// case "folder":
-			// 	values = append(values, task.Folder.String())
-			// case "url":
-			// 	values = append(values, task.Url)
-			// case "space":
-			// 	values = append(values, task.Space.Id)
-			// case "id":
-			// 	values = append(values, task.Id)
 		case "id":
 			task.Id = data[column].(string)
 		}
