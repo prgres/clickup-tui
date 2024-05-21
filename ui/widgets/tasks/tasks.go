@@ -219,7 +219,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			for _, task := range tasks {
 				m.log.Debug("Opening task in the web browser", "url", task.Url)
 				if err := common.OpenUrlInWebBrowser(task.Url); err != nil {
-					m.log.Fatal(err)
+					cmds = append(cmds, common.ErrCmd(err))
+					return m, tea.Batch(cmds...)
 				}
 			}
 
@@ -227,7 +228,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			task := m.componenetTasksTable.GetHighlightedTask()
 			m.log.Debug("Opening task in the web browser", "url", task.Url)
 			if err := common.OpenUrlInWebBrowser(task.Url); err != nil {
-				m.log.Fatal(err)
+				cmds = append(cmds, common.ErrCmd(err))
+				return m, tea.Batch(cmds...)
 			}
 
 		case key.Matches(msg, m.keyMap.ToggleSidebar):
@@ -298,20 +300,19 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *Model) SetTasks(tasks []clickup.Task) {
+func (m *Model) SetTasks(tasks []clickup.Task) error {
 	m.showSpinner = false
 	m.componenetTasksTable.SetTasks(tasks)
 
 	if len(tasks) == 0 {
 		m.componenetTasksSidebar.SetHidden(true)
-		return
+		return nil
 	}
 
 	// TODO: check if it should yield at all or move it to cmd
 	id := tasks[0].Id
-	if err := m.componenetTasksSidebar.SetTask(id); err != nil {
-		m.log.Fatal(err)
-	}
+
+	return m.componenetTasksSidebar.SetTask(id)
 }
 
 func (m Model) View() string {

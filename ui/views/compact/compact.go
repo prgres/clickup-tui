@@ -128,7 +128,11 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		}
 
 		if len(views) == 0 {
-			m.widgetTasks.SetTasks(nil)
+			if err := m.widgetTasks.SetTasks(nil); err != nil {
+				cmds = append(cmds, common.ErrCmd(err))
+				return m, tea.Batch(cmds...)
+			}
+
 			m.widgetViewsTabs.SetTabs(nil)
 		} else {
 			tabs := viewsToTabs(views)
@@ -210,7 +214,12 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 
 		if id == "" {
 			m.log.Info("Received: LoadingTasksFromViewMsg empty")
-			m.widgetTasks.SetTasks(nil)
+
+			if err := m.widgetTasks.SetTasks(nil); err != nil {
+				cmds = append(cmds, common.ErrCmd(err))
+				return m, tea.Batch(cmds...)
+			}
+
 			break
 		}
 
@@ -326,8 +335,8 @@ func (m *Model) reloadTasks(viewId string) error {
 	if err != nil {
 		return err
 	}
-	m.widgetTasks.SetTasks(tasks)
-	return nil
+
+	return m.widgetTasks.SetTasks(tasks)
 }
 
 func (m *Model) handleWorkspaceChangePreview(id string) tea.Cmd {
