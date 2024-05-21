@@ -202,7 +202,7 @@ func (c *Cache) Dump() error {
 		}
 	}
 
-	return nil
+	return errgroup.Wait()
 }
 
 func (c *Cache) saveToFile(path string, filename string, value interface{}) error {
