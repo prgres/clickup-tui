@@ -1,15 +1,17 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"os/user"
+	"path/filepath"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
-	"github.com/kkyr/fig"
 	"github.com/prgrs/clickup/api"
 	"github.com/prgrs/clickup/internal/config"
 	"github.com/prgrs/clickup/pkg/cache"
@@ -26,12 +28,8 @@ const (
 	AppName = "clickup-tui"
 	// Description is the description of the application
 	AppDescription = "A terminal user interface for ClickUp"
-	// DefaultConfigFilename is the default config filename
-	DefaultConfigFilename = "config.yaml"
 	// DefaultCachePath is the default cache path
 	DefaultCachePath = "./cache"
-
-	ErrMissingToken = `ClickUp API token is required. Follow the steps: [ClickUp API docs: Generate your personal API token](https://clickup.com/api/developer-portal/authentication/#generate-your-personal-api-token) and please set it in the config file. See https://docs.clickup.com/en/articles/1367130-getting-started-with-the-clickup-api")`
 )
 
 var (
@@ -40,7 +38,7 @@ var (
 	flagDebugDeep      *bool          = flag.Bool("debug-deep", false, "Enable deep debug mode")
 	flagHelp           *bool          = flag.BoolP("help", "h", false, "Show help")
 	flagVersion        *bool          = flag.BoolP("version", "v", false, "Show version")
-	flagConfigFilename *string        = flag.StringP("config", "c", DefaultConfigFilename, "A config filename")
+	flagConfig         *string        = flag.StringP("config", "c", "", "A config filename")
 	flagCleanCache     *bool          = flag.Bool("clean-cache", false, "Cleans cache data")
 	flagCleanCacheOnly *bool          = flag.Bool("clean-cache-only", false, "Cleans cache data and exits")
 	flagCachePath      *string        = flag.String("cache-path", DefaultCachePath, "The path to the cache directory")
@@ -101,21 +99,9 @@ func main() {
 	logger.Info("Starting up...")
 
 	logger.Info("Initializing config...")
-	var cfg config.Config
-	if err := fig.Load(&cfg,
-		fig.File(*flagConfigFilename),
-		fig.Dirs(
-			".",
-			"/etc/clickup-tui",
-			"/home/user/clickup-tui",
-			"$HOME/.config/clickup-tui",
-		),
-	); err != nil {
+	cfg, err := initConfig(*flagConfig)
+	if err != nil {
 		termLogger.Fatal(err)
-	}
-
-	if cfg.Token == "" {
-		termLogger.Fatal(ErrMissingToken)
 	}
 
 	logger.Info("Initializing cache...")
@@ -155,7 +141,7 @@ func main() {
 	api := api.NewApi(logger, cache, cfg.Token)
 
 	logger.Info("Initializing user context...")
-	ctx := context.NewUserContext(logger, &api, &cfg)
+	ctx := context.NewUserContext(logger, &api, cfg)
 
 	logger.Info("Initializing main model...")
 	mainModel := ui.InitialModel(&ctx, logger)
@@ -165,4 +151,52 @@ func main() {
 	if _, err := p.Run(); err != nil {
 		termLogger.Fatal(err)
 	}
+}
+
+func initConfig(path string) (*config.Config, error) {
+	if path == "" {
+		usr, err := user.Current()
+		if err != nil {
+			return nil, err
+		}
+
+		defaultConfigPath := filepath.Join(usr.HomeDir, config.DefaultPathPrefix)
+		paths := []string{
+			".",
+			"/etc/clickup-tui",
+			"/home/user/clickup-tui",
+			defaultConfigPath,
+		}
+
+		filename := config.DefaultFilename
+
+		configPath, err := config.FindConfigFile(filename, paths)
+		if err != nil {
+			fmt.Println("Config file not found, creating a new...")
+
+			configPath = defaultConfigPath
+			if err = config.CreateEmptyCfgFile(filename, configPath); err != nil {
+				return nil, err
+			}
+
+			configPath = filepath.Join(configPath, filename)
+		}
+
+		path = configPath
+		fmt.Println("Loading config file from:", path)
+	}
+
+	cfg, err := config.Init(path)
+	if err != nil {
+		if errors.Is(err, config.ErrMissingToken) {
+			fmt.Println(config.HowToGetToken)
+			if err := cfg.Save(); err != nil {
+				return nil, err
+			}
+		}
+
+		return nil, err
+	}
+
+	return cfg, nil
 }
