@@ -5,10 +5,10 @@ import "encoding/json"
 type Workspace = Team
 
 type Team struct {
-	Id      string
-	Name    string
-	Color   string
-	Avatar  string
+	Id      string        `json:"id"`
+	Name    string        `json:"name"`
+	Color   string        `json:"color"`
+	Avatar  string        `json:"avatar"`
 	Members []interface{} `json:"members"`
 }
 
