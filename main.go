@@ -111,7 +111,7 @@ func main() {
 	)
 
 	defer func() {
-		if err := cache.Dump(); err != nil {
+		if err := cache.Close(); err != nil {
 			termLogger.Fatal(err)
 		}
 	}()
@@ -149,6 +149,7 @@ func main() {
 	logger.Info("Initializing program...")
 	p := tea.NewProgram(mainModel, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
+		cache.Close()
 		termLogger.Fatal(err)
 	}
 }

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -79,6 +80,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			"width", msg.Width,
 			"height", msg.Height)
 		m.ctx.WindowSize.Set(msg.Width, msg.Height)
+
+	case common.UITickMsg:
+		ts := int64(msg)
+		if time.Now().Unix() > ts {
+			m.log.Debug("Fire refresh tick")
+			cmds = append(cmds, common.UITickCmd(time.Now().Unix()+3))
+			cmds = append(cmds, common.RefreshCmd())
+			return m, tea.Batch(cmds...)
+		}
+		cmds = append(cmds, common.UITickCmd(ts))
 	}
 
 	m.viewCompact, cmd = m.viewCompact.Update(msg)
@@ -146,5 +157,6 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.viewCompact.Init(),
 		m.dialogHelp.Init(),
+		common.UITickCmd(time.Now().Unix()+3),
 	)
 }

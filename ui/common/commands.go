@@ -91,3 +91,19 @@ func ErrCmd(err ErrMsg) tea.Cmd {
 		return err
 	}
 }
+
+type UITickMsg int64
+
+func UITickCmd(ts int64) tea.Cmd {
+	return func() tea.Msg {
+		return UITickMsg(ts)
+	}
+}
+
+type RefreshMsg string
+
+func RefreshCmd() tea.Cmd {
+	return func() tea.Msg {
+		return RefreshMsg("")
+	}
+}

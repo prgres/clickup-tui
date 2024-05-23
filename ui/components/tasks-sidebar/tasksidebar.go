@@ -125,15 +125,19 @@ func (m Model) renderTask(task clickup.Task) string {
 	divider := strings.Repeat("-", runewidth.StringWidth(header))
 	s.WriteString(divider)
 
-	r, _ := glamour.NewTermRenderer(
+	r, err := glamour.NewTermRenderer(
 		glamour.WithAutoStyle(),
 		glamour.WithWordWrap(m.viewport.Width),
 	)
+	if err != nil {
+		return err.Error()
+	}
 
 	out, err := r.Render(task.MarkdownDescription)
 	if err != nil {
 		return err.Error()
 	}
+
 	s.WriteString(out)
 
 	return s.String()

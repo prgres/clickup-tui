@@ -18,19 +18,23 @@ import (
 
 const ViewId = "viewCompact"
 
-type Model struct {
-	ctx    *context.UserContext
-	log    *log.Logger
-	ViewId common.ViewId
-	state  common.WidgetId
-	size   common.Size
+type State struct {
+	Widget common.WidgetId
+	View   string
+}
 
+type Model struct {
+	ctx         *context.UserContext
+	ViewId      common.ViewId
+	log         *log.Logger
+	state       State
 	spinner     spinner.Model
+	size        common.Size
 	showSpinner bool
 
 	widgetNavigator navigator.Model
-	widgetViewsTabs viewstabs.Model
 	widgetTasks     tasks.Model
+	widgetViewsTabs viewstabs.Model
 }
 
 func (m Model) GetSize() common.Size {
@@ -50,7 +54,7 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) KeyMap() help.KeyMap {
-	switch m.state {
+	switch m.state.Widget {
 	case navigator.WidgetId:
 		return m.widgetNavigator.KeyMap()
 	case viewstabs.WidgetId:
@@ -79,26 +83,26 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "tab":
-			switch m.state {
+			switch m.state.Widget {
 			case navigator.WidgetId:
-				m.state = tasks.WidgetId
+				m.state.Widget = tasks.WidgetId
 				m.widgetTasks = m.widgetTasks.SetFocused(true)
 				m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 				m.widgetNavigator = m.widgetNavigator.SetFocused(false)
 			case viewstabs.WidgetId:
-				m.state = navigator.WidgetId
+				m.state.Widget = navigator.WidgetId
 				m.widgetTasks = m.widgetTasks.SetFocused(false)
 				m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 				m.widgetNavigator = m.widgetNavigator.SetFocused(true)
 			case tasks.WidgetId:
-				m.state = viewstabs.WidgetId
+				m.state.Widget = viewstabs.WidgetId
 				m.widgetTasks = m.widgetTasks.SetFocused(false)
 				m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(true)
 				m.widgetNavigator = m.widgetNavigator.SetFocused(false)
 			}
 		}
 
-		switch m.state {
+		switch m.state.Widget {
 		case navigator.WidgetId:
 			m.widgetNavigator, cmd = m.widgetNavigator.Update(msg)
 		case viewstabs.WidgetId:
@@ -140,7 +144,8 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 
 			initTab := m.widgetViewsTabs.SelectedTab
 
-			if err := m.reloadTasks(initTab); err != nil {
+			m.state.View = initTab
+			if err := m.widgetTasks.ReloadTasks(initTab); err != nil {
 				cmds = append(cmds, common.ErrCmd(err))
 				return m, tea.Batch(cmds...)
 			}
@@ -194,7 +199,7 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		id := string(msg)
 		m.log.Info("Received: ListChangeMsg", "id", id)
 		// TODO: make state change as func
-		m.state = m.widgetTasks.WidgetId
+		m.state.Widget = m.widgetTasks.WidgetId
 		m.widgetTasks = m.widgetTasks.SetFocused(true)
 		m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 		m.widgetNavigator = m.widgetNavigator.SetFocused(false)
@@ -214,7 +219,6 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 
 		if id == "" {
 			m.log.Info("Received: LoadingTasksFromViewMsg empty")
-
 			if err := m.widgetTasks.SetTasks(nil); err != nil {
 				cmds = append(cmds, common.ErrCmd(err))
 				return m, tea.Batch(cmds...)
@@ -223,18 +227,34 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 			break
 		}
 
+		m.state.View = id
 		m.log.Info("Received: LoadingTasksFromViewMsg", "id", id)
-		if err := m.reloadTasks(id); err != nil {
+		if err := m.widgetTasks.ReloadTasks(id); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
 			return m, tea.Batch(cmds...)
 		}
 
 	case tasks.LostFocusMsg:
 		m.log.Info("Received: tasks.LostFocusMsg")
-		m.state = navigator.WidgetId
+		m.state.Widget = navigator.WidgetId
 		m.widgetTasks = m.widgetTasks.SetFocused(false)
 		m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 		m.widgetNavigator = m.widgetNavigator.SetFocused(true)
+
+	case common.RefreshMsg:
+		m.log.Info("Received: common.RefreshMsg")
+		if m.state.View == "" {
+			if err := m.widgetTasks.SetTasks(nil); err != nil {
+				cmds = append(cmds, common.ErrCmd(err))
+				return m, tea.Batch(cmds...)
+			}
+
+			break
+		}
+		if err := m.widgetTasks.ReloadTasks(m.state.View); err != nil {
+			cmds = append(cmds, common.ErrCmd(err))
+			return m, tea.Batch(cmds...)
+		}
 	}
 
 	m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
@@ -311,7 +331,9 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) common.View {
 		widgetViewsTabs: widgetViewsTabs,
 		widgetNavigator: widgetNavigator,
 		widgetTasks:     widgetTasks,
-		state:           widgetNavigator.WidgetId,
+		state: State{
+			Widget: widgetNavigator.WidgetId,
+		},
 	}
 }
 
@@ -328,15 +350,6 @@ func viewsToTabs(views []clickup.View) []viewstabs.Tab {
 	}
 
 	return tabs
-}
-
-func (m *Model) reloadTasks(viewId string) error {
-	tasks, err := m.ctx.Api.GetTasksFromView(viewId)
-	if err != nil {
-		return err
-	}
-
-	return m.widgetTasks.SetTasks(tasks)
 }
 
 func (m *Model) handleWorkspaceChangePreview(id string) tea.Cmd {

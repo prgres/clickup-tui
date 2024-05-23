@@ -289,6 +289,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 		cmds = append(cmds, cmd)
+
+	case spinner.TickMsg:
+		if m.showSpinner {
+			m.spinner, cmd = m.spinner.Update(msg)
+			cmds = append(cmds, cmd)
+		}
 	}
 
 	m.componenetTasksTable, cmd = m.componenetTasksTable.Update(msg)
@@ -452,6 +458,25 @@ func (m Model) SetFocused(f bool) Model {
 
 func (m *Model) SetSize(s common.Size) {
 	m.size = s
+}
+
+func (m *Model) ReloadTasks(viewId string) error {
+	tasks, err := m.ctx.Api.GetTasksFromView(viewId)
+	if err != nil {
+		return err
+	}
+
+	m.showSpinner = false
+	m.componenetTasksTable.SetTasks(tasks)
+
+	if len(tasks) == 0 {
+		m.componenetTasksSidebar.SetHidden(true)
+		return nil
+	}
+
+	id := m.componenetTasksSidebar.SelectedTask.Id
+
+	return m.componenetTasksSidebar.SetTask(id)
 }
 
 func (m *Model) Init() error {

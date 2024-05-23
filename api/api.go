@@ -2,6 +2,7 @@ package api
 
 import (
 	"log/slog"
+	"time"
 
 	"github.com/charmbracelet/log"
 
@@ -11,19 +12,28 @@ import (
 
 const (
 	// Cache namespace
-	CacheNamespaceTeams   = "teams"
-	CacheNamespaceSpaces  = "spaces"
-	CacheNamespaceFolders = "folders"
-	CacheNamespaceLists   = "lists"
-	CacheNamespaceViews   = "views"
-	CacheNamespaceTasks   = "tasks"
-	CacheNamespaceTask    = "task"
+	CacheNamespaceTeams     cache.Namespace = "teams"
+	CacheNamespaceSpaces    cache.Namespace = "spaces"
+	CacheNamespaceFolders   cache.Namespace = "folders"
+	CacheNamespaceLists     cache.Namespace = "lists"
+	CacheNamespaceViews     cache.Namespace = "views"
+	CacheNamespaceTask      cache.Namespace = "tasks"
+	CacheNamespaceTasksList cache.Namespace = "tasks-list"
+	CacheNamespaceTasksView cache.Namespace = "tasks-view"
+)
+
+const (
+	TTL                      = 10
+	GarbageCollectorInterval = 5
 )
 
 type Api struct {
 	Clickup *clickup.Client
 	Cache   *cache.Cache
 	logger  *log.Logger
+
+	gcCloseChan chan struct{}
+	interval    time.Duration
 }
 
 func NewApi(logger *log.Logger, cache *cache.Cache, token string) Api {
@@ -35,16 +45,38 @@ func NewApi(logger *log.Logger, cache *cache.Cache, token string) Api {
 		slog.New(log.WithPrefix(log.GetPrefix()+"/ClickUp")),
 	)
 
-	return Api{
-		Clickup: clickup,
-		logger:  log,
-		Cache:   cache,
+	api := Api{
+		Clickup:     clickup,
+		logger:      log,
+		Cache:       cache,
+		gcCloseChan: make(chan struct{}),
+		interval:    GarbageCollectorInterval * time.Second,
+	}
+
+	go api.garbageCollector()
+	return api
+}
+
+func (m *Api) garbageCollector() {
+	ticker := time.NewTicker(m.interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			m.logger.Debug("Garbage Collector: starting")
+			// now := time.Now().Unix()
+			if err := m.InvalidateCache(); err != nil {
+				panic(err)
+			}
+		case <-m.gcCloseChan:
+			return
+		}
 	}
 }
 
 func (m *Api) GetSpaces(teamId string) ([]clickup.Space, error) {
-	m.logger.Debug("Getting spaces for a team",
-		"teamId", teamId)
+	m.logger.Debug("Getting spaces for a team", "teamId", teamId)
 
 	cacheNamespace := CacheNamespaceSpaces
 
@@ -70,6 +102,25 @@ func (m *Api) GetSpaces(teamId string) ([]clickup.Space, error) {
 	m.Cache.Set(cacheNamespace, teamId, spaces)
 
 	return spaces, nil
+}
+
+func (m *Api) syncSpaces(entry cache.Entry) error {
+	m.logger.Debug("Sync spaces for a team", "teamId", entry.Key)
+
+	client := m.Clickup
+
+	m.logger.Debugf("Fetching spaces from API")
+	data, err := client.GetSpaces(entry.Key)
+	if err != nil {
+		return err
+	}
+	m.logger.Debugf("Found %d spaces for team: %s", len(data), entry.Key)
+
+	entry.UpdatedTimestamp = time.Now().Unix()
+	entry.Value = data
+	m.Cache.Update(entry)
+
+	return nil
 }
 
 // Alias for GetTeams since they are the same thing
@@ -105,6 +156,25 @@ func (m *Api) GetTeams() ([]clickup.Team, error) {
 	return teams, nil
 }
 
+func (m *Api) syncTeams(entry cache.Entry) error {
+	m.logger.Debug("Sync Authorized Teams (Workspaces)")
+
+	client := m.Clickup
+
+	m.logger.Debugf("Fetching teams from API")
+	data, err := client.GetTeams()
+	if err != nil {
+		return err
+	}
+	m.logger.Debugf("Found %d teams", len(data))
+
+	entry.UpdatedTimestamp = time.Now().Unix()
+	entry.Value = data
+	m.Cache.Update(entry)
+
+	return nil
+}
+
 func (m *Api) GetFolders(spaceId string) ([]clickup.Folder, error) {
 	m.logger.Debug("Getting folders for a space",
 		"space", spaceId)
@@ -132,6 +202,26 @@ func (m *Api) GetFolders(spaceId string) ([]clickup.Folder, error) {
 	m.Cache.Set(cacheNamespace, spaceId, folders)
 
 	return folders, nil
+}
+
+func (m *Api) syncFolders(entry cache.Entry) error {
+	spaceId := entry.Key
+	m.logger.Debug("Sync folders for a space", "space", spaceId)
+
+	client := m.Clickup
+
+	m.logger.Debugf("Fetching folders from API")
+	data, err := client.GetFolders(spaceId)
+	if err != nil {
+		return err
+	}
+	m.logger.Debugf("Found %d folders for space: %s", len(data), spaceId)
+
+	entry.UpdatedTimestamp = time.Now().Unix()
+	entry.Value = data
+	m.Cache.Update(entry)
+
+	return nil
 }
 
 func (m *Api) GetLists(folderId string) ([]clickup.List, error) {
@@ -163,6 +253,26 @@ func (m *Api) GetLists(folderId string) ([]clickup.List, error) {
 	return lists, nil
 }
 
+func (m *Api) syncLists(entry cache.Entry) error {
+	folderId := entry.Key
+	m.logger.Debug("Getting lists for a folder", "folderId", folderId)
+
+	client := m.Clickup
+
+	m.logger.Debugf("Fetching lists from API")
+	data, err := client.GetListsFromFolder(folderId)
+	if err != nil {
+		return err
+	}
+	m.logger.Debugf("Found %d lists for folder: %s", len(data), folderId)
+
+	entry.UpdatedTimestamp = time.Now().Unix()
+	entry.Value = data
+	m.Cache.Update(entry)
+
+	return nil
+}
+
 func (m *Api) GetTask(taskId string) (clickup.Task, error) {
 	m.logger.Debug("Getting a task",
 		"taskId", taskId)
@@ -192,11 +302,31 @@ func (m *Api) GetTask(taskId string) (clickup.Task, error) {
 	return task, nil
 }
 
+func (m *Api) syncTask(entry cache.Entry) error {
+	taskId := entry.Key
+	m.logger.Debug("Sync a task", "taskId", taskId)
+
+	client := m.Clickup
+
+	m.logger.Debug("Fetching task from API")
+	data, err := client.GetTask(taskId)
+	if err != nil {
+		return err
+	}
+	m.logger.Debug("Found task", "task", taskId)
+
+	entry.UpdatedTimestamp = time.Now().Unix()
+	entry.Value = data
+	m.Cache.Update(entry)
+
+	return nil
+}
+
 func (m *Api) GetTasksFromList(listId string) ([]clickup.Task, error) {
 	m.logger.Debug("Getting tasks for a list",
 		"listId", listId)
 
-	cacheNamespace := CacheNamespaceTasks
+	cacheNamespace := CacheNamespaceTasksList
 	data, ok := m.Cache.Get(cacheNamespace, listId)
 	if ok {
 		var tasks []clickup.Task
@@ -225,7 +355,7 @@ func (m *Api) GetTasksFromView(viewId string) ([]clickup.Task, error) {
 	m.logger.Debug("Getting tasks for a view",
 		"viewId", viewId)
 
-	cacheNamespace := CacheNamespaceTasks
+	cacheNamespace := CacheNamespaceTasksView
 	data, ok := m.Cache.Get(cacheNamespace, viewId)
 	if ok {
 		var tasks []clickup.Task
@@ -248,6 +378,26 @@ func (m *Api) GetTasksFromView(viewId string) ([]clickup.Task, error) {
 	m.Cache.Set(cacheNamespace, viewId, tasks)
 
 	return tasks, nil
+}
+
+func (m *Api) syncTasksFromView(entry cache.Entry) error {
+	viewId := entry.Key
+	m.logger.Debug("Sync tasks for a view", "viewId", viewId)
+
+	client := m.Clickup
+
+	m.logger.Debug("Fetching tasks from API")
+	data, err := client.GetTasksFromView(viewId)
+	if err != nil {
+		return err
+	}
+	m.logger.Debugf("Found %d tasks in view %s", len(data), viewId)
+
+	entry.UpdatedTimestamp = time.Now().Unix()
+	entry.Value = data
+	m.Cache.Update(entry)
+
+	return nil
 }
 
 func (m *Api) GetViewsFromFolder(folderId string) ([]clickup.View, error) {
@@ -391,7 +541,7 @@ func (m *Api) GetViewsFromWorkspace(workspaceId string) ([]clickup.View, error) 
 }
 
 //nolint:unused
-func (m *Api) getFromCache(namespace string, key string, v interface{}) (bool, error) {
+func (m *Api) getFromCache(namespace cache.Namespace, key string, v interface{}) (bool, error) {
 	data, ok := m.Cache.Get(namespace, key)
 	if !ok {
 		return false, nil
@@ -410,59 +560,53 @@ func (m *Api) InvalidateCache() error {
 	entries := m.Cache.GetEntries()
 	m.logger.Debug("Found cache entries", "count", len(entries))
 
-	if err := m.Cache.Invalidate(); err != nil {
-		m.logger.Error("Failed to invalidate cache", "error", err)
-		return err
-	}
+	// if err := m.Cache.Invalidate(); err != nil {
+	// 	m.logger.Error("Failed to invalidate cache", "error", err)
+	// 	return err
+	// }
 
+	now := time.Now().Unix()
 	for _, entry := range entries {
+		if entry.UpdatedTimestamp+TTL > now {
+			continue
+		}
+
+		var err error
+
+		m.logger.Debug("Invalidating cache", "namespace", entry.Namespace)
 		switch entry.Namespace {
 		case CacheNamespaceTeams:
-			m.logger.Debug("Invalidating teams cache")
-			_, err := m.GetTeams()
-			if err != nil {
-				m.logger.Error("Failed to invalidate teams cache", "error", err)
-			}
+			err = m.syncTeams(entry)
 		case CacheNamespaceSpaces:
-			m.logger.Debug("Invalidating spaces cache")
-			_, err := m.GetSpaces(entry.Key)
-			if err != nil {
-				m.logger.Error("Failed to invalidate spaces cache", "error", err)
-			}
+			err = m.syncSpaces(entry)
 		case CacheNamespaceFolders:
-			m.logger.Debug("Invalidating folders cache")
-			_, err := m.GetFolders(entry.Key)
-			if err != nil {
-				m.logger.Error("Failed to invalidate folders cache", "error", err)
-			}
+			err = m.syncFolders(entry)
 		case CacheNamespaceLists:
-			m.logger.Debug("Invalidating lists cache")
-			_, err := m.GetLists(entry.Key)
-			if err != nil {
-				m.logger.Error("Failed to invalidate lists cache", "error", err)
-			}
-		case CacheNamespaceViews:
-			m.logger.Debug("Invalidating views cache")
-			_, err := m.GetViewsFromSpace(entry.Key)
-			if err != nil {
-				m.logger.Error("Failed to invalidate views cache", "error", err)
-			}
-		case CacheNamespaceTasks:
-			m.logger.Debug("Invalidating tasks cache")
-			_, err := m.GetTasksFromList(entry.Key)
-			if err != nil {
-				m.logger.Error("Failed to invalidate tasks cache", "error", err)
-			}
+			err = m.syncLists(entry)
+
+		// TODO:
+		// case CacheNamespaceViews:
+		// 	m.logger.Debug("Invalidating views cache")
+		// 	_, err := m.GetViewsFromSpace(entry.Key)
+		// 	if err != nil {
+		// 		m.logger.Error("Failed to invalidate views cache", "error", err)
+		// 	}
+		// case CacheNamespaceTasksList:
+		// 	m.logger.Debug("Invalidating tasks cache")
+		// 	_, err := m.GetTasksFromList(entry.Key)
+		// 	if err != nil {
+		// 		m.logger.Error("Failed to invalidate tasks cache", "error", err)
+		// 	}
+		case CacheNamespaceTasksView:
+			err = m.syncTasksFromView(entry)
 		case CacheNamespaceTask:
-			m.logger.Debug("Invalidating task cache")
-			_, err := m.GetTask(entry.Key)
-			if err != nil {
-				m.logger.Error("Failed to invalidate task cache", "error", err)
-			}
-		default:
-			m.logger.Debug("Invalidating cache",
-				"namespace", entry.Namespace, "key", entry.Key)
+			err = m.syncTask(entry)
+		}
+
+		if err != nil {
+			m.logger.Error("Failed to invalidate task cache", "error", err)
 		}
 	}
+
 	return nil
 }
