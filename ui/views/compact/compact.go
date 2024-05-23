@@ -145,7 +145,6 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		m.showSpinner = false
 
 	case spinner.TickMsg:
-		// m.log.Info("Received: spinner.TickMsg")
 		if m.showSpinner {
 			m.spinner, cmd = m.spinner.Update(msg)
 			cmds = append(cmds, cmd)

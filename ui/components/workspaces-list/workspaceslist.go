@@ -122,12 +122,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.SelectedWorkspace = selectedWorkspace
 			return m, common.WorkspacePreviewCmd(selectedWorkspace)
 		}
-
-		// switch {
-		// case key.Matches(msg, m.list.KeyMap.CursorDown):
-		// 	m.list.CursorUp()
-		// 	return m, nil
-		// }
 	}
 
 	m.list, cmd = m.list.Update(msg)
@@ -136,27 +130,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-// func (m Model) View() string {
 func (m Model) View() string {
 	return m.list.View()
 }
-
-// 	bColor := lipgloss.Color("#FFF")
-// 	if m.Focused {
-// 		bColor = lipgloss.Color("#8909FF")
-// 	}
-//
-// 	return lipgloss.NewStyle().
-// 		BorderStyle(lipgloss.RoundedBorder()).
-// 		BorderForeground(bColor).
-// 		BorderBottom(m.ifBorders).
-// 		BorderRight(m.ifBorders).
-// 		BorderTop(m.ifBorders).
-// 		BorderLeft(m.ifBorders).
-// 		Render(
-// 			m.list.View(),
-// 		)
-// }
 
 func (m Model) Init() tea.Cmd {
 	m.log.Infof("Initializing...")

@@ -194,67 +194,6 @@ func (m Model) View() string {
 	)
 }
 
-// func (m Model) View() string {
-// 	bColor := lipgloss.Color("#FFF")
-// 	if m.Focused {
-// 		bColor = lipgloss.Color("#8909FF")
-// 	}
-//
-// 	borderMargin := 0
-// 	if m.ifBorders {
-// 		borderMargin = 2
-// 	}
-//
-// 	style := lipgloss.NewStyle().
-// 		BorderStyle(lipgloss.RoundedBorder()).
-// 		BorderForeground(bColor).
-// 		BorderBottom(m.ifBorders).
-// 		BorderRight(m.ifBorders).
-// 		BorderTop(m.ifBorders).
-// 		BorderLeft(m.ifBorders).
-// 		Height(1).
-// 		MaxHeight(1 + borderMargin).
-// 		Width(m.size.Width - borderMargin).
-// 		MaxWidth(m.size.Width + borderMargin)
-//
-// 	s := new(strings.Builder)
-// 	s.WriteString(" Views |")
-//
-// 	if len(m.tabs) == 0 {
-// 		s.WriteString(" ")
-// 		return style.Render(s.String())
-// 	}
-// 	m.log.Debugf("Rendering %d tabs", len(m.tabs))
-//
-// 	moreTabsIcon := " + "
-// 	for i, tab := range m.tabs {
-// 		m.log.Debugf("Rendering tab: %s %s", tab.Name, tab.Id)
-// 		// m.EndIdx = i
-//
-// 		t := ""
-// 		tabContent := " " + tab.Name + " "
-// 		if m.SelectedTab == tab.Id {
-// 			t = activeTabStyle.Render(tabContent)
-// 		} else {
-// 			t = inactiveTabStyle.Render(tabContent)
-// 		}
-//
-// 		content := " " + t + " "
-//
-// 		if lipgloss.Width(s.String()+content+moreTabsIcon) >= m.size.Width-borderMargin {
-// 			s.WriteString(moreTabsIcon)
-// 			break
-// 		}
-// 		s.WriteString(content)
-//
-// 		if i != len(m.tabs)-1 {
-// 			s.WriteString("|")
-// 		}
-// 	}
-//
-// 	return style.Render(s.String())
-// }
-
 func (m Model) Init() tea.Cmd {
 	m.log.Info("Initializing...")
 	return nil
