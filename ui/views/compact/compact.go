@@ -309,13 +309,10 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) common.View {
 func viewsToTabs(views []clickup.View) []viewstabs.Tab {
 	tabs := make([]viewstabs.Tab, len(views))
 	for i, view := range views {
-		tabView := viewstabs.Tab{
+		tabs[i] = viewstabs.Tab{
 			Name: view.Name,
-			Type: "view",
 			Id:   view.Id,
-			// Active: false,
 		}
-		tabs[i] = tabView
 	}
 
 	return tabs

@@ -15,10 +15,8 @@ import (
 const WidgetId = "widgetTasksTabs"
 
 type Tab struct {
-	Name   string
-	Type   string
-	Id     string
-	Active bool
+	Name string
+	Id   string
 }
 
 type Model struct {
