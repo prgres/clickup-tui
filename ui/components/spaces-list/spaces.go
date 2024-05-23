@@ -14,13 +14,12 @@ import (
 const ComponentId = "spacesList"
 
 type Model struct {
-	list              list.Model
-	ctx               *context.UserContext
-	log               *log.Logger
-	ComponentId       common.ComponentId
-	SelectedSpace     string
-	SelectedWorkspace string
-	spaces            []clickup.Space
+	list          list.Model
+	ctx           *context.UserContext
+	log           *log.Logger
+	ComponentId   common.ComponentId
+	SelectedSpace string
+	spaces        []clickup.Space
 }
 
 func (m Model) KeyMap() help.KeyMap {
@@ -132,7 +131,6 @@ func (m *Model) SetSize(s common.Size) {
 
 func (m *Model) WorkspaceChanged(id string) error {
 	m.log.Infof("Received: WorkspaceChangeMsg: %s", id)
-	m.SelectedWorkspace = id
 
 	spaces, err := m.ctx.Api.GetSpaces(id)
 	if err != nil {
