@@ -248,6 +248,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			case m.componenetTasksTable.ComponentId:
 				m.componenetTasksSidebar.SetFocused(false)
 				m.componenetTasksTable.SetFocused(false)
+
+				cmds = append(cmds, LostFocusCmd())
 			}
 
 			m.componenetTasksSidebar, cmd = m.componenetTasksSidebar.Update(msg)
@@ -255,7 +257,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.componenetTasksTable, cmd = m.componenetTasksTable.Update(msg)
 			cmds = append(cmds, cmd)
 
-			cmds = append(cmds, LostFocusCmd())
 			return m, tea.Batch(cmds...)
 		}
 
