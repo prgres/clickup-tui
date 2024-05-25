@@ -18,8 +18,7 @@ type Model struct {
 	ctx            *context.UserContext
 	log            *log.Logger
 	ComponentId    common.ComponentId
-	SelectedSpace  string
-	SelectedFolder string
+	SelectedFolder clickup.Folder
 	folders        []clickup.Folder
 }
 
@@ -44,8 +43,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		ComponentId:    ComponentId,
 		list:           l,
 		ctx:            ctx,
-		SelectedFolder: "",
-		SelectedSpace:  ctx.Config.DefaultSpace,
+		SelectedFolder: clickup.Folder{},
 		folders:        []clickup.Folder{},
 		log:            log,
 	}
@@ -55,18 +53,18 @@ func (m *Model) syncList(folders []clickup.Folder) {
 	m.log.Info("Synchronizing list")
 	m.folders = folders
 
-	sre_index := 0
-	items := folderListToItems(folders)
-	itemsList := listitem.ItemListToBubblesItems(items)
+	items := NewListItem(folders)
 
-	for i, item := range items {
-		if item.Description() == m.ctx.Config.DefaultFolder {
-			sre_index = i
+	for _, item := range items {
+		i := item.(listitem.Item)
+		if i.Title() == m.ctx.Config.DefaultFolder {
+			m.SelectedFolder = i.Data().(clickup.Folder)
 		}
 	}
 
-	m.list.SetItems(itemsList)
-	m.list.Select(sre_index)
+	m.list.SetItems(items)
+	m.list.Select(0)
+	m.log.Info("List synchronized")
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -81,10 +79,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.log.Info("List is empty")
 				break
 			}
-			selectedFolder := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.log.Infof("Selected folder %s", selectedFolder)
+			selectedFolder := m.list.SelectedItem().(listitem.Item).Data().(clickup.Folder)
+			m.log.Info("Selected folder", "id", selectedFolder.Id, "name", selectedFolder.Name)
 			m.SelectedFolder = selectedFolder
-			return m, FolderChangeCmd(selectedFolder)
+			return m, FolderChangeCmd(selectedFolder.Id)
 
 		case "J", "shift+down":
 			m.list.CursorDown()
@@ -92,10 +90,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.log.Info("List is empty")
 				break
 			}
-			selectedFolder := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.log.Infof("Selected folder %s", selectedFolder)
+			selectedFolder := m.list.SelectedItem().(listitem.Item).Data().(clickup.Folder)
+			m.log.Info("Selected folder", "id", selectedFolder.Id, "name", selectedFolder.Name)
 			m.SelectedFolder = selectedFolder
-			return m, common.FolderPreviewCmd(selectedFolder)
+			return m, common.FolderPreviewCmd(selectedFolder.Id)
 
 		case "K", "shift+up":
 			m.list.CursorUp()
@@ -103,10 +101,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.log.Info("List is empty")
 				break
 			}
-			selectedFolder := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.log.Infof("Selected folder %s", selectedFolder)
+			selectedFolder := m.list.SelectedItem().(listitem.Item).Data().(clickup.Folder)
+			m.log.Info("Selected folder", "id", selectedFolder.Id, "name", selectedFolder.Name)
 			m.SelectedFolder = selectedFolder
-			return m, common.FolderPreviewCmd(selectedFolder)
+			return m, common.FolderPreviewCmd(selectedFolder.Id)
 		}
 	}
 
@@ -131,7 +129,6 @@ func (m *Model) SetSize(s common.Size) {
 
 func (m *Model) SpaceChanged(id string) error {
 	m.log.Infof("Received: SpaceChangedMsg: %s", id)
-	m.SelectedSpace = id
 
 	folders, err := m.ctx.Api.GetFolders(id)
 	if err != nil {
@@ -140,4 +137,12 @@ func (m *Model) SpaceChanged(id string) error {
 
 	m.syncList(folders)
 	return nil
+}
+
+func NewListItem(items []clickup.Folder) []list.Item {
+	result := make([]list.Item, len(items))
+	for i, v := range items {
+		result[i] = listitem.NewItem(v.Name, v.Id, v)
+	}
+	return result
 }

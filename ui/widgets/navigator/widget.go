@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	folderslist "github.com/prgrs/clickup/ui/components/folders-list"
 	listslist "github.com/prgrs/clickup/ui/components/lists-list"
@@ -36,6 +37,11 @@ type Model struct {
 	componentSpacesList     spaceslist.Model
 	componentFoldersList    folderslist.Model
 	componentListsList      listslist.Model
+}
+
+// TODO: refactor
+func (m *Model) SetWorksapce(workspace clickup.Workspace) {
+	m.componentWorkspacesList.SelectedWorkspace = workspace
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
@@ -125,8 +131,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case listslist.ComponentId:
 			m.componentListsList, cmd = m.componentListsList.Update(msg)
 		}
-		cmds = append(cmds, cmd)
 
+		cmds = append(cmds, cmd)
 		return m, tea.Batch(cmds...)
 
 	case common.WorkspaceChangeMsg:
@@ -281,7 +287,7 @@ func (m *Model) SetSize(s common.Size) {
 	m.size = s
 }
 
-func (m Model) GetWorkspace() string {
+func (m Model) GetWorkspace() clickup.Workspace {
 	return m.componentWorkspacesList.SelectedWorkspace
 }
 
