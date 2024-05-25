@@ -1,7 +1,5 @@
 package clickup
 
-import "encoding/json"
-
 type Folder struct {
 	Id               string        `json:"id"`
 	Name             string        `json:"name"`
@@ -21,17 +19,20 @@ type FolderSpace struct {
 
 type RequestGetFolders struct {
 	Folders []Folder `json:"folders"`
+	Err     string   `json:"err"`
+}
+
+func (r RequestGetFolders) Error() string {
+	return r.Err
 }
 
 func (c *Client) GetFolders(spaceId string) ([]Folder, error) {
-	rawData, err := c.requestGet("/space/" + spaceId + "/folder")
-	if err != nil {
-		return nil, err
-	}
+	return c.getFolders("/space/" + spaceId + "/folder")
+}
 
+func (c *Client) getFolders(url string) ([]Folder, error) {
 	var objmap RequestGetFolders
-
-	if err := json.Unmarshal(rawData, &objmap); err != nil {
+	if err := c.get(url, &objmap); err != nil {
 		return nil, err
 	}
 

@@ -2,7 +2,6 @@ package clickup
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 type ListFolder struct {
@@ -36,33 +35,33 @@ type List struct {
 }
 
 type RequestGetLists struct {
-	Err   string `json:"err"`
 	Lists []List `json:"lists"`
+	Err   string `json:"err"`
+}
+
+func (r RequestGetLists) Error() string {
+	return r.Err
 }
 
 func (c *Client) GetListsFromFolder(folderId string) ([]List, error) {
-	rawData, err := c.requestGet("/folder/" + folderId + "/list")
-	if err != nil {
-		return nil, err
-	}
+	return c.getLists("/folder/" + folderId + "/list")
+}
+
+func (c *Client) getLists(url string) ([]List, error) {
 	var objmap RequestGetLists
-
-	if err := json.Unmarshal(rawData, &objmap); err != nil {
+	if err := c.get(url, &objmap); err != nil {
 		return nil, err
 	}
-
-	if objmap.Err != "" {
-		return nil, fmt.Errorf(
-			"error occurs while getting lists from folders: %s. API response: %s",
-			folderId, string(rawData))
-	}
-
 	return objmap.Lists, nil
 }
 
 type RequestGetList struct {
-	Err  string `json:"err"`
 	List List   `json:"list"`
+	Err  string `json:"err"`
+}
+
+func (r RequestGetList) Error() string {
+	return r.Err
 }
 
 func (c *Client) GetList(listId string) (List, error) {

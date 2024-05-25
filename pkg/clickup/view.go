@@ -1,13 +1,24 @@
 package clickup
 
-import (
-	"encoding/json"
-	"fmt"
+type ViewType string
+
+const (
+	ViewTypeCalendar     ViewType = "calendar"
+	ViewTypeGantt        ViewType = "gantt"
+	ViewTypeTable        ViewType = "table"
+	ViewTypeList         ViewType = "list"
+	ViewTypeDoc          ViewType = "doc"
+	ViewTypeBoard        ViewType = "board"
+	ViewTypeTimeline     ViewType = "Timeline"
+	ViewTypeWorkload     ViewType = "workload"
+	ViewTypeActivity     ViewType = "activity"
+	ViewTypeMap          ViewType = "map"
+	ViewTypeConversation ViewType = "conversation"
 )
 
 type View struct {
 	Name          string          `json:"name"`
-	Type          string          `json:"type"`
+	Type          ViewType        `json:"type"`
 	DateProtected string          `json:"date_protected"`
 	Id            string          `json:"id"`
 	ProtectedBy   ViewProtectedBy `json:"protected_by"`
@@ -108,8 +119,12 @@ type ViewSettings struct {
 
 type RequestGetViews struct {
 	Views         []View        `json:"views"`
-	Err           string        `json:"err"`
 	RequiredViews RequiredViews `json:"required_views"`
+	Err           string        `json:"err"`
+}
+
+func (r RequestGetViews) Error() string {
+	return r.Err
 }
 
 type RequiredViews struct {
@@ -119,191 +134,50 @@ type RequiredViews struct {
 	Calendar View `json:"calendar"`
 }
 
-func (r RequiredViews) GetViews() []View {
+func (r RequiredViews) GetNonEmptyViews() []View {
 	views := []View{}
 	if r.List.Id != "" {
 		views = append(views, r.List)
 	}
 
-	// if r.Board.Id != "" {
-	// 	views = append(views, r.Board)
-	// }
+	if r.Board.Id != "" {
+		views = append(views, r.Board)
+	}
 
-	// if r.Box.Id != "" {
-	// 	views = append(views, r.Box)
-	// }
+	if r.Box.Id != "" {
+		views = append(views, r.Box)
+	}
 
-	// if r.Calendar.Id != "" {
-	// 	views = append(views, r.Calendar)
-	// }
+	if r.Calendar.Id != "" {
+		views = append(views, r.Calendar)
+	}
 
 	return views // []View{r.List, r.Board, r.Box, r.Calendar}
 }
 
-func filterListViews(views []View) []View {
-	filteredViews := []View{}
-	for _, view := range views {
-		if view.Type == "list" {
-			filteredViews = append(filteredViews, view)
-		}
-	}
-	return filteredViews
-}
-
 func (c *Client) GetViewsFromWorkspace(workspaceId string) ([]View, error) {
-	errMsg := "Error occurs while getting views from workspace: %s. Error: %s. Raw data: %s"
-
-	errApiMsg := errMsg + " API response: %s"
-
-	rawData, err := c.requestGet("/team/" + workspaceId + "/view")
-	if err != nil {
-		return nil, fmt.Errorf(errMsg, workspaceId, err, "none")
-	}
-
-	var objmap RequestGetViews
-	if err := json.Unmarshal(rawData, &objmap); err != nil {
-		return nil, fmt.Errorf(
-			errApiMsg, workspaceId, err, string(rawData))
-	}
-
-	if objmap.Err != "" {
-		return nil, fmt.Errorf(
-			errApiMsg, workspaceId, objmap.Err, string(rawData))
-	}
-
-	allViews := append(objmap.Views, objmap.RequiredViews.GetViews()...)
-	for _, v := range allViews {
-		if v.Id == "" || v.Name == "" {
-			return nil, fmt.Errorf(
-				"View id or name is empty, API response: %s", string(rawData))
-		}
-	}
-
-	if len(allViews) == 0 {
-		c.logger.Error("No views found in workspace",
-			"workspace", workspaceId)
-		return []View{}, nil
-	}
-
-	return allViews, nil
+	return c.getViews("/team/" + workspaceId + "/view")
 }
 
 func (c *Client) GetViewsFromSpace(spaceId string) ([]View, error) {
-	errMsg := "Error occurs while getting views from space: %s. Error: %s. Raw data: %s"
-
-	errApiMsg := errMsg + " API response: %s"
-
-	rawData, err := c.requestGet("/space/" + spaceId + "/view")
-	if err != nil {
-		return nil, fmt.Errorf(errMsg, spaceId, err, "none")
-	}
-
-	var objmap RequestGetViews
-	if err := json.Unmarshal(rawData, &objmap); err != nil {
-		return nil, fmt.Errorf(
-			errApiMsg, spaceId, err, string(rawData))
-	}
-
-	if objmap.Err != "" {
-		return nil, fmt.Errorf(
-			errMsg, spaceId, "API response contains error.", string(rawData))
-	}
-
-	allViews := append(objmap.Views, objmap.RequiredViews.GetViews()...)
-	// TODO: find out why it was needed
-	for _, v := range allViews {
-		if v.Id == "" || v.Name == "" {
-			return nil, fmt.Errorf(
-				"View id or name is empty, API response: %s", string(rawData))
-		}
-	}
-
-	if len(allViews) == 0 {
-		c.logger.Error("No views found in space",
-			"space", spaceId)
-		return []View{}, nil
-	}
-
-	// filteredViews := filterListViews(allViews)
-
-	return objmap.RequiredViews.GetViews(), nil
-	// return append(filteredViews, objmap.RequiredViews.GetViews()...), nil
+	return c.getViews("/space/" + spaceId + "/view")
 }
 
 func (c *Client) GetViewsFromFolder(folderId string) ([]View, error) {
-	errMsg := "Error occurs while getting views from folder: %s. Error: %s"
-	errApiMsg := errMsg + " API response: %s"
-
-	rawData, err := c.requestGet("/folder/" + folderId + "/view")
-	if err != nil {
-		return nil, fmt.Errorf(errMsg,
-			folderId, err)
-	}
-
-	var objmap RequestGetViews
-	if err := json.Unmarshal(rawData, &objmap); err != nil {
-		return nil, fmt.Errorf(errApiMsg,
-			folderId, err, string(rawData))
-	}
-
-	if objmap.Err != "" {
-		return nil, fmt.Errorf(errApiMsg,
-			folderId, objmap.Err, string(rawData))
-	}
-
-	allViews := append(objmap.Views, objmap.RequiredViews.GetViews()...)
-	for _, v := range allViews {
-		if v.Id == "" || v.Name == "" {
-			return nil, fmt.Errorf(errApiMsg,
-				folderId, "View id or name is empty", string(rawData))
-		}
-	}
-
-	if len(allViews) == 0 {
-		return []View{}, fmt.Errorf(errMsg,
-			folderId, "No views found in folder")
-	}
-
-	filteredViews := filterListViews(allViews)
-
-	return append(filteredViews, objmap.RequiredViews.GetViews()...), nil
+	return c.getViews("/folder/" + folderId + "/view")
 }
 
 func (c *Client) GetViewsFromList(listId string) ([]View, error) {
-	errMsg := "Error occurs while getting views from list: %s. Error: %s"
-	errApiMsg := errMsg + " API response: %s"
+	return c.getViews("/list/" + listId + "/view")
+}
 
-	rawData, err := c.requestGet("/list/" + listId + "/view")
-	if err != nil {
-		return nil, fmt.Errorf(errMsg,
-			listId, err)
-	}
-
+func (c *Client) getViews(url string) ([]View, error) {
 	var objmap RequestGetViews
-	if err := json.Unmarshal(rawData, &objmap); err != nil {
-		return nil, fmt.Errorf(errApiMsg,
-			listId, err, string(rawData))
+	if err := c.get(url, &objmap); err != nil {
+		return nil, err
 	}
 
-	if objmap.Err != "" {
-		return nil, fmt.Errorf(errApiMsg,
-			listId, objmap.Err, string(rawData))
-	}
-
-	allViews := append(objmap.Views, objmap.RequiredViews.GetViews()...)
-	for _, v := range allViews {
-		if v.Id == "" || v.Name == "" {
-			return nil, fmt.Errorf(errApiMsg,
-				listId, "View id or name is empty", string(rawData))
-		}
-	}
-
-	if len(allViews) == 0 {
-		return []View{}, nil
-	}
-
-	// filteredViews := filterListViews(allViews)
-
-	return allViews, nil
-	// return append(filteredViews, objmap.RequiredViews.GetViews()...), nil //TODO: find out why it was needed
+	return append(objmap.Views,
+		objmap.RequiredViews.GetNonEmptyViews()...,
+	), nil
 }
