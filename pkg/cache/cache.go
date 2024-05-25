@@ -16,16 +16,25 @@ import (
 var ErrKeyNotFoundInNamespace = errors.New("key not found in namespace")
 
 type Entry struct {
-	Key       string
-	Namespace string
+	Key       Key
+	Namespace Namespace
+	Value     interface{}
 }
 
-type Data map[string]interface{}
+type Data map[Key]Entry
+
+type Namespace string
+
+type Key string
+
+func (k Key) String() string {
+	return string(k)
+}
 
 type Cache struct {
 	logger *slog.Logger
 
-	data  map[string]Data
+	data  map[Namespace]Data
 	path  string
 	mutex sync.RWMutex
 }
@@ -33,7 +42,7 @@ type Cache struct {
 func NewCache(logger *slog.Logger, path string) *Cache {
 	return &Cache{
 		path:   path,
-		data:   map[string]Data{},
+		data:   map[Namespace]Data{},
 		logger: logger,
 	}
 }
@@ -45,23 +54,18 @@ func (c *Cache) Load() error {
 		return err
 	}
 
-	if len(namespaces) == 0 {
-		c.logger.Debug("No namespaces found in cache")
-		return nil
-	}
-
 	errgroup := new(errgroup.Group)
 	for _, namespace := range namespaces {
 		// nested function to prevent loop closure
-		func(namespace os.DirEntry) {
+		func(namespace Namespace) {
 			errgroup.Go(func() error {
-				data, err := c.loadNamespace(namespace.Name())
+				data, err := c.loadNamespace(namespace)
 				if err != nil {
 					return err
 				}
 
 				c.mutex.Lock()
-				c.data[namespace.Name()] = data
+				c.data[namespace] = data
 				c.mutex.Unlock()
 
 				return nil
@@ -72,7 +76,7 @@ func (c *Cache) Load() error {
 	return errgroup.Wait()
 }
 
-func (c *Cache) GetNamespace(namespace string) Data {
+func (c *Cache) GetNamespace(namespace Namespace) Data {
 	c.mutex.Lock()
 
 	v, ok := c.data[namespace]
@@ -85,7 +89,7 @@ func (c *Cache) GetNamespace(namespace string) Data {
 	return v
 }
 
-func (c *Cache) Get(namespace string, key string, target interface{}) error {
+func (c *Cache) Get(namespace Namespace, key Key, target interface{}) error {
 	data := c.GetNamespace(namespace)
 
 	// Check if the key exists in the cache
@@ -102,19 +106,21 @@ func (c *Cache) Get(namespace string, key string, target interface{}) error {
 		value = v
 	}
 
-	c.logger.Debug("Key found in cache",
-		"namespace", namespace, "key", key)
+	c.logger.Debug("Key found in cache", "namespace", namespace, "key", key)
 
 	return c.parseData(value, target)
 }
 
-func (c *Cache) Set(namespace string, key string, value interface{}) {
-	c.logger.Debug("Caching",
-		"namespace", namespace, "key", key)
+func (c *Cache) Set(namespace Namespace, key Key, value interface{}) {
+	c.logger.Debug("Caching", "namespace", namespace, "key", key)
 	data := c.GetNamespace(namespace)
 
 	c.mutex.Lock()
-	data[key] = value
+	data[key] = Entry{
+		Key:       key,
+		Namespace: namespace,
+		Value:     value,
+	}
 	c.mutex.Unlock()
 
 	path := fmt.Sprintf("%s/%s", c.path, namespace)
@@ -132,7 +138,7 @@ func (c *Cache) Dump() error {
 	errgroup := new(errgroup.Group)
 	for namespace, data := range c.data {
 		for key, value := range data {
-			func(namespace string, key string, value interface{}) {
+			func(namespace Namespace, key Key, value interface{}) {
 				errgroup.Go(func() error {
 					path := fmt.Sprintf("%s/%s", c.path, namespace)
 					filename := fmt.Sprintf("%s.json", key)
@@ -154,12 +160,9 @@ func (c *Cache) GetEntries() []Entry {
 	j, _ := json.Marshal(c.data)
 	c.logger.Debug(string(j))
 
-	for ns, data := range c.data {
-		for key := range data {
-			entries = append(entries, Entry{
-				Namespace: ns,
-				Key:       key,
-			})
+	for _, data := range c.data {
+		for _, entry := range data {
+			entries = append(entries, entry)
 		}
 	}
 
@@ -170,7 +173,7 @@ func (c *Cache) Invalidate() error {
 	c.logger.Debug("Invalidating all cache entries")
 
 	// Clear the in-memory cache
-	c.data = make(map[string]Data)
+	c.data = make(map[Namespace]Data)
 
 	contents, err := filepath.Glob(c.path + "/*")
 	if err != nil {
@@ -196,7 +199,7 @@ func (c *Cache) Invalidate_Deprecated() error {
 	c.logger.Debug("Invalidating all cache entries")
 
 	// Clear the in-memory cache
-	c.data = make(map[string]Data)
+	c.data = make(map[Namespace]Data)
 
 	// Remove subdirectories and nested files within the cache directory
 	subdirs, err := os.ReadDir(c.path)
@@ -240,29 +243,40 @@ func (c *Cache) Invalidate_Deprecated() error {
 	return errgroup.Wait()
 }
 
-func (c *Cache) getNamespacesFromCacheFiles() ([]os.DirEntry, error) {
-	namespaces, err := os.ReadDir(c.path)
+func (c *Cache) getNamespacesFromCacheFiles() ([]Namespace, error) {
+	rd, err := os.ReadDir(c.path)
 	if err != nil {
 		return nil, err
 	}
 
-	return filterDir(namespaces), nil
-}
+	dirs := filterDir(rd)
+	ns := make([]Namespace, len(dirs))
 
-func (c *Cache) loadKey(namespace string, key string) (interface{}, error) {
-	c.logger.Debug("Loading key", "key", namespace+"/"+key)
-
-	rawData, err := c.loadFromFile(
-		fmt.Sprintf("%s/%s/%s.json",
-			c.path, namespace, key))
-	if err != nil {
-		return nil, err
+	for i := range dirs {
+		ns[i] = Namespace(dirs[i].Name())
 	}
 
-	return rawData, nil
+	return ns, nil
 }
 
-func (c *Cache) loadNamespace(namespace string) (Data, error) {
+func (c *Cache) loadKey(namespace Namespace, key Key) (Entry, error) {
+	c.logger.Debug("Loading key", "key", fmt.Sprintf("%s/%s", namespace, key))
+
+	data, err := c.loadFromFile(
+		fmt.Sprintf("%s/%s/%s.json", c.path, namespace, key))
+	if err != nil {
+		return Entry{}, err
+	}
+
+	e := Entry{
+		Key:       key,
+		Namespace: namespace,
+		Value:     data,
+	}
+	return e, nil
+}
+
+func (c *Cache) loadNamespace(namespace Namespace) (Data, error) {
 	c.logger.Debug("Loading namespace", "namespace", namespace)
 
 	keys, err := os.ReadDir(fmt.Sprintf("%s/%s", c.path, namespace))
@@ -276,7 +290,7 @@ func (c *Cache) loadNamespace(namespace string) (Data, error) {
 			continue
 		}
 
-		keyName := strings.ReplaceAll(key.Name(), ".json", "")
+		keyName := Key(strings.ReplaceAll(key.Name(), ".json", ""))
 		keyData, err := c.loadKey(namespace, keyName)
 		if err != nil {
 			return nil, err
@@ -332,7 +346,7 @@ func (c *Cache) loadFromFile(filepath string) (interface{}, error) {
 }
 
 func (c *Cache) parseData(data interface{}, target interface{}) error {
-	j, err := json.Marshal(data)
+	j, err := json.Marshal(data.(Entry).Value)
 	if err != nil {
 		return err
 	}

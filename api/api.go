@@ -14,14 +14,13 @@ import (
 )
 
 const (
-	// Cache namespace
-	CacheNamespaceTeams   = "teams"
-	CacheNamespaceSpaces  = "spaces"
-	CacheNamespaceFolders = "folders"
-	CacheNamespaceLists   = "lists"
-	CacheNamespaceViews   = "views"
-	CacheNamespaceTasks   = "tasks"
-	CacheNamespaceTask    = "task"
+	CacheNamespaceTeams   cache.Namespace = "teams"
+	CacheNamespaceSpaces  cache.Namespace = "spaces"
+	CacheNamespaceFolders cache.Namespace = "folders"
+	CacheNamespaceLists   cache.Namespace = "lists"
+	CacheNamespaceViews   cache.Namespace = "views"
+	CacheNamespaceTasks   cache.Namespace = "tasks"
+	CacheNamespaceTask    cache.Namespace = "task"
 )
 
 type Api struct {
@@ -54,7 +53,7 @@ func (m *Api) GetSpaces(teamId string) ([]clickup.Space, error) {
 	key := teamId
 	fallback := func() (interface{}, error) { return m.Clickup.GetSpacesFromTeam(key) }
 
-	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
+	if err := m.get(cacheNamespace, cache.Key(key), &data, fallback); err != nil {
 		return nil, err
 	}
 
@@ -74,7 +73,7 @@ func (m *Api) GetTeams() ([]clickup.Team, error) {
 	key := "teams"
 	fallback := func() (interface{}, error) { return m.Clickup.GetTeams() }
 
-	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
+	if err := m.get(cacheNamespace, cache.Key(key), &data, fallback); err != nil {
 		return nil, err
 	}
 
@@ -89,7 +88,7 @@ func (m *Api) GetFolders(spaceId string) ([]clickup.Folder, error) {
 	key := spaceId
 	fallback := func() (interface{}, error) { return m.Clickup.GetFolders(key) }
 
-	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
+	if err := m.get(cacheNamespace, cache.Key(key), &data, fallback); err != nil {
 		return nil, err
 	}
 
@@ -104,7 +103,7 @@ func (m *Api) GetLists(folderId string) ([]clickup.List, error) {
 	key := folderId
 	fallback := func() (interface{}, error) { return m.Clickup.GetListsFromFolder(key) }
 
-	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
+	if err := m.get(cacheNamespace, cache.Key(key), &data, fallback); err != nil {
 		return nil, err
 	}
 
@@ -119,7 +118,7 @@ func (m *Api) GetTask(taskId string) (clickup.Task, error) {
 	key := taskId
 	fallback := func() (interface{}, error) { return m.Clickup.GetTask(key) }
 
-	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
+	if err := m.get(cacheNamespace, cache.Key(key), &data, fallback); err != nil {
 		return clickup.Task{}, err
 	}
 
@@ -134,7 +133,7 @@ func (m *Api) GetTasksFromList(listId string) ([]clickup.Task, error) {
 	key := listId
 	fallback := func() (interface{}, error) { return m.Clickup.GetTasksFromList(key) }
 
-	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
+	if err := m.get(cacheNamespace, cache.Key(key), &data, fallback); err != nil {
 		return nil, err
 	}
 
@@ -149,7 +148,7 @@ func (m *Api) GetTasksFromView(viewId string) ([]clickup.Task, error) {
 	key := viewId
 	fallback := func() (interface{}, error) { return m.Clickup.GetTasksFromView(key) }
 
-	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
+	if err := m.get(cacheNamespace, cache.Key(key), &data, fallback); err != nil {
 		return nil, err
 	}
 
@@ -171,7 +170,7 @@ func (m *Api) GetViewsFromFolder(folderId string) ([]clickup.View, error) {
 		return filterViews(v, []clickup.ViewType{clickup.ViewTypeList}), nil
 	}
 
-	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
+	if err := m.get(cacheNamespace, cache.Key(key), &data, fallback); err != nil {
 		return nil, err
 	}
 
@@ -193,7 +192,7 @@ func (m *Api) GetViewsFromList(listId string) ([]clickup.View, error) {
 		return filterViews(v, []clickup.ViewType{clickup.ViewTypeList}), nil
 	}
 
-	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
+	if err := m.get(cacheNamespace, cache.Key(key), &data, fallback); err != nil {
 		return nil, err
 	}
 
@@ -215,7 +214,7 @@ func (m *Api) GetViewsFromSpace(spaceId string) ([]clickup.View, error) {
 		return filterViews(v, []clickup.ViewType{clickup.ViewTypeList}), nil
 	}
 
-	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
+	if err := m.get(cacheNamespace, cache.Key(key), &data, fallback); err != nil {
 		return nil, err
 	}
 
@@ -237,7 +236,7 @@ func (m *Api) GetViewsFromWorkspace(workspaceId string) ([]clickup.View, error) 
 		return filterViews(v, []clickup.ViewType{clickup.ViewTypeList}), nil
 	}
 
-	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
+	if err := m.get(cacheNamespace, cache.Key(key), &data, fallback); err != nil {
 		return nil, err
 	}
 
@@ -252,7 +251,7 @@ func (m *Api) GetList(listId string) (clickup.List, error) {
 	key := listId
 	fallback := func() (interface{}, error) { return m.Clickup.GetList(key) }
 
-	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
+	if err := m.get(cacheNamespace, cache.Key(key), &data, fallback); err != nil {
 		return clickup.List{}, err
 	}
 
@@ -280,45 +279,46 @@ func (m *Api) InvalidateCache() error {
 			}
 		case CacheNamespaceSpaces:
 			m.logger.Debug("Invalidating spaces cache")
-			_, err := m.GetSpaces(entry.Key)
+			_, err := m.GetSpaces(entry.Key.String())
 			if err != nil {
 				m.logger.Error("Failed to invalidate spaces cache", "error", err)
 			}
 		case CacheNamespaceFolders:
 			m.logger.Debug("Invalidating folders cache")
-			_, err := m.GetFolders(entry.Key)
+			_, err := m.GetFolders(entry.Key.String())
 			if err != nil {
 				m.logger.Error("Failed to invalidate folders cache", "error", err)
 			}
 		case CacheNamespaceLists:
 			m.logger.Debug("Invalidating lists cache")
-			_, err := m.GetLists(entry.Key)
+			_, err := m.GetLists(entry.Key.String())
 			if err != nil {
 				m.logger.Error("Failed to invalidate lists cache", "error", err)
 			}
 		case CacheNamespaceViews:
 			m.logger.Debug("Invalidating views cache")
-			_, err := m.GetViewsFromSpace(entry.Key)
+			_, err := m.GetViewsFromSpace(entry.Key.String())
 			if err != nil {
 				m.logger.Error("Failed to invalidate views cache", "error", err)
 			}
 		case CacheNamespaceTasks:
 			m.logger.Debug("Invalidating tasks cache")
-			_, err := m.GetTasksFromList(entry.Key)
+			_, err := m.GetTasksFromList(entry.Key.String())
 			if err != nil {
 				m.logger.Error("Failed to invalidate tasks cache", "error", err)
 			}
 		case CacheNamespaceTask:
 			m.logger.Debug("Invalidating task cache")
-			_, err := m.GetTask(entry.Key)
+			_, err := m.GetTask(entry.Key.String())
 			if err != nil {
 				m.logger.Error("Failed to invalidate task cache", "error", err)
 			}
 		default:
 			m.logger.Debug("Invalidating cache",
-				"namespace", entry.Namespace, "key", entry.Key)
+				"namespace", entry.Namespace, "key", entry.Key.String())
 		}
 	}
+
 	return nil
 }
 
@@ -333,7 +333,7 @@ func filterViews(views []clickup.View, filters []clickup.ViewType) []clickup.Vie
 	return result
 }
 
-func (m *Api) getFromCache(namespace string, key string, v interface{}) (bool, error) {
+func (m *Api) getFromCache(namespace cache.Namespace, key cache.Key, v interface{}) (bool, error) {
 	err := m.Cache.Get(namespace, key, v)
 	if err == nil {
 		return true, nil
@@ -346,10 +346,10 @@ func (m *Api) getFromCache(namespace string, key string, v interface{}) (bool, e
 	return false, err
 }
 
-func (m *Api) get(cacheNamespace string, id string, data interface{}, fallback func() (interface{}, error)) error {
-	m.logger.Debug("Getting resources", "namespace", cacheNamespace, "id", id)
+func (m *Api) get(cacheNamespace cache.Namespace, cacheKey cache.Key, data interface{}, fallback func() (interface{}, error)) error {
+	m.logger.Debug("Getting resources", "namespace", cacheNamespace, "id", cacheKey)
 
-	ok, err := m.getFromCache(cacheNamespace, id, data)
+	ok, err := m.getFromCache(cacheNamespace, cacheKey, data)
 	if err != nil {
 		return err
 	}
@@ -357,12 +357,12 @@ func (m *Api) get(cacheNamespace string, id string, data interface{}, fallback f
 		return nil
 	}
 
-	m.logger.Debug("Fetching resources from API", "namespace", cacheNamespace, "id", id)
+	m.logger.Debug("Fetching resources from API", "namespace", cacheNamespace, "id", cacheKey)
 	newData, err := fallback()
 	if err != nil {
 		return err
 	}
-	m.Cache.Set(cacheNamespace, id, newData)
+	m.Cache.Set(cacheNamespace, cacheKey, newData)
 
 	// Use reflection to set the value of the data
 	val := reflect.ValueOf(data)
