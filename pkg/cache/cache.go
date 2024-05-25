@@ -2,6 +2,7 @@ package cache
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -145,7 +146,7 @@ func (c *Cache) GetNamespace(namespace string) Data {
 
 // Get returns the value of the key in the namespace
 // and a boolean indicating if the key exists in the cache
-func (c *Cache) Get(namespace string, key string) (interface{}, bool) {
+func (c *Cache) GetRaw(namespace string, key string) (interface{}, bool) {
 	data := c.GetNamespace(namespace)
 
 	// Check if the key exists in the cache
@@ -165,6 +166,31 @@ func (c *Cache) Get(namespace string, key string) (interface{}, bool) {
 		"namespace", namespace, "key", key)
 
 	return value, true
+}
+
+var ErrKeyNotFoundInNamespace = errors.New("key not found in namespace")
+
+func (c *Cache) Get(namespace string, key string, target interface{}) error {
+	data := c.GetNamespace(namespace)
+
+	// Check if the key exists in the cache
+	value, ok := data[key]
+	if !ok {
+		// If not, try to load it from the file
+		v, err := c.loadKey(namespace, key)
+		if err != nil {
+			c.logger.Debug("Key not found in cache",
+				"namespace", namespace, "key", key)
+			return ErrKeyNotFoundInNamespace
+		}
+
+		value = v
+	}
+
+	c.logger.Debug("Key found in cache",
+		"namespace", namespace, "key", key)
+
+	return c.ParseData(value, target)
 }
 
 func (c *Cache) Set(namespace string, key string, value interface{}) {
@@ -254,11 +280,7 @@ func (c *Cache) ParseData(data interface{}, target interface{}) error {
 		return err
 	}
 
-	if err := json.Unmarshal(j, target); err != nil {
-		return err
-	}
-
-	return nil
+	return json.Unmarshal(j, target)
 }
 
 func (c *Cache) GetEntries() []Entry {
