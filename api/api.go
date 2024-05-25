@@ -351,7 +351,6 @@ func (m *Api) get(cacheNamespace string, id string, data interface{}, fallback f
 
 	ok, err := m.getFromCache(cacheNamespace, id, data)
 	if err != nil {
-		data = nil
 		return err
 	}
 	if ok {
