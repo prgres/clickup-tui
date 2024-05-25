@@ -13,11 +13,10 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type Entry struct {
-	// The key of the Entry
-	Key string
+var ErrKeyNotFoundInNamespace = errors.New("key not found in namespace")
 
-	// The namespace of the Entryl
+type Entry struct {
+	Key       string
 	Namespace string
 }
 
@@ -37,64 +36,6 @@ func NewCache(logger *slog.Logger, path string) *Cache {
 		data:   map[string]Data{},
 		logger: logger,
 	}
-}
-
-func filterDir(files []os.DirEntry) []os.DirEntry {
-	var dirs []os.DirEntry
-	for _, file := range files {
-		if file.IsDir() {
-			dirs = append(dirs, file)
-		}
-	}
-	return dirs
-}
-
-func (c *Cache) getNamespacesFromCacheFiles() ([]os.DirEntry, error) {
-	namespaces, err := os.ReadDir(c.path)
-	if err != nil {
-		return nil, err
-	}
-
-	return filterDir(namespaces), nil
-}
-
-func (c *Cache) loadKey(namespace string, key string) (interface{}, error) {
-	c.logger.Debug("Loading key", "key", namespace+"/"+key)
-
-	rawData, err := c.loadFromFile(
-		fmt.Sprintf("%s/%s/%s.json",
-			c.path, namespace, key))
-	if err != nil {
-		return nil, err
-	}
-
-	return rawData, nil
-}
-
-func (c *Cache) loadNamespace(namespace string) (Data, error) {
-	c.logger.Debug("Loading namespace", "namespace", namespace)
-
-	keys, err := os.ReadDir(fmt.Sprintf("%s/%s", c.path, namespace))
-	if err != nil {
-		return nil, err
-	}
-
-	data := Data{}
-	for _, key := range keys {
-		if key.IsDir() {
-			continue
-		}
-
-		keyName := strings.ReplaceAll(key.Name(), ".json", "")
-		keyData, err := c.loadKey(namespace, keyName)
-		if err != nil {
-			return nil, err
-		}
-
-		data[keyName] = keyData
-	}
-
-	return data, nil
 }
 
 func (c *Cache) Load() error {
@@ -144,32 +85,6 @@ func (c *Cache) GetNamespace(namespace string) Data {
 	return v
 }
 
-// Get returns the value of the key in the namespace
-// and a boolean indicating if the key exists in the cache
-func (c *Cache) GetRaw(namespace string, key string) (interface{}, bool) {
-	data := c.GetNamespace(namespace)
-
-	// Check if the key exists in the cache
-	value, ok := data[key]
-	if !ok {
-		// If not, try to load it from the file
-		v, err := c.loadKey(namespace, key)
-		if err != nil {
-			c.logger.Debug("Key not found in cache",
-				"namespace", namespace, "key", key)
-			return nil, false
-		}
-		value = v
-	}
-
-	c.logger.Debug("Key found in cache",
-		"namespace", namespace, "key", key)
-
-	return value, true
-}
-
-var ErrKeyNotFoundInNamespace = errors.New("key not found in namespace")
-
 func (c *Cache) Get(namespace string, key string, target interface{}) error {
 	data := c.GetNamespace(namespace)
 
@@ -190,7 +105,7 @@ func (c *Cache) Get(namespace string, key string, target interface{}) error {
 	c.logger.Debug("Key found in cache",
 		"namespace", namespace, "key", key)
 
-	return c.ParseData(value, target)
+	return c.parseData(value, target)
 }
 
 func (c *Cache) Set(namespace string, key string, value interface{}) {
@@ -229,58 +144,6 @@ func (c *Cache) Dump() error {
 	}
 
 	return nil
-}
-
-func (c *Cache) saveToFile(path string, filename string, value interface{}) error {
-	if err := os.MkdirAll(path, 0777); err != nil {
-		c.logger.Error(err.Error())
-		panic(err)
-	}
-
-	filepath := fmt.Sprintf("%s/%s", path, filename)
-	c.logger.Debug("Saving cache to file", "file", filepath)
-
-	f, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	data, err := json.Marshal(value)
-	if err != nil {
-		return err
-	}
-
-	_, err = f.Write(data)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *Cache) loadFromFile(filepath string) (interface{}, error) {
-	f, err := os.Open(filepath)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	var data interface{}
-	if err := json.NewDecoder(f).Decode(&data); err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
-func (c *Cache) ParseData(data interface{}, target interface{}) error {
-	j, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal(j, target)
 }
 
 func (c *Cache) GetEntries() []Entry {
@@ -375,4 +238,114 @@ func (c *Cache) Invalidate_Deprecated() error {
 	}
 
 	return errgroup.Wait()
+}
+
+func (c *Cache) getNamespacesFromCacheFiles() ([]os.DirEntry, error) {
+	namespaces, err := os.ReadDir(c.path)
+	if err != nil {
+		return nil, err
+	}
+
+	return filterDir(namespaces), nil
+}
+
+func (c *Cache) loadKey(namespace string, key string) (interface{}, error) {
+	c.logger.Debug("Loading key", "key", namespace+"/"+key)
+
+	rawData, err := c.loadFromFile(
+		fmt.Sprintf("%s/%s/%s.json",
+			c.path, namespace, key))
+	if err != nil {
+		return nil, err
+	}
+
+	return rawData, nil
+}
+
+func (c *Cache) loadNamespace(namespace string) (Data, error) {
+	c.logger.Debug("Loading namespace", "namespace", namespace)
+
+	keys, err := os.ReadDir(fmt.Sprintf("%s/%s", c.path, namespace))
+	if err != nil {
+		return nil, err
+	}
+
+	data := Data{}
+	for _, key := range keys {
+		if key.IsDir() {
+			continue
+		}
+
+		keyName := strings.ReplaceAll(key.Name(), ".json", "")
+		keyData, err := c.loadKey(namespace, keyName)
+		if err != nil {
+			return nil, err
+		}
+
+		data[keyName] = keyData
+	}
+
+	return data, nil
+}
+
+func (c *Cache) saveToFile(path string, filename string, value interface{}) error {
+	if err := os.MkdirAll(path, 0777); err != nil {
+		c.logger.Error(err.Error())
+		panic(err)
+	}
+
+	filepath := fmt.Sprintf("%s/%s", path, filename)
+	c.logger.Debug("Saving cache to file", "file", filepath)
+
+	f, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	data, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+
+	_, err = f.Write(data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Cache) loadFromFile(filepath string) (interface{}, error) {
+	f, err := os.Open(filepath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	var data interface{}
+	if err := json.NewDecoder(f).Decode(&data); err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (c *Cache) parseData(data interface{}, target interface{}) error {
+	j, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(j, target)
+}
+
+func filterDir(files []os.DirEntry) []os.DirEntry {
+	var dirs []os.DirEntry
+	for _, file := range files {
+		if file.IsDir() {
+			dirs = append(dirs, file)
+		}
+	}
+	return dirs
 }
