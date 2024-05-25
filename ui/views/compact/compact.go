@@ -75,6 +75,8 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
+	m.widgetViewsTabs.Path = m.widgetNavigator.GetPath()
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
@@ -106,6 +108,8 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		case tasks.WidgetId:
 			m.widgetTasks, cmd = m.widgetTasks.Update(msg)
 		}
+
+		m.widgetViewsTabs.Path = m.widgetNavigator.GetPath()
 
 		cmds = append(cmds, cmd)
 		return m, tea.Batch(cmds...)
@@ -224,6 +228,7 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		m.widgetTasks = m.widgetTasks.SetFocused(false)
 		m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 		m.widgetNavigator = m.widgetNavigator.SetFocused(true)
+		m.widgetViewsTabs.Path = m.widgetNavigator.GetPath()
 	}
 
 	m.widgetNavigator, cmd = m.widgetNavigator.Update(msg)

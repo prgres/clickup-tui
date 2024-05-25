@@ -44,6 +44,24 @@ func (m *Model) SetWorksapce(workspace clickup.Workspace) {
 	m.componentWorkspacesList.SelectedWorkspace = workspace
 }
 
+func (m Model) GetPath() string {
+	switch m.state {
+	case workspaceslist.ComponentId:
+		return "/"
+	case spaceslist.ComponentId:
+		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name
+	case folderslist.ComponentId:
+		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name
+	case listslist.ComponentId:
+		if m.Focused {
+			return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name + "/" + m.componentFoldersList.SelectedFolder.Name
+		}
+		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name + "/" + m.componentFoldersList.SelectedFolder.Name + "/" + m.componentListsList.SelectedList.Name
+	default:
+		return ""
+	}
+}
+
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
