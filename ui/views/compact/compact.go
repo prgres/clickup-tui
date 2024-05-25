@@ -111,6 +111,7 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 
 	case InitCompactMsg:
+		m.showSpinner = false
 		m.log.Info("Received: InitCompactMsg")
 
 		if err := m.widgetNavigator.Init(); err != nil {
@@ -119,9 +120,10 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		}
 
 		initWorkspace := m.widgetNavigator.GetWorkspace()
-		cmds = append(cmds, common.WorkspacePreviewCmd(initWorkspace))
+		m.widgetNavigator.SetWorksapce(initWorkspace)
+		cmds = append(cmds, common.WorkspacePreviewCmd(initWorkspace.Id))
 
-		views, err := m.ctx.Api.GetViewsFromWorkspace(initWorkspace)
+		views, err := m.ctx.Api.GetViewsFromWorkspace(initWorkspace.Id)
 		if err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
 			return m, tea.Batch(cmds...)
@@ -133,7 +135,6 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		} else {
 			tabs := viewsToTabs(views)
 			m.widgetViewsTabs.SetTabs(tabs)
-
 			initTab := m.widgetViewsTabs.SelectedTab
 
 			if err := m.reloadTasks(initTab); err != nil {
@@ -141,8 +142,6 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 				return m, tea.Batch(cmds...)
 			}
 		}
-
-		m.showSpinner = false
 
 	case spinner.TickMsg:
 		// m.log.Info("Received: spinner.TickMsg")
@@ -228,10 +227,10 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		m.widgetNavigator = m.widgetNavigator.SetFocused(true)
 	}
 
-	m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
+	m.widgetNavigator, cmd = m.widgetNavigator.Update(msg)
 	cmds = append(cmds, cmd)
 
-	m.widgetNavigator, cmd = m.widgetNavigator.Update(msg)
+	m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
 	cmds = append(cmds, cmd)
 
 	m.widgetTasks, cmd = m.widgetTasks.Update(msg)

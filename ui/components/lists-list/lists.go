@@ -14,13 +14,12 @@ import (
 const ComponentId = "viewLists"
 
 type Model struct {
-	list           list.Model
-	ctx            *context.UserContext
-	log            *log.Logger
-	ComponentId    common.ComponentId
-	SelectedList   string
-	SelectedFolder string
-	lists          []clickup.List
+	list         list.Model
+	ctx          *context.UserContext
+	log          *log.Logger
+	ComponentId  common.ComponentId
+	SelectedList clickup.List
+	lists        []clickup.List
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
@@ -34,13 +33,12 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + ComponentId)
 
 	return Model{
-		ComponentId:    ComponentId,
-		list:           l,
-		ctx:            ctx,
-		SelectedFolder: "",
-		SelectedList:   "",
-		lists:          []clickup.List{},
-		log:            log,
+		ComponentId:  ComponentId,
+		list:         l,
+		ctx:          ctx,
+		SelectedList: clickup.List{},
+		lists:        []clickup.List{},
+		log:          log,
 	}
 }
 
@@ -55,10 +53,9 @@ func (m *Model) syncList(lists []clickup.List) {
 	m.log.Info("Synchronizing list")
 	m.lists = lists
 
-	items := listsListToItems(lists)
-	itemsList := listitem.ItemListToBubblesItems(items)
+	items := NewListItem(lists)
 
-	m.list.SetItems(itemsList)
+	m.list.SetItems(items)
 	m.list.Select(0)
 	m.log.Info("List synchronized")
 }
@@ -75,10 +72,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.log.Info("List is empty")
 				break
 			}
-			selectedList := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.log.Infof("Selected list %s", selectedList)
+			selectedList := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
+			m.log.Info("Selected list", "id", selectedList.Id, "name", selectedList.Name)
 			m.SelectedList = selectedList
-			return m, ListChangedCmd(m.SelectedList)
+			return m, ListChangedCmd(m.SelectedList.Id)
 
 		case "J", "shift+down":
 			m.list.CursorDown()
@@ -86,10 +83,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.log.Info("List is empty")
 				break
 			}
-			selectedList := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.log.Infof("Selected list %s", selectedList)
+			selectedList := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
+			m.log.Info("Selected list", "id", selectedList.Id, "name", selectedList.Name)
 			m.SelectedList = selectedList
-			return m, common.ListPreviewCmd(m.SelectedList)
+			return m, common.ListPreviewCmd(m.SelectedList.Id)
 
 		case "K", "shift+up":
 			m.list.CursorUp()
@@ -97,10 +94,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.log.Info("List is empty")
 				break
 			}
-			selectedList := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.log.Infof("Selected list %s", selectedList)
+			selectedList := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
+			m.log.Info("Selected list", "id", selectedList.Id, "name", selectedList.Name)
 			m.SelectedList = selectedList
-			return m, common.ListPreviewCmd(m.SelectedList)
+			return m, common.ListPreviewCmd(m.SelectedList.Id)
 		}
 	}
 
@@ -131,4 +128,12 @@ func (m *Model) SpaceChanged(id string) error {
 	m.syncList(folders)
 
 	return nil
+}
+
+func NewListItem(items []clickup.List) []list.Item {
+	result := make([]list.Item, len(items))
+	for i, v := range items {
+		result[i] = listitem.NewItem(v.Name, v.Id, v)
+	}
+	return result
 }
