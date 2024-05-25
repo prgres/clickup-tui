@@ -18,14 +18,10 @@ type Model struct {
 	ctx               *context.UserContext
 	log               *log.Logger
 	ComponentId       common.ComponentId
-	SelectedWorkspace string
+	SelectedWorkspace clickup.Workspace
 	workspaces        []clickup.Workspace
 	ifBorders         bool
 	Focused           bool
-}
-
-func (m Model) GetFocused() bool {
-	return m.Focused
 }
 
 func (m Model) SetFocused(f bool) Model {
@@ -41,9 +37,12 @@ func (m Model) KeyMap() help.KeyMap {
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
-	l := list.New([]list.Item{},
+	l := list.New(
+		[]list.Item{},
 		list.NewDefaultDelegate(),
-		0, 0)
+		0, 0,
+	)
+
 	l.KeyMap.Quit.Unbind()
 	l.SetShowHelp(false)
 	l.Title = "Workspaces"
@@ -54,7 +53,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		ComponentId:       ComponentId,
 		list:              l,
 		ctx:               ctx,
-		SelectedWorkspace: "",
+		SelectedWorkspace: clickup.Workspace{},
 		workspaces:        []clickup.Workspace{},
 		log:               log,
 		ifBorders:         true,
@@ -66,20 +65,22 @@ func (m *Model) syncList(workspaces []clickup.Workspace) {
 	m.log.Info("Synchronizing list...")
 	m.workspaces = workspaces
 
-	items := workspaceListToItems(workspaces)
-	itemsList := listitem.ItemListToBubblesItems(items)
+	items := NewListItem(workspaces)
 	if len(items) == 0 {
 		panic("list is empty")
 	}
 
-	for _, item := range items {
-		if item.Description() == m.ctx.Config.DefaultWorkspace {
-			m.SelectedWorkspace = item.Description()
+	index := 0
+	for i, item := range items {
+		it := item.(listitem.Item)
+		if it.Title() == m.ctx.Config.DefaultWorkspace {
+			index = i
 		}
 	}
 
-	m.list.SetItems(itemsList)
-	m.list.Select(0)
+	m.SelectedWorkspace = items[index].(listitem.Item).Data().(clickup.Workspace)
+	m.list.SetItems(items)
+	m.list.Select(index)
 	m.log.Info("List synchronized")
 }
 
@@ -95,10 +96,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.log.Info("List is empty")
 				break
 			}
-			selectedWorkspace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.log.Info("Selected workspace", "workspace", selectedWorkspace)
+			selectedWorkspace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
+			m.log.Info("Selected workspace", "id", selectedWorkspace.Id, "name", selectedWorkspace.Name)
 			m.SelectedWorkspace = selectedWorkspace
-			return m, common.WorkspaceChangeCmd(selectedWorkspace)
+			return m, common.WorkspaceChangeCmd(selectedWorkspace.Id)
 
 		case "J", "shift+down":
 			m.list.CursorDown()
@@ -106,10 +107,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.log.Info("List is empty")
 				break
 			}
-			selectedWorkspace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.log.Info("Selected workspace", "workspace", selectedWorkspace)
+			selectedWorkspace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
+			m.log.Info("Selected workspace", "id", selectedWorkspace.Id, "name", selectedWorkspace.Name)
 			m.SelectedWorkspace = selectedWorkspace
-			return m, common.WorkspacePreviewCmd(selectedWorkspace)
+			return m, common.WorkspacePreviewCmd(selectedWorkspace.Id)
 
 		case "K", "shift+up":
 			m.list.CursorUp()
@@ -117,10 +118,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.log.Info("List is empty")
 				break
 			}
-			selectedWorkspace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.log.Info("Selected workspace", "workspace", selectedWorkspace)
+			selectedWorkspace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
+			m.log.Info("Selected workspace", "id", selectedWorkspace.Id, "name", selectedWorkspace.Name)
 			m.SelectedWorkspace = selectedWorkspace
-			return m, common.WorkspacePreviewCmd(selectedWorkspace)
+			return m, common.WorkspacePreviewCmd(selectedWorkspace.Id)
 		}
 
 		// switch {
@@ -174,8 +175,16 @@ func (m *Model) InitWorkspaces() error {
 		return err
 	}
 
-	m.SelectedWorkspace = workspaces[0].Id
+	m.SelectedWorkspace = workspaces[0]
 	m.syncList(workspaces)
 
 	return nil
+}
+
+func NewListItem(items []clickup.Workspace) []list.Item {
+	result := make([]list.Item, len(items))
+	for i, v := range items {
+		result[i] = listitem.NewItem(v.Name, v.Id, v)
+	}
+	return result
 }
