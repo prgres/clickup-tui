@@ -79,6 +79,8 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
+	m.widgetViewsTabs.Path = m.widgetNavigator.GetPath()
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
@@ -111,10 +113,13 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 			m.widgetTasks, cmd = m.widgetTasks.Update(msg)
 		}
 
+		m.widgetViewsTabs.Path = m.widgetNavigator.GetPath()
+
 		cmds = append(cmds, cmd)
 		return m, tea.Batch(cmds...)
 
 	case InitCompactMsg:
+		m.showSpinner = false
 		m.log.Info("Received: InitCompactMsg")
 
 		if err := m.widgetNavigator.Init(); err != nil {
@@ -123,9 +128,10 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		}
 
 		initWorkspace := m.widgetNavigator.GetWorkspace()
-		cmds = append(cmds, common.WorkspacePreviewCmd(initWorkspace))
+		m.widgetNavigator.SetWorksapce(initWorkspace)
+		cmds = append(cmds, common.WorkspacePreviewCmd(initWorkspace.Id))
 
-		views, err := m.ctx.Api.GetViewsFromWorkspace(initWorkspace)
+		views, err := m.ctx.Api.GetViewsFromWorkspace(initWorkspace.Id)
 		if err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
 			return m, tea.Batch(cmds...)
@@ -141,7 +147,6 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		} else {
 			tabs := viewsToTabs(views)
 			m.widgetViewsTabs.SetTabs(tabs)
-
 			initTab := m.widgetViewsTabs.SelectedTab
 
 			m.state.View = initTab
@@ -151,10 +156,7 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 			}
 		}
 
-		m.showSpinner = false
-
 	case spinner.TickMsg:
-		// m.log.Info("Received: spinner.TickMsg")
 		if m.showSpinner {
 			m.spinner, cmd = m.spinner.Update(msg)
 			cmds = append(cmds, cmd)
@@ -240,6 +242,7 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		m.widgetTasks = m.widgetTasks.SetFocused(false)
 		m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 		m.widgetNavigator = m.widgetNavigator.SetFocused(true)
+		m.widgetViewsTabs.Path = m.widgetNavigator.GetPath()
 
 	case common.RefreshMsg:
 		m.log.Info("Received: common.RefreshMsg")
@@ -257,10 +260,10 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		}
 	}
 
-	m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
+	m.widgetNavigator, cmd = m.widgetNavigator.Update(msg)
 	cmds = append(cmds, cmd)
 
-	m.widgetNavigator, cmd = m.widgetNavigator.Update(msg)
+	m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
 	cmds = append(cmds, cmd)
 
 	m.widgetTasks, cmd = m.widgetTasks.Update(msg)
@@ -340,13 +343,10 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) common.View {
 func viewsToTabs(views []clickup.View) []viewstabs.Tab {
 	tabs := make([]viewstabs.Tab, len(views))
 	for i, view := range views {
-		tabView := viewstabs.Tab{
+		tabs[i] = viewstabs.Tab{
 			Name: view.Name,
-			Type: "view",
 			Id:   view.Id,
-			// Active: false,
 		}
-		tabs[i] = tabView
 	}
 
 	return tabs

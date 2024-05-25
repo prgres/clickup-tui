@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	folderslist "github.com/prgrs/clickup/ui/components/folders-list"
 	listslist "github.com/prgrs/clickup/ui/components/lists-list"
@@ -36,6 +37,29 @@ type Model struct {
 	componentSpacesList     spaceslist.Model
 	componentFoldersList    folderslist.Model
 	componentListsList      listslist.Model
+}
+
+// TODO: refactor
+func (m *Model) SetWorksapce(workspace clickup.Workspace) {
+	m.componentWorkspacesList.SelectedWorkspace = workspace
+}
+
+func (m Model) GetPath() string {
+	switch m.state {
+	case workspaceslist.ComponentId:
+		return "/"
+	case spaceslist.ComponentId:
+		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name
+	case folderslist.ComponentId:
+		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name
+	case listslist.ComponentId:
+		if m.Focused {
+			return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name + "/" + m.componentFoldersList.SelectedFolder.Name
+		}
+		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name + "/" + m.componentFoldersList.SelectedFolder.Name + "/" + m.componentListsList.SelectedList.Name
+	default:
+		return ""
+	}
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
@@ -103,16 +127,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.log.Info("Received: Go to previous view")
 
 			switch m.state {
-			// case workspaceslist.ComponentId:
 			case spaceslist.ComponentId:
 				m.state = workspaceslist.ComponentId
-			// 	cmd = common.WorkspaceChangeCmd(m.componentWorkspacesList.SelectedWorkspace)
 			case folderslist.ComponentId:
 				m.state = spaceslist.ComponentId
-				// cmd = common.SpaceChangeCmd(m.componentSpacesList.SelectedSpace)
 			case listslist.ComponentId:
 				m.state = folderslist.ComponentId
-				// cmd = common.FolderChangeCmd(m.componentFoldersList.SelectedFolder)
 			}
 
 			cmds = append(cmds, cmd)
@@ -129,18 +149,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case listslist.ComponentId:
 			m.componentListsList, cmd = m.componentListsList.Update(msg)
 		}
+
 		cmds = append(cmds, cmd)
-
-		switch keypress := msg.String(); keypress {
-		// case "enter":
-		// 	switch m.state {
-		// 	case workspaceslist.ComponentId:
-		// 		m.state = folderslist.ComponentId
-		// 	}
-		// case "b":
-		// 	m.state = workspaceslist.ComponentId
-		}
-
 		return m, tea.Batch(cmds...)
 
 	case common.WorkspaceChangeMsg:
@@ -295,7 +305,7 @@ func (m *Model) SetSize(s common.Size) {
 	m.size = s
 }
 
-func (m Model) GetWorkspace() string {
+func (m Model) GetWorkspace() clickup.Workspace {
 	return m.componentWorkspacesList.SelectedWorkspace
 }
 

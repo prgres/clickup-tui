@@ -15,23 +15,21 @@ import (
 const WidgetId = "widgetTasksTabs"
 
 type Tab struct {
-	Name   string
-	Type   string
-	Id     string
-	Active bool
+	Name string
+	Id   string
 }
 
 type Model struct {
-	ctx         *context.UserContext
-	log         *log.Logger
-	SelectedTab string
-	keyMap      KeyMap
-	tabs        []Tab
-	size        common.Size
-	Focused     bool
-	Hidden      bool
-	ifBorders   bool
-
+	ctx            *context.UserContext
+	log            *log.Logger
+	SelectedTab    string
+	keyMap         KeyMap
+	tabs           []Tab
+	size           common.Size
+	Focused        bool
+	Hidden         bool
+	ifBorders      bool
+	Path           string
 	StartIdx       int
 	EndIdx         int
 	SelectedTabIdx int
@@ -66,12 +64,12 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
 
 	return Model{
-		ctx:       ctx,
-		tabs:      []Tab{},
-		log:       log,
-		keyMap:    DefaultKeyMap(),
-		ifBorders: true,
-
+		ctx:            ctx,
+		tabs:           []Tab{},
+		log:            log,
+		keyMap:         DefaultKeyMap(),
+		ifBorders:      true,
+		Path:           "",
 		StartIdx:       0,
 		EndIdx:         0,
 		SelectedTabIdx: 0,
@@ -147,52 +145,44 @@ func (m Model) View() string {
 		MaxWidth(m.size.Width + borderMargin)
 
 	var s []string
-	tabPrefix := " Views |"
-	// s = append(s, " Views |")
-
-	if len(m.tabs) == 0 {
-		s = append(s, " ")
-		return style.Render(
-			tabPrefix + strings.Join(s, ""),
-		)
-	}
-	// m.log.Debugf("Rendering %d tabs", len(m.tabs))
 
 	moreTabsIcon := " + "
+	tabPrefix := " Views |"
+	suffix := ""
 
-	// selectedTabVisible := false
+	if m.Path != "" {
+		suffix += " | " + m.Path
+	}
+
 	for _, tab := range m.tabs {
-		// for i, tab := range m.tabs {
-		// m.log.Debugf("Rendering tab: %s %s", tab.Name, tab.Id)
-		// m.EndIdx = i
-
 		t := ""
 		tabContent := " " + tab.Name + " "
+
+		style := inactiveTabStyle
 		if m.SelectedTab == tab.Id {
-			t = activeTabStyle.Render(tabContent)
-			// selectedTabVisible = true
-		} else {
-			t = inactiveTabStyle.Render(tabContent)
+			style = activeTabStyle
 		}
+		t = style.Render(tabContent)
 
 		content := " " + t + " "
 
-		if lipgloss.Width(tabPrefix+strings.Join(s, "")+content+moreTabsIcon) >= m.size.Width-borderMargin {
-			// if selectedTabVisible {
+		if lipgloss.Width(tabPrefix+strings.Join(s, "")+content+moreTabsIcon+suffix) >= m.size.Width-borderMargin {
 			s = append(s, moreTabsIcon)
 			break
-			// }
-			// s = s[4:]
 		}
 		s = append(s, content)
-
-		// if i != len(m.tabs)-1 {
 		s = append(s, "|")
-		// }
 	}
+	content := strings.Join(s, "")
+
+	dividerWidth := m.size.Width - borderMargin - lipgloss.Width(tabPrefix+content+moreTabsIcon+suffix)
+	if dividerWidth < 0 {
+		dividerWidth = 0
+	}
+	divider := strings.Repeat(" ", dividerWidth)
 
 	return style.Render(
-		tabPrefix + strings.Join(s, ""),
+		tabPrefix + content + divider + suffix,
 	)
 }
 

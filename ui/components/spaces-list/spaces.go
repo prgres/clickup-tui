@@ -14,13 +14,12 @@ import (
 const ComponentId = "spacesList"
 
 type Model struct {
-	list              list.Model
-	ctx               *context.UserContext
-	log               *log.Logger
-	ComponentId       common.ComponentId
-	SelectedSpace     string
-	SelectedWorkspace string
-	spaces            []clickup.Space
+	list          list.Model
+	ctx           *context.UserContext
+	log           *log.Logger
+	ComponentId   common.ComponentId
+	SelectedSpace clickup.Space
+	spaces        []clickup.Space
 }
 
 func (m Model) KeyMap() help.KeyMap {
@@ -44,7 +43,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		ComponentId:   ComponentId,
 		list:          l,
 		ctx:           ctx,
-		SelectedSpace: "",
+		SelectedSpace: clickup.Space{},
 		spaces:        []clickup.Space{},
 		log:           log,
 	}
@@ -54,19 +53,17 @@ func (m *Model) syncList(spaces []clickup.Space) {
 	m.log.Info("Synchronizing list...")
 	m.spaces = spaces
 
-	sre_index := 0 // TODO: rename
-	items := spaceListToItems(spaces)
-	itemsList := listitem.ItemListToBubblesItems(items)
+	items := NewListItem(spaces)
 
-	for i, item := range items {
-		if item.Description() == m.ctx.Config.DefaultSpace {
-			sre_index = i
+	for _, item := range items {
+		i := item.(listitem.Item)
+		if i.Title() == m.ctx.Config.DefaultSpace {
+			m.SelectedSpace = i.Data().(clickup.Space)
 		}
 	}
 
-	m.list.SetItems(itemsList)
-	m.list.Select(sre_index)
-
+	m.list.SetItems(items)
+	m.list.Select(0)
 	m.log.Info("List synchronized")
 }
 
@@ -82,10 +79,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.log.Info("List is empty")
 				break
 			}
-			selectedSpace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.log.Infof("Selected space %s", selectedSpace)
+			selectedSpace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
+			m.log.Info("Selected space", "id", selectedSpace.Id, "name", selectedSpace.Name)
 			m.SelectedSpace = selectedSpace
-			return m, SpaceChangedCmd(selectedSpace)
+			return m, SpaceChangedCmd(selectedSpace.Id)
 
 		case "J", "shift+down":
 			m.list.CursorDown()
@@ -93,10 +90,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.log.Info("List is empty")
 				break
 			}
-			selectedSpace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.log.Info("Selected space", "space", selectedSpace)
+			selectedSpace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
+			m.log.Info("Selected space", "id", selectedSpace.Id, "name", selectedSpace.Name)
 			m.SelectedSpace = selectedSpace
-			return m, common.SpacePreviewCmd(selectedSpace)
+			return m, common.SpacePreviewCmd(selectedSpace.Id)
 
 		case "K", "shift+up":
 			m.list.CursorUp()
@@ -104,10 +101,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.log.Info("List is empty")
 				break
 			}
-			selectedSpace := listitem.BubblesItemToItem(m.list.SelectedItem()).Description()
-			m.log.Info("Selected space", "space", selectedSpace)
+			selectedSpace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
+			m.log.Info("Selected space", "id", selectedSpace.Id, "name", selectedSpace.Name)
 			m.SelectedSpace = selectedSpace
-			return m, common.SpacePreviewCmd(selectedSpace)
+			return m, common.SpacePreviewCmd(selectedSpace.Id)
 		}
 	}
 
@@ -132,7 +129,6 @@ func (m *Model) SetSize(s common.Size) {
 
 func (m *Model) WorkspaceChanged(id string) error {
 	m.log.Infof("Received: WorkspaceChangeMsg: %s", id)
-	m.SelectedWorkspace = id
 
 	spaces, err := m.ctx.Api.GetSpaces(id)
 	if err != nil {
@@ -141,4 +137,12 @@ func (m *Model) WorkspaceChanged(id string) error {
 
 	m.syncList(spaces)
 	return nil
+}
+
+func NewListItem(items []clickup.Space) []list.Item {
+	result := make([]list.Item, len(items))
+	for i, v := range items {
+		result[i] = listitem.NewItem(v.Name, v.Id, v)
+	}
+	return result
 }
