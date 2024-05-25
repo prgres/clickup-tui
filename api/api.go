@@ -347,7 +347,7 @@ func (m *Api) getFromCache(namespace string, key string, v interface{}) (bool, e
 }
 
 func (m *Api) get(cacheNamespace string, id string, data interface{}, fallback func() (interface{}, error)) error {
-	m.logger.Debug("!!!!Getting views for workspace", "id", id)
+	m.logger.Debug("Getting resources", "namespace", cacheNamespace, "id", id)
 
 	ok, err := m.getFromCache(cacheNamespace, id, data)
 	if err != nil {
@@ -358,13 +358,11 @@ func (m *Api) get(cacheNamespace string, id string, data interface{}, fallback f
 		return nil
 	}
 
-	m.logger.Debug("!!!!Fetching views from API")
+	m.logger.Debug("Fetching resources from API", "namespace", cacheNamespace, "id", id)
 	newData, err := fallback()
 	if err != nil {
 		return err
 	}
-	m.logger.Debug("!!!!Found views in workspace", "id", id)
-
 	m.Cache.Set(cacheNamespace, id, newData)
 
 	// Use reflection to set the value of the data
