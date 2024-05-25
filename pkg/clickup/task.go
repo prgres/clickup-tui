@@ -108,54 +108,30 @@ type Creator struct {
 }
 
 type RequestGetTasks struct {
-	Err      string `json:"err"`
 	Tasks    []Task `json:"tasks"`
 	LastPage bool   `json:"last_page"`
+	Err      string `json:"err"`
+}
+
+func (r RequestGetTasks) Error() string {
+	return r.Err
 }
 
 type RequestGetTask struct {
-	Err  string `json:"err"`
 	Task Task   `json:"task"`
+	Err  string `json:"err"`
+}
+
+func (r RequestGetTask) Error() string {
+	return r.Err
 }
 
 func (c *Client) GetTasksFromView(viewId string) ([]Task, error) {
-	rawData, err := c.requestGet("/view/" + viewId + "/task")
-	if err != nil {
-		return nil, err
-	}
-	var objmap RequestGetTasks
-
-	if err := json.Unmarshal(rawData, &objmap); err != nil {
-		return nil, err
-	}
-
-	if objmap.Err != "" {
-		return nil, fmt.Errorf(
-			"error occurs while getting tasks from view: %s. API response: %s",
-			viewId, string(rawData))
-	}
-
-	return objmap.Tasks, nil
+	return c.getTasks("/view/" + viewId + "/task")
 }
 
 func (c *Client) GetTasksFromList(listId string) ([]Task, error) {
-	rawData, err := c.requestGet("/list/" + listId + "/task")
-	if err != nil {
-		return nil, err
-	}
-	var objmap RequestGetTasks
-
-	if err := json.Unmarshal(rawData, &objmap); err != nil {
-		return nil, err
-	}
-
-	if objmap.Err != "" {
-		return nil, fmt.Errorf(
-			"error occurs while getting tasks from list: %s. API response: %s",
-			listId, string(rawData))
-	}
-
-	return objmap.Tasks, nil
+	return c.getTasks("/list/" + listId + "/task")
 }
 
 func (c *Client) GetTask(taskId string) (Task, error) {
@@ -170,4 +146,12 @@ func (c *Client) GetTask(taskId string) (Task, error) {
 	}
 
 	return objmap, nil
+}
+
+func (c *Client) getTasks(url string) ([]Task, error) {
+	var objmap RequestGetTasks
+	if err := c.get(url, &objmap); err != nil {
+		return nil, err
+	}
+	return objmap.Tasks, nil
 }

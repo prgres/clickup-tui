@@ -1,10 +1,5 @@
 package clickup
 
-import (
-	"encoding/json"
-	"fmt"
-)
-
 type Space struct {
 	Id                string        `json:"id"`
 	Name              string        `json:"name"`
@@ -22,24 +17,22 @@ type SpaceStatus struct {
 }
 
 type RequestGetSpaces struct {
-	Err    string  `json:"err"`
 	Spaces []Space `json:"spaces"`
+	Err    string  `json:"err"`
 }
 
-func (c *Client) GetSpaces(teamId string) ([]Space, error) {
-	rawData, err := c.requestGet("/team/" + teamId + "/space")
-	if err != nil {
-		return nil, err
-	}
+func (r RequestGetSpaces) Error() string {
+	return r.Err
+}
 
+func (c *Client) GetSpacesFromTeam(teamId string) ([]Space, error) {
+	return c.getSpaces("/team/" + teamId + "/space")
+}
+
+func (c *Client) getSpaces(url string) ([]Space, error) {
 	var objmap RequestGetSpaces
-	if err := json.Unmarshal(rawData, &objmap); err != nil {
+	if err := c.get(url, &objmap); err != nil {
 		return nil, err
 	}
-
-	if objmap.Err != "" {
-		return nil, fmt.Errorf(objmap.Err)
-	}
-
 	return objmap.Spaces, nil
 }
