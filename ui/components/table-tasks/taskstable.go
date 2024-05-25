@@ -12,13 +12,13 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const ComponentId = "componenetTasksTable"
+const id = "tasks-table"
 
 type Model struct {
+	id                common.Id
 	tasks             []clickup.Task
 	log               *log.Logger
 	ctx               *context.UserContext
-	ComponentId       common.ComponentId
 	columns           []Column
 	columnsVisible    []Column
 	columnsHidden     []Column
@@ -28,6 +28,10 @@ type Model struct {
 	Focused           bool
 	Hidden            bool
 	ifBorders         bool
+}
+
+func (m Model) Id() common.Id {
+	return m.id
 }
 
 type Column struct {
@@ -169,10 +173,10 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 				Bold(true).
 				Foreground(lipgloss.Color("212")))
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + ComponentId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
 
 	return Model{
-		ComponentId:    ComponentId,
+		id:             id,
 		ctx:            ctx,
 		table:          t,
 		columns:        columns,

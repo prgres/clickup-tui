@@ -10,11 +10,11 @@ type Size struct {
 	Height int
 }
 
-type ViewId string
+type Id string
 
-type WidgetId string
-
-type ComponentId string
+type UIElement interface {
+	Id() Id
+}
 
 type View interface {
 	View() string
@@ -23,11 +23,11 @@ type View interface {
 	SetSize(Size) View
 	GetSize() Size
 	Update(msg tea.Msg) (View, tea.Cmd)
-	GetViewId() ViewId
 	Init() tea.Cmd
 }
 
 type Widget interface {
+	GetId() Id
 	View() string
 	KeyMap() help.KeyMap
 	GetFocused() bool

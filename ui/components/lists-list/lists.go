@@ -11,15 +11,19 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const ComponentId = "viewLists"
+const id = "lists-list"
 
 type Model struct {
+	id           common.Id
 	list         list.Model
 	ctx          *context.UserContext
 	log          *log.Logger
-	ComponentId  common.ComponentId
 	SelectedList clickup.List
 	lists        []clickup.List
+}
+
+func (m Model) Id() common.Id {
+	return m.id
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
@@ -30,10 +34,10 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	l.SetShowHelp(false)
 	l.Title = "Lists"
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + ComponentId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
 
 	return Model{
-		ComponentId:  ComponentId,
+		id:           id,
 		list:         l,
 		ctx:          ctx,
 		SelectedList: clickup.List{},

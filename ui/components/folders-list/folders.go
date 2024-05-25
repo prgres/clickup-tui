@@ -11,15 +11,19 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const ComponentId = "widgetFoldersList"
+const id = "folders-list"
 
 type Model struct {
+	id             common.Id
 	list           list.Model
 	ctx            *context.UserContext
 	log            *log.Logger
-	ComponentId    common.ComponentId
 	SelectedFolder clickup.Folder
 	folders        []clickup.Folder
+}
+
+func (m Model) Id() common.Id {
+	return m.id
 }
 
 func (m Model) KeyMap() help.KeyMap {
@@ -37,10 +41,10 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	l.SetShowHelp(false)
 	l.Title = "Folders"
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + ComponentId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
 
 	return Model{
-		ComponentId:    ComponentId,
+		id:             id,
 		list:           l,
 		ctx:            ctx,
 		SelectedFolder: clickup.Folder{},

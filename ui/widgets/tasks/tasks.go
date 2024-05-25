@@ -17,34 +17,35 @@ import (
 	"golang.design/x/clipboard"
 )
 
-const WidgetId = "tasks"
+const id = "tasks"
 
 type Model struct {
-	log       *log.Logger
-	ctx       *context.UserContext
-	WidgetId  common.WidgetId
-	size      common.Size
-	Focused   bool
-	Hidden    bool
-	ifBorders bool
-	keyMap    KeyMap
-
-	state common.ComponentId
-
+	log         *log.Logger
+	ctx         *context.UserContext
+	id          common.Id
+	size        common.Size
+	Focused     bool
+	Hidden      bool
+	ifBorders   bool
+	keyMap      KeyMap
+	state       common.Id
 	spinner     spinner.Model
 	showSpinner bool
+	copyMode    bool // TODO make as a widget
 
 	componenetTasksTable   tabletasks.Model
 	componenetTasksSidebar taskssidebar.Model
+}
 
-	copyMode bool // TODO make as a widget
+func (m Model) Id() common.Id {
+	return m.id
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/widget/" + id)
 
 	size := common.Size{
 		Width:  0,
@@ -56,24 +57,20 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	)
 
 	return Model{
-		WidgetId:  WidgetId,
-		ctx:       ctx,
-		size:      size,
-		Focused:   false,
-		Hidden:    false,
-		keyMap:    DefaultKeyMap(),
-		log:       log,
-		ifBorders: true,
-
+		id:                     id,
+		ctx:                    ctx,
+		size:                   size,
+		Focused:                false,
+		Hidden:                 false,
+		keyMap:                 DefaultKeyMap(),
+		log:                    log,
+		ifBorders:              true,
+		state:                  componenetTasksTable.Id(),
+		spinner:                s,
+		showSpinner:            false,
+		copyMode:               false,
 		componenetTasksTable:   componenetTasksTable,
 		componenetTasksSidebar: componenetTasksSidebar,
-
-		state: componenetTasksTable.ComponentId,
-
-		spinner:     s,
-		showSpinner: false,
-
-		copyMode: false,
 	}
 }
 
@@ -152,9 +149,9 @@ func (m Model) KeyMap() help.KeyMap {
 	}
 
 	switch m.state {
-	case m.componenetTasksSidebar.ComponentId:
+	case m.componenetTasksSidebar.Id():
 		km = m.componenetTasksSidebar.KeyMap()
-	case m.componenetTasksTable.ComponentId:
+	case m.componenetTasksTable.Id():
 		km = m.componenetTasksTable.KeyMap()
 	}
 
@@ -240,12 +237,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 		case key.Matches(msg, m.keyMap.LostFocus):
 			switch m.state {
-			case m.componenetTasksSidebar.ComponentId:
-				m.state = m.componenetTasksTable.ComponentId
+			case m.componenetTasksSidebar.Id():
+				m.state = m.componenetTasksTable.Id()
 				m.componenetTasksSidebar.SetFocused(false)
 				m.componenetTasksTable.SetFocused(true)
 
-			case m.componenetTasksTable.ComponentId:
+			case m.componenetTasksTable.Id():
 				m.componenetTasksSidebar.SetFocused(false)
 				m.componenetTasksTable.SetFocused(false)
 
@@ -261,9 +258,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 		switch m.state {
-		case m.componenetTasksSidebar.ComponentId:
+		case m.componenetTasksSidebar.Id():
 			m.componenetTasksSidebar, cmd = m.componenetTasksSidebar.Update(msg)
-		case m.componenetTasksTable.ComponentId:
+		case m.componenetTasksTable.Id():
 			m.componenetTasksTable, cmd = m.componenetTasksTable.Update(msg)
 		}
 
@@ -275,7 +272,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		id := string(msg)
 		m.log.Infof("Received: taskstable.TaskSelectedMsg: %s", id)
 
-		m.state = m.componenetTasksSidebar.ComponentId
+		m.state = m.componenetTasksSidebar.Id()
 
 		m.componenetTasksSidebar.
 			SetFocused(true).
@@ -441,9 +438,9 @@ func (m Model) SetFocused(f bool) Model {
 	m.Focused = f
 
 	switch m.state {
-	case m.componenetTasksSidebar.ComponentId:
+	case m.componenetTasksSidebar.Id():
 		m.componenetTasksSidebar.SetFocused(f)
-	case m.componenetTasksTable.ComponentId:
+	case m.componenetTasksTable.Id():
 		m.componenetTasksTable.SetFocused(f)
 	}
 

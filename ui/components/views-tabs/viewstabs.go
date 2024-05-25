@@ -12,7 +12,7 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const WidgetId = "widgetTasksTabs"
+const id = "TasksTabs"
 
 type Tab struct {
 	Name string
@@ -20,6 +20,7 @@ type Tab struct {
 }
 
 type Model struct {
+	id             common.Id
 	ctx            *context.UserContext
 	log            *log.Logger
 	SelectedTab    string
@@ -33,6 +34,10 @@ type Model struct {
 	StartIdx       int
 	EndIdx         int
 	SelectedTabIdx int
+}
+
+func (m Model) Id() common.Id {
+	return m.id
 }
 
 func (m *Model) SetSize(s common.Size) {
@@ -61,9 +66,10 @@ func (m Model) KeyMap() help.KeyMap {
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/componenet/" + id)
 
 	return Model{
+		id:             id,
 		ctx:            ctx,
 		tabs:           []Tab{},
 		log:            log,

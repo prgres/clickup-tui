@@ -16,14 +16,14 @@ import (
 	"github.com/prgrs/clickup/ui/widgets/tasks"
 )
 
-const ViewId = "viewCompact"
+const id = "Compact"
 
 type Model struct {
-	ctx    *context.UserContext
-	log    *log.Logger
-	ViewId common.ViewId
-	state  common.WidgetId
-	size   common.Size
+	id    common.Id
+	ctx   *context.UserContext
+	log   *log.Logger
+	state common.Id
+	size  common.Size
 
 	spinner     spinner.Model
 	showSpinner bool
@@ -37,8 +37,8 @@ func (m Model) GetSize() common.Size {
 	return m.size
 }
 
-func (m Model) GetViewId() common.ViewId {
-	return m.ViewId
+func (m Model) Id() common.Id {
+	return m.id
 }
 
 func (m Model) Init() tea.Cmd {
@@ -51,11 +51,11 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) KeyMap() help.KeyMap {
 	switch m.state {
-	case navigator.WidgetId:
+	case m.widgetNavigator.Id():
 		return m.widgetNavigator.KeyMap()
-	case viewstabs.WidgetId:
+	case m.widgetViewsTabs.Id():
 		return m.widgetTasks.KeyMap()
-	case tasks.WidgetId:
+	case m.widgetTasks.Id():
 		return m.widgetTasks.KeyMap()
 	default:
 		return common.NewEmptyKeyMap()
@@ -82,18 +82,18 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case "tab":
 			switch m.state {
-			case navigator.WidgetId:
-				m.state = tasks.WidgetId
+			case m.widgetNavigator.Id():
+				m.state = m.widgetTasks.Id()
 				m.widgetTasks = m.widgetTasks.SetFocused(true)
 				m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 				m.widgetNavigator = m.widgetNavigator.SetFocused(false)
-			case viewstabs.WidgetId:
-				m.state = navigator.WidgetId
+			case m.widgetViewsTabs.Id():
+				m.state = m.widgetNavigator.Id()
 				m.widgetTasks = m.widgetTasks.SetFocused(false)
 				m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 				m.widgetNavigator = m.widgetNavigator.SetFocused(true)
-			case tasks.WidgetId:
-				m.state = viewstabs.WidgetId
+			case m.widgetTasks.Id():
+				m.state = m.widgetViewsTabs.Id()
 				m.widgetTasks = m.widgetTasks.SetFocused(false)
 				m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(true)
 				m.widgetNavigator = m.widgetNavigator.SetFocused(false)
@@ -101,11 +101,11 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		}
 
 		switch m.state {
-		case navigator.WidgetId:
+		case m.widgetNavigator.Id():
 			m.widgetNavigator, cmd = m.widgetNavigator.Update(msg)
-		case viewstabs.WidgetId:
+		case m.widgetViewsTabs.Id():
 			m.widgetViewsTabs, cmd = m.widgetViewsTabs.Update(msg)
-		case tasks.WidgetId:
+		case m.widgetTasks.Id():
 			m.widgetTasks, cmd = m.widgetTasks.Update(msg)
 		}
 
@@ -192,7 +192,7 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 		id := string(msg)
 		m.log.Info("Received: ListChangeMsg", "id", id)
 		// TODO: make state change as func
-		m.state = m.widgetTasks.WidgetId
+		m.state = m.widgetTasks.Id()
 		m.widgetTasks = m.widgetTasks.SetFocused(true)
 		m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 		m.widgetNavigator = m.widgetNavigator.SetFocused(false)
@@ -224,7 +224,7 @@ func (m Model) Update(msg tea.Msg) (common.View, tea.Cmd) {
 
 	case tasks.LostFocusMsg:
 		m.log.Info("Received: tasks.LostFocusMsg")
-		m.state = navigator.WidgetId
+		m.state = m.widgetNavigator.Id()
 		m.widgetTasks = m.widgetTasks.SetFocused(false)
 		m.widgetViewsTabs = m.widgetViewsTabs.SetFocused(false)
 		m.widgetNavigator = m.widgetNavigator.SetFocused(true)
@@ -288,7 +288,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) common.View {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + ViewId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/view/" + id)
 
 	var (
 		widgetViewsTabs = viewstabs.InitialModel(ctx, log)
@@ -297,7 +297,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) common.View {
 	)
 
 	return Model{
-		ViewId:          ViewId,
+		id:              id,
 		ctx:             ctx,
 		spinner:         s,
 		showSpinner:     true,
@@ -305,7 +305,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) common.View {
 		widgetViewsTabs: widgetViewsTabs,
 		widgetNavigator: widgetNavigator,
 		widgetTasks:     widgetTasks,
-		state:           widgetNavigator.WidgetId,
+		state:           widgetNavigator.Id(),
 	}
 }
 

@@ -11,17 +11,21 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const ComponentId = "workspacesList"
+const id = "workspaces-list"
 
 type Model struct {
+	id                common.Id
 	list              list.Model
 	ctx               *context.UserContext
 	log               *log.Logger
-	ComponentId       common.ComponentId
 	SelectedWorkspace clickup.Workspace
 	workspaces        []clickup.Workspace
 	ifBorders         bool
 	Focused           bool
+}
+
+func (m Model) Id() common.Id {
+	return m.id
 }
 
 func (m Model) SetFocused(f bool) Model {
@@ -47,10 +51,10 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	l.SetShowHelp(false)
 	l.Title = "Workspaces"
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + ComponentId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
 
 	return Model{
-		ComponentId:       ComponentId,
+		id:                id,
 		list:              l,
 		ctx:               ctx,
 		SelectedWorkspace: clickup.Workspace{},

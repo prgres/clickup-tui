@@ -17,11 +17,11 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const ComponentId = "widgetTaskSidebar"
+const id = "task-sidebar"
 
 type Model struct {
 	ctx          *context.UserContext
-	ComponentId  common.ComponentId
+	id           common.Id
 	log          *log.Logger
 	SelectedTask clickup.Task
 	viewport     viewport.Model
@@ -30,6 +30,10 @@ type Model struct {
 	Hidden       bool
 	Ready        bool
 	ifBorders    bool
+}
+
+func (m Model) Id() common.Id {
+	return m.id
 }
 
 func (m *Model) SetSize(s common.Size) {
@@ -89,9 +93,10 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		Height: 0,
 	}
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + ComponentId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
 
 	return Model{
+		id:           id,
 		ctx:          ctx,
 		viewport:     v,
 		Focused:      false,
