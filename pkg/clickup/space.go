@@ -6,7 +6,7 @@ import (
 )
 
 type Space struct {
-	Id                string
+	Id                string        `json:"id"`
 	Name              string        `json:"name"`
 	Statuses          []SpaceStatus `json:"statuses"`
 	Features          []interface{} `json:"-"`
