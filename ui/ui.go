@@ -57,7 +57,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case common.ErrMsg:
-		m.log.Fatal(msg.Error())
+		m.log.Error(msg.Error())
 		return m, tea.Quit
 
 	case tea.KeyMsg:
@@ -79,7 +79,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			"width", msg.Width,
 			"height", msg.Height)
 		m.ctx.WindowSize.Set(msg.Width, msg.Height)
-
 	}
 
 	m.viewCompact, cmd = m.viewCompact.Update(msg)
