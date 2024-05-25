@@ -101,3 +101,28 @@ func (c *Client) parseQueryParams(p ...string) (string, error) {
 
 	return v.Encode(), nil
 }
+
+type RequestGet interface {
+	Error() string
+}
+
+func (c *Client) get(url string, objmap RequestGet) error {
+	errMsg := "Error occurs while getting resources from url: %s. Error: %s. Raw data: %s"
+	errApiMsg := errMsg + " API response: %s"
+
+	rawData, err := c.requestGet(url)
+	if err != nil {
+		return fmt.Errorf(errMsg, url, err, "none")
+	}
+
+	if err := json.Unmarshal(rawData, objmap); err != nil {
+		return fmt.Errorf(errApiMsg, url, err, string(rawData))
+	}
+
+	if objmap.Error() != "" {
+		return fmt.Errorf(
+			errMsg, url, "API response contains error.", string(rawData))
+	}
+
+	return nil
+}

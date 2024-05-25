@@ -2,6 +2,7 @@ package api
 
 import (
 	"log/slog"
+	"slices"
 
 	"github.com/charmbracelet/log"
 
@@ -61,7 +62,7 @@ func (m *Api) GetSpaces(teamId string) ([]clickup.Space, error) {
 	client := m.Clickup
 
 	m.logger.Debugf("Fetching spaces from API")
-	spaces, err := client.GetSpaces(teamId)
+	spaces, err := client.GetSpacesFromTeam(teamId)
 	if err != nil {
 		return nil, err
 	}
@@ -272,6 +273,7 @@ func (m *Api) GetViewsFromFolder(folderId string) ([]clickup.View, error) {
 	if err != nil {
 		return nil, err
 	}
+	views = filterViews(views, []clickup.ViewType{clickup.ViewTypeList})
 	m.logger.Debugf("Found %d views in folder %s", len(views), folderId)
 
 	m.Cache.Set(cacheNamespace, folderId, views)
@@ -301,6 +303,7 @@ func (m *Api) GetViewsFromList(listId string) ([]clickup.View, error) {
 	if err != nil {
 		return nil, err
 	}
+	views = filterViews(views, []clickup.ViewType{clickup.ViewTypeList})
 	m.logger.Debugf("Found %d views in folder %s", len(views), listId)
 
 	m.Cache.Set(cacheNamespace, listId, views)
@@ -331,6 +334,7 @@ func (m *Api) GetViewsFromSpace(spaceId string) ([]clickup.View, error) {
 	if err != nil {
 		return nil, err
 	}
+	views = filterViews(views, []clickup.ViewType{clickup.ViewTypeList})
 	m.logger.Debugf("Found %d views in space %s", len(views), spaceId)
 
 	m.Cache.Set(cacheNamespace, spaceId, views)
@@ -383,6 +387,7 @@ func (m *Api) GetViewsFromWorkspace(workspaceId string) ([]clickup.View, error) 
 	if err != nil {
 		return nil, err
 	}
+	views = filterViews(views, []clickup.ViewType{clickup.ViewTypeList})
 	m.logger.Debugf("Found %d views in workspace %s", len(views), workspaceId)
 
 	m.Cache.Set(cacheNamespace, workspaceId, views)
@@ -465,4 +470,15 @@ func (m *Api) InvalidateCache() error {
 		}
 	}
 	return nil
+}
+
+func filterViews(views []clickup.View, filters []clickup.ViewType) []clickup.View {
+	result := []clickup.View{}
+	for i := range views {
+		if slices.Contains(filters, views[i].Type) {
+			result = append(result, views[i])
+		}
+	}
+
+	return result
 }
