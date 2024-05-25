@@ -2,6 +2,7 @@ package cache
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -253,7 +254,7 @@ func (c *Cache) Get(namespace Namespace, key string) (interface{}, bool) {
 	return value.Value, true
 }
 
-func (c *Cache) Set(namespace Namespace, key string, value interface{}) {
+func (c *Cache) Set(namespace string, key string, value interface{}) {
 	c.logger.Debug("Caching",
 		"namespace", namespace, "key", key)
 	data := c.GetNamespace(namespace)
@@ -362,11 +363,7 @@ func (c *Cache) ParseData(data interface{}, target interface{}) error {
 		return err
 	}
 
-	if err := json.Unmarshal(j, target); err != nil {
-		return err
-	}
-
-	return nil
+	return json.Unmarshal(j, target)
 }
 
 func (c *Cache) GetEntries() []Entry {

@@ -1,8 +1,11 @@
 package api
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
 	"time"
+	"reflect"
 	"slices"
 
 	"github.com/charmbracelet/log"
@@ -79,30 +82,16 @@ func (m *Api) garbageCollector() {
 func (m *Api) GetSpaces(teamId string) ([]clickup.Space, error) {
 	m.logger.Debug("Getting spaces for a team", "teamId", teamId)
 
+	var data []clickup.Space
 	cacheNamespace := CacheNamespaceSpaces
+	key := teamId
+	fallback := func() (interface{}, error) { return m.Clickup.GetSpacesFromTeam(key) }
 
-	data, ok := m.Cache.Get(cacheNamespace, teamId)
-	if ok {
-		var spaces []clickup.Space
-		if err := m.Cache.ParseData(data, &spaces); err != nil {
-			return nil, err
-		}
-
-		return spaces, nil
-	}
-
-	client := m.Clickup
-
-	m.logger.Debugf("Fetching spaces from API")
-	spaces, err := client.GetSpacesFromTeam(teamId)
-	if err != nil {
+	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
 		return nil, err
 	}
-	m.logger.Debugf("Found %d spaces for team: %s", len(spaces), teamId)
 
-	m.Cache.Set(cacheNamespace, teamId, spaces)
-
-	return spaces, nil
+	return data, nil
 }
 
 func (m *Api) syncSpaces(entry cache.Entry) error {
@@ -132,29 +121,16 @@ func (m *Api) GetWorkspaces() ([]clickup.Workspace, error) {
 func (m *Api) GetTeams() ([]clickup.Team, error) {
 	m.logger.Debug("Getting Authorized Teams (Workspaces)")
 
+	var data []clickup.Team
 	cacheNamespace := CacheNamespaceTeams
-	data, ok := m.Cache.Get(cacheNamespace, "teams")
-	if ok {
-		var teams []clickup.Team
-		if err := m.Cache.ParseData(data, &teams); err != nil {
-			return nil, err
-		}
+	key := "teams"
+	fallback := func() (interface{}, error) { return m.Clickup.GetTeams() }
 
-		return teams, nil
-	}
-
-	client := m.Clickup
-
-	m.logger.Debugf("Fetching teams from API")
-	teams, err := client.GetTeams()
-	if err != nil {
+	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
 		return nil, err
 	}
-	m.logger.Debugf("Found %d teams", len(teams))
 
-	m.Cache.Set(cacheNamespace, "teams", teams)
-
-	return teams, nil
+	return data, nil
 }
 
 func (m *Api) syncTeams(entry cache.Entry) error {
@@ -177,32 +153,18 @@ func (m *Api) syncTeams(entry cache.Entry) error {
 }
 
 func (m *Api) GetFolders(spaceId string) ([]clickup.Folder, error) {
-	m.logger.Debug("Getting folders for a space",
-		"space", spaceId)
+	m.logger.Debug("Getting folders for a space", "space", spaceId)
 
+	var data []clickup.Folder
 	cacheNamespace := CacheNamespaceFolders
-	data, ok := m.Cache.Get(cacheNamespace, spaceId)
-	if ok {
-		var folders []clickup.Folder
-		if err := m.Cache.ParseData(data, &folders); err != nil {
-			return nil, err
-		}
+	key := spaceId
+	fallback := func() (interface{}, error) { return m.Clickup.GetFolders(key) }
 
-		return folders, nil
-	}
-
-	client := m.Clickup
-
-	m.logger.Debugf("Fetching folders from API")
-	folders, err := client.GetFolders(spaceId)
-	if err != nil {
+	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
 		return nil, err
 	}
-	m.logger.Debugf("Found %d folders for space: %s", len(folders), spaceId)
 
-	m.Cache.Set(cacheNamespace, spaceId, folders)
-
-	return folders, nil
+	return data, nil
 }
 
 func (m *Api) syncFolders(entry cache.Entry) error {
@@ -226,32 +188,18 @@ func (m *Api) syncFolders(entry cache.Entry) error {
 }
 
 func (m *Api) GetLists(folderId string) ([]clickup.List, error) {
-	m.logger.Debug("Getting lists for a folder",
-		"folderId", folderId)
+	m.logger.Debug("Getting lists for a folder", "folderId", folderId)
 
+	var data []clickup.List
 	cacheNamespace := CacheNamespaceLists
-	data, ok := m.Cache.Get(cacheNamespace, folderId)
-	if ok {
-		var lists []clickup.List
-		if err := m.Cache.ParseData(data, &lists); err != nil {
-			return nil, err
-		}
+	key := folderId
+	fallback := func() (interface{}, error) { return m.Clickup.GetListsFromFolder(key) }
 
-		return lists, nil
-	}
-
-	client := m.Clickup
-
-	m.logger.Debugf("Fetching lists from API")
-	lists, err := client.GetListsFromFolder(folderId)
-	if err != nil {
+	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
 		return nil, err
 	}
-	m.logger.Debugf("Found %d lists for folder: %s", len(lists), folderId)
 
-	m.Cache.Set(cacheNamespace, folderId, lists)
-
-	return lists, nil
+	return data, nil
 }
 
 func (m *Api) syncLists(entry cache.Entry) error {
@@ -275,32 +223,18 @@ func (m *Api) syncLists(entry cache.Entry) error {
 }
 
 func (m *Api) GetTask(taskId string) (clickup.Task, error) {
-	m.logger.Debug("Getting a task",
-		"taskId", taskId)
+	m.logger.Debug("Getting a task", "taskId", taskId)
 
+	var data clickup.Task
 	cacheNamespace := CacheNamespaceTask
-	data, ok := m.Cache.Get(cacheNamespace, taskId)
-	if ok {
-		var task clickup.Task
-		if err := m.Cache.ParseData(data, &task); err != nil {
-			return clickup.Task{}, err
-		}
+	key := taskId
+	fallback := func() (interface{}, error) { return m.Clickup.GetTask(key) }
 
-		return task, nil
-	}
-
-	client := m.Clickup
-
-	m.logger.Debug("Fetching task from API")
-	task, err := client.GetTask(taskId)
-	if err != nil {
+	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
 		return clickup.Task{}, err
 	}
-	m.logger.Debugf("Found tasks %s", taskId)
 
-	m.Cache.Set(cacheNamespace, taskId, task)
-
-	return task, nil
+	return data, nil
 }
 
 func (m *Api) syncTask(entry cache.Entry) error {
@@ -324,61 +258,33 @@ func (m *Api) syncTask(entry cache.Entry) error {
 }
 
 func (m *Api) GetTasksFromList(listId string) ([]clickup.Task, error) {
-	m.logger.Debug("Getting tasks for a list",
-		"listId", listId)
+	m.logger.Debug("Getting tasks for a list", "listId", listId)
 
-	cacheNamespace := CacheNamespaceTasksList
-	data, ok := m.Cache.Get(cacheNamespace, listId)
-	if ok {
-		var tasks []clickup.Task
-		if err := m.Cache.ParseData(data, &tasks); err != nil {
-			return nil, err
-		}
+	var data []clickup.Task
+	cacheNamespace := CacheNamespaceTasks
+	key := listId
+	fallback := func() (interface{}, error) { return m.Clickup.GetTasksFromList(key) }
 
-		return tasks, nil
-	}
-
-	client := m.Clickup
-
-	m.logger.Debug("Fetching tasks from API")
-	tasks, err := client.GetTasksFromList(listId)
-	if err != nil {
+	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
 		return nil, err
 	}
-	m.logger.Debugf("Found %d tasks in list %s", len(tasks), listId)
 
-	m.Cache.Set(cacheNamespace, listId, tasks)
-
-	return tasks, nil
+	return data, nil
 }
 
 func (m *Api) GetTasksFromView(viewId string) ([]clickup.Task, error) {
-	m.logger.Debug("Getting tasks for a view",
-		"viewId", viewId)
+	m.logger.Debug("Getting tasks for a view", "viewId", viewId)
 
-	cacheNamespace := CacheNamespaceTasksView
-	data, ok := m.Cache.Get(cacheNamespace, viewId)
-	if ok {
-		var tasks []clickup.Task
-		if err := m.Cache.ParseData(data, &tasks); err != nil {
-			return nil, err
-		}
+	var data []clickup.Task
+	cacheNamespace := CacheNamespaceTasks
+	key := viewId
+	fallback := func() (interface{}, error) { return m.Clickup.GetTasksFromView(key) }
 
-		return tasks, nil
-	}
-
-	client := m.Clickup
-
-	m.logger.Debug("Fetching tasks from API")
-	tasks, err := client.GetTasksFromView(viewId)
-	if err != nil {
+	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
 		return nil, err
 	}
-	m.logger.Debugf("Found %d tasks in view %s", len(tasks), viewId)
 
-	m.Cache.Set(cacheNamespace, viewId, tasks)
-
-	return tasks, nil
+	return data, nil
 }
 
 func (m *Api) syncTasksFromView(entry cache.Entry) error {
@@ -402,161 +308,106 @@ func (m *Api) syncTasksFromView(entry cache.Entry) error {
 }
 
 func (m *Api) GetViewsFromFolder(folderId string) ([]clickup.View, error) {
-	m.logger.Debug("Getting views for folder",
-		"folder", folderId)
+	m.logger.Debug("Getting views for folder", "folder", folderId)
 
+	var data []clickup.View
 	cacheNamespace := CacheNamespaceViews
-	data, ok := m.Cache.Get(cacheNamespace, folderId)
-	if ok {
-		var views []clickup.View
-		if err := m.Cache.ParseData(data, &views); err != nil {
+	key := folderId
+	fallback := func() (interface{}, error) {
+		v, err := m.Clickup.GetViewsFromFolder(key)
+		if err != nil {
 			return nil, err
 		}
 
-		return views, nil
+		return filterViews(v, []clickup.ViewType{clickup.ViewTypeList}), nil
 	}
 
-	client := m.Clickup
-
-	m.logger.Debug("Fetching views from API")
-	views, err := client.GetViewsFromFolder(folderId)
-	if err != nil {
+	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
 		return nil, err
 	}
-	views = filterViews(views, []clickup.ViewType{clickup.ViewTypeList})
-	m.logger.Debugf("Found %d views in folder %s", len(views), folderId)
 
-	m.Cache.Set(cacheNamespace, folderId, views)
-
-	return views, nil
+	return data, nil
 }
 
 func (m *Api) GetViewsFromList(listId string) ([]clickup.View, error) {
-	m.logger.Debug("Getting views for list",
-		"listId", listId)
+	m.logger.Debug("Getting views for list", "listId", listId)
 
+	var data []clickup.View
 	cacheNamespace := CacheNamespaceViews
-	data, ok := m.Cache.Get(cacheNamespace, listId)
-	if ok {
-		var views []clickup.View
-		if err := m.Cache.ParseData(data, &views); err != nil {
+	key := listId
+	fallback := func() (interface{}, error) {
+		v, err := m.Clickup.GetViewsFromList(key)
+		if err != nil {
 			return nil, err
 		}
 
-		return views, nil
+		return filterViews(v, []clickup.ViewType{clickup.ViewTypeList}), nil
 	}
 
-	client := m.Clickup
-
-	m.logger.Debug("Fetching views from API")
-	views, err := client.GetViewsFromList(listId)
-	if err != nil {
+	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
 		return nil, err
 	}
-	views = filterViews(views, []clickup.ViewType{clickup.ViewTypeList})
-	m.logger.Debugf("Found %d views in folder %s", len(views), listId)
 
-	m.Cache.Set(cacheNamespace, listId, views)
-
-	return views, nil
+	return data, nil
 }
 
 func (m *Api) GetViewsFromSpace(spaceId string) ([]clickup.View, error) {
-	m.logger.Info("Getting views for space",
-		"spaceId", spaceId)
+	m.logger.Info("Getting views for space", "spaceId", spaceId)
 
+	var data []clickup.View
 	cacheNamespace := CacheNamespaceViews
-	data, ok := m.Cache.Get(cacheNamespace, spaceId)
-	if ok {
-		var views []clickup.View
-		if err := m.Cache.ParseData(data, &views); err != nil {
+	key := spaceId
+	fallback := func() (interface{}, error) {
+		v, err := m.Clickup.GetViewsFromSpace(key)
+		if err != nil {
 			return nil, err
 		}
 
-		return views, nil
+		return filterViews(v, []clickup.ViewType{clickup.ViewTypeList}), nil
 	}
 
-	client := m.Clickup
-
-	m.logger.Debug("Fetching views from API",
-		"spaceId", spaceId)
-	views, err := client.GetViewsFromSpace(spaceId)
-	if err != nil {
+	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
 		return nil, err
 	}
-	views = filterViews(views, []clickup.ViewType{clickup.ViewTypeList})
-	m.logger.Debugf("Found %d views in space %s", len(views), spaceId)
 
-	m.Cache.Set(cacheNamespace, spaceId, views)
-
-	return views, nil
-}
-
-func (m *Api) GetList(listId string) (clickup.List, error) {
-	m.logger.Debug("Getting a list",
-		"listId", listId)
-	cacheNamespace := CacheNamespaceLists
-	data, ok := m.Cache.Get(cacheNamespace, listId)
-	if ok {
-		var list clickup.List
-		if err := m.Cache.ParseData(data, &list); err != nil {
-			return clickup.List{}, err
-		}
-		return list, nil
-	}
-	client := m.Clickup
-	m.logger.Debug("Fetching list from API")
-
-	list, err := client.GetList(listId)
-	if err != nil {
-		return clickup.List{}, err
-	}
-	m.logger.Debugf("Found list %s", listId)
-
-	m.Cache.Set(cacheNamespace, listId, list)
-
-	return list, nil
+	return data, nil
 }
 
 func (m *Api) GetViewsFromWorkspace(workspaceId string) ([]clickup.View, error) {
-	m.logger.Debug("Getting views for workspace",
-		"workspaceId", workspaceId)
+	m.logger.Debug("Getting views for workspace", "workspaceId", workspaceId)
+
+	var data []clickup.View
 	cacheNamespace := CacheNamespaceViews
-	data, ok := m.Cache.Get(cacheNamespace, workspaceId)
-	if ok {
-		var views []clickup.View
-		if err := m.Cache.ParseData(data, &views); err != nil {
+	key := workspaceId
+	fallback := func() (interface{}, error) {
+		v, err := m.Clickup.GetViewsFromWorkspace(key)
+		if err != nil {
 			return nil, err
 		}
-		return views, nil
-	}
-	client := m.Clickup
-	m.logger.Debug("Fetching views from API")
 
-	views, err := client.GetViewsFromWorkspace(workspaceId)
-	if err != nil {
+		return filterViews(v, []clickup.ViewType{clickup.ViewTypeList}), nil
+	}
+
+	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
 		return nil, err
 	}
-	views = filterViews(views, []clickup.ViewType{clickup.ViewTypeList})
-	m.logger.Debugf("Found %d views in workspace %s", len(views), workspaceId)
 
-	m.Cache.Set(cacheNamespace, workspaceId, views)
-
-	return views, nil
+	return data, nil
 }
 
-//nolint:unused
-func (m *Api) getFromCache(namespace cache.Namespace, key string, v interface{}) (bool, error) {
-	data, ok := m.Cache.Get(namespace, key)
-	if !ok {
-		return false, nil
+func (m *Api) GetList(listId string) (clickup.List, error) {
+	m.logger.Debug("Getting a list", "listId", listId)
+
+	var data clickup.List
+	cacheNamespace := CacheNamespaceLists
+	key := listId
+	fallback := func() (interface{}, error) { return m.Clickup.GetList(key) }
+
+	if err := m.get(cacheNamespace, key, &data, fallback); err != nil {
+		return clickup.List{}, err
 	}
 
-	if err := m.Cache.ParseData(data, &v); err != nil {
-		return false, err
-	}
-
-	return true, nil
+	return data, nil
 }
 
 func (m *Api) InvalidateCache() error {
@@ -625,4 +476,53 @@ func filterViews(views []clickup.View, filters []clickup.ViewType) []clickup.Vie
 	}
 
 	return result
+}
+
+func (m *Api) getFromCache(namespace string, key string, v interface{}) (bool, error) {
+	err := m.Cache.Get(namespace, key, v)
+	if err == nil {
+		return true, nil
+	}
+
+	if errors.Is(err, cache.ErrKeyNotFoundInNamespace) {
+		return false, nil
+	}
+
+	return false, err
+}
+
+func (m *Api) get(cacheNamespace string, id string, data interface{}, fallback func() (interface{}, error)) error {
+	m.logger.Debug("Getting resources", "namespace", cacheNamespace, "id", id)
+
+	ok, err := m.getFromCache(cacheNamespace, id, data)
+	if err != nil {
+		return err
+	}
+	if ok {
+		return nil
+	}
+
+	m.logger.Debug("Fetching resources from API", "namespace", cacheNamespace, "id", id)
+	newData, err := fallback()
+	if err != nil {
+		return err
+	}
+	m.Cache.Set(cacheNamespace, id, newData)
+
+	// Use reflection to set the value of the data
+	val := reflect.ValueOf(data)
+	if val.Kind() != reflect.Ptr || val.IsNil() {
+		return fmt.Errorf("data must be a non-nil pointer")
+	}
+
+	// Ensure newData is assignable to data
+	val = val.Elem()
+	newVal := reflect.ValueOf(newData)
+	if !newVal.Type().AssignableTo(val.Type()) {
+		return fmt.Errorf("cannot assign type %T to type %T", newData, data)
+	}
+
+	val.Set(newVal)
+
+	return nil
 }
