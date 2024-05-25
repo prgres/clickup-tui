@@ -44,6 +44,24 @@ func (m *Model) SetWorksapce(workspace clickup.Workspace) {
 	m.componentWorkspacesList.SelectedWorkspace = workspace
 }
 
+func (m Model) GetPath() string {
+	switch m.state {
+	case workspaceslist.ComponentId:
+		return "/"
+	case spaceslist.ComponentId:
+		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name
+	case folderslist.ComponentId:
+		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name
+	case listslist.ComponentId:
+		if m.Focused {
+			return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name + "/" + m.componentFoldersList.SelectedFolder.Name
+		}
+		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name + "/" + m.componentFoldersList.SelectedFolder.Name + "/" + m.componentListsList.SelectedList.Name
+	default:
+		return ""
+	}
+}
+
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
@@ -109,16 +127,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.log.Info("Received: Go to previous view")
 
 			switch m.state {
-			// case workspaceslist.ComponentId:
 			case spaceslist.ComponentId:
 				m.state = workspaceslist.ComponentId
-			// 	cmd = common.WorkspaceChangeCmd(m.componentWorkspacesList.SelectedWorkspace)
 			case folderslist.ComponentId:
 				m.state = spaceslist.ComponentId
-				// cmd = common.SpaceChangeCmd(m.componentSpacesList.SelectedSpace)
 			case listslist.ComponentId:
 				m.state = folderslist.ComponentId
-				// cmd = common.FolderChangeCmd(m.componentFoldersList.SelectedFolder)
 			}
 
 			cmds = append(cmds, cmd)
