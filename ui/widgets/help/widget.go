@@ -13,12 +13,11 @@ import (
 	"golang.org/x/term"
 )
 
-const WidgetId = "widgetHelp"
+const id = "widgetHelp"
 
 type Model struct {
-	WidgetId common.WidgetId
-	ShowHelp bool
-
+	id         common.Id
+	ShowHelp   bool
 	lastKey    string
 	ctx        *context.UserContext
 	log        *log.Logger
@@ -26,22 +25,24 @@ type Model struct {
 	inputStyle lipgloss.Style
 }
 
+func (m Model) Id() common.Id {
+	return m.id
+}
+
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/widget/" + id)
 
 	return Model{
 		inputStyle: lipgloss.NewStyle().Foreground(lipgloss.Color("#FF75B7")),
-
-		// keys:     keys,
-		WidgetId: WidgetId,
-		ctx:      ctx,
-		log:      log,
-		help:     help.New(),
-		ShowHelp: false,
+		id:         id,
+		ctx:        ctx,
+		log:        log,
+		help:       help.New(),
+		ShowHelp:   false,
 	}
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -65,25 +66,20 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case "?": // key.Matches(msg, m.keys.Help):
 			m.ShowHelp = !m.ShowHelp
 			m.help.ShowAll = !m.help.ShowAll
-			// }
-			// case tea.KeyMsg:
-			// 	switch keypress := msg.String(); keypress {
-			// 	case "enter":
 		}
 	}
 
 	cmds = append(cmds, cmd)
 
-	return m, tea.Batch(cmds...)
+	return tea.Batch(cmds...)
 }
 
 func (m Model) View(keyMap help.KeyMap) string {
-	var status string
-	if m.lastKey == "" {
-		status = "Waiting for input..."
-	} else {
+	status := "Waiting for input..."
+	if m.lastKey != "" {
 		status = "You chose: " + m.inputStyle.Render(m.lastKey)
 	}
+
 	m.help.ShowAll = m.ShowHelp
 	helpView := m.help.View(keyMap)
 

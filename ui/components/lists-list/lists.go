@@ -11,15 +11,19 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const ComponentId = "viewLists"
+const id = "lists-list"
 
 type Model struct {
+	id           common.Id
 	list         list.Model
 	ctx          *context.UserContext
 	log          *log.Logger
-	ComponentId  common.ComponentId
 	SelectedList clickup.List
 	lists        []clickup.List
+}
+
+func (m Model) Id() common.Id {
+	return m.id
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
@@ -30,10 +34,10 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	l.SetShowHelp(false)
 	l.Title = "Lists"
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + ComponentId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
 
 	return Model{
-		ComponentId:  ComponentId,
+		id:           id,
 		list:         l,
 		ctx:          ctx,
 		SelectedList: clickup.List{},
@@ -60,7 +64,7 @@ func (m *Model) syncList(lists []clickup.List) {
 	m.log.Info("List synchronized")
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -75,7 +79,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedList := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
 			m.log.Info("Selected list", "id", selectedList.Id, "name", selectedList.Name)
 			m.SelectedList = selectedList
-			return m, ListChangedCmd(m.SelectedList.Id)
+			return ListChangedCmd(m.SelectedList.Id)
 
 		case "J", "shift+down":
 			m.list.CursorDown()
@@ -86,7 +90,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedList := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
 			m.log.Info("Selected list", "id", selectedList.Id, "name", selectedList.Name)
 			m.SelectedList = selectedList
-			return m, common.ListPreviewCmd(m.SelectedList.Id)
+			return common.ListPreviewCmd(m.SelectedList.Id)
 
 		case "K", "shift+up":
 			m.list.CursorUp()
@@ -97,14 +101,14 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedList := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
 			m.log.Info("Selected list", "id", selectedList.Id, "name", selectedList.Name)
 			m.SelectedList = selectedList
-			return m, common.ListPreviewCmd(m.SelectedList.Id)
+			return common.ListPreviewCmd(m.SelectedList.Id)
 		}
 	}
 
 	m.list, cmd = m.list.Update(msg)
 	cmds = append(cmds, cmd)
 
-	return m, tea.Batch(cmds...)
+	return tea.Batch(cmds...)
 }
 
 func (m Model) View() string {

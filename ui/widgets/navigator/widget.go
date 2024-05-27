@@ -17,26 +17,28 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const WidgetId = "navigator"
+const id = "navigator"
 
 type Model struct {
-	log       *log.Logger
-	ctx       *context.UserContext
-	WidgetId  common.WidgetId
-	size      common.Size
-	Focused   bool
-	Hidden    bool
-	ifBorders bool
-
-	state common.ComponentId
-
+	id          common.Id
+	log         *log.Logger
+	ctx         *context.UserContext
+	size        common.Size
+	Focused     bool
+	Hidden      bool
+	ifBorders   bool
+	state       common.Id
 	spinner     spinner.Model
 	showSpinner bool
 
-	componentWorkspacesList workspaceslist.Model
-	componentSpacesList     spaceslist.Model
-	componentFoldersList    folderslist.Model
-	componentListsList      listslist.Model
+	componentWorkspacesList *workspaceslist.Model
+	componentSpacesList     *spaceslist.Model
+	componentFoldersList    *folderslist.Model
+	componentListsList      *listslist.Model
+}
+
+func (m Model) Id() common.Id {
+	return m.id
 }
 
 // TODO: refactor
@@ -46,13 +48,13 @@ func (m *Model) SetWorksapce(workspace clickup.Workspace) {
 
 func (m Model) GetPath() string {
 	switch m.state {
-	case workspaceslist.ComponentId:
+	case m.componentWorkspacesList.Id():
 		return "/"
-	case spaceslist.ComponentId:
+	case m.componentSpacesList.Id():
 		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name
-	case folderslist.ComponentId:
+	case m.componentFoldersList.Id():
 		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name
-	case listslist.ComponentId:
+	case m.componentListsList.Id():
 		if m.Focused {
 			return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name + "/" + m.componentFoldersList.SelectedFolder.Name
 		}
@@ -66,7 +68,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/widget/" + id)
 
 	size := common.Size{
 		Width:  0,
@@ -74,14 +76,14 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 
 	var (
-		componentWorkspacesList = workspaceslist.InitialModel(ctx, log).SetFocused(true)
+		componentWorkspacesList = workspaceslist.InitialModel(ctx, log).WithFocused(true)
 		componentFoldersList    = folderslist.InitialModel(ctx, log)
 		componentSpacesList     = spaceslist.InitialModel(ctx, log)
 		cpomponentListsList     = listslist.InitialModel(ctx, log)
 	)
 
 	return Model{
-		WidgetId:  WidgetId,
+		id:        id,
 		ctx:       ctx,
 		size:      size,
 		Focused:   false,
@@ -89,12 +91,12 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		log:       log,
 		ifBorders: true,
 
-		componentWorkspacesList: componentWorkspacesList,
-		componentFoldersList:    componentFoldersList,
-		componentSpacesList:     componentSpacesList,
-		componentListsList:      cpomponentListsList,
+		componentWorkspacesList: &componentWorkspacesList,
+		componentFoldersList:    &componentFoldersList,
+		componentSpacesList:     &componentSpacesList,
+		componentListsList:      &cpomponentListsList,
 
-		state: componentWorkspacesList.ComponentId,
+		state: componentWorkspacesList.Id(),
 
 		spinner:     s,
 		showSpinner: false,
@@ -103,20 +105,20 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 
 func (m Model) KeyMap() help.KeyMap {
 	switch m.state {
-	case workspaceslist.ComponentId:
+	case m.componentWorkspacesList.Id():
 		return m.componentWorkspacesList.KeyMap()
-	case spaceslist.ComponentId:
+	case m.componentSpacesList.Id():
 		return m.componentSpacesList.KeyMap()
-	case folderslist.ComponentId:
+	case m.componentFoldersList.Id():
 		return m.componentFoldersList.KeyMap()
-	case listslist.ComponentId:
+	case m.componentListsList.Id():
 		return m.componentListsList.KeyMap()
 	default:
 		return common.NewEmptyKeyMap()
 	}
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -127,31 +129,31 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.log.Info("Received: Go to previous view")
 
 			switch m.state {
-			case spaceslist.ComponentId:
-				m.state = workspaceslist.ComponentId
-			case folderslist.ComponentId:
-				m.state = spaceslist.ComponentId
-			case listslist.ComponentId:
-				m.state = folderslist.ComponentId
+			case m.componentSpacesList.Id():
+				m.state = m.componentWorkspacesList.Id()
+			case m.componentFoldersList.Id():
+				m.state = m.componentSpacesList.Id()
+			case m.componentListsList.Id():
+				m.state = m.componentFoldersList.Id()
 			}
 
 			cmds = append(cmds, cmd)
-			return m, tea.Batch(cmds...)
+			return tea.Batch(cmds...)
 		}
 
 		switch m.state {
-		case workspaceslist.ComponentId:
-			m.componentWorkspacesList, cmd = m.componentWorkspacesList.Update(msg)
-		case spaceslist.ComponentId:
-			m.componentSpacesList, cmd = m.componentSpacesList.Update(msg)
-		case folderslist.ComponentId:
-			m.componentFoldersList, cmd = m.componentFoldersList.Update(msg)
-		case listslist.ComponentId:
-			m.componentListsList, cmd = m.componentListsList.Update(msg)
+		case m.componentWorkspacesList.Id():
+			cmd = m.componentWorkspacesList.Update(msg)
+		case m.componentSpacesList.Id():
+			cmd = m.componentSpacesList.Update(msg)
+		case m.componentFoldersList.Id():
+			cmd = m.componentFoldersList.Update(msg)
+		case m.componentListsList.Id():
+			cmd = m.componentListsList.Update(msg)
 		}
 
 		cmds = append(cmds, cmd)
-		return m, tea.Batch(cmds...)
+		return tea.Batch(cmds...)
 
 	case common.WorkspaceChangeMsg:
 		id := string(msg)
@@ -170,10 +172,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.log.Infof("Received: LoadingSpacesFromWorkspaceMsg: %s", id)
 		if err := m.componentSpacesList.WorkspaceChanged(id); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
-			return m, tea.Batch(cmds...)
+			return tea.Batch(cmds...)
 		}
 		m.showSpinner = false
-		m.state = spaceslist.ComponentId
+		m.state = m.componentSpacesList.Id()
 
 	case spaceslist.SpaceChangedMsg:
 		id := string(msg)
@@ -191,10 +193,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.log.Infof("Received: LoadingFoldersFromSpaceMsg: %s", id)
 		if err := m.componentFoldersList.SpaceChanged(id); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
-			return m, tea.Batch(cmds...)
+			return tea.Batch(cmds...)
 		}
 		m.showSpinner = false
-		m.state = folderslist.ComponentId
+		m.state = m.componentFoldersList.Id()
 
 	case folderslist.FolderChangeMsg:
 		id := string(msg)
@@ -212,10 +214,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.log.Infof("Received: LoadingListsFromFolderMsg: %s", id)
 		if err := m.componentListsList.SpaceChanged(id); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
-			return m, tea.Batch(cmds...)
+			return tea.Batch(cmds...)
 		}
 		m.showSpinner = false
-		m.state = listslist.ComponentId
+		m.state = m.componentListsList.Id()
 
 	case listslist.ListChangedMsg:
 		id := string(msg)
@@ -223,19 +225,14 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, common.ListChangeCmd(id))
 	}
 
-	m.componentWorkspacesList, cmd = m.componentWorkspacesList.Update(msg)
-	cmds = append(cmds, cmd)
+	cmds = append(cmds,
+		m.componentWorkspacesList.Update(msg),
+		m.componentSpacesList.Update(msg),
+		m.componentFoldersList.Update(msg),
+		m.componentListsList.Update(msg),
+	)
 
-	m.componentSpacesList, cmd = m.componentSpacesList.Update(msg)
-	cmds = append(cmds, cmd)
-
-	m.componentFoldersList, cmd = m.componentFoldersList.Update(msg)
-	cmds = append(cmds, cmd)
-
-	m.componentListsList, cmd = m.componentListsList.Update(msg)
-	cmds = append(cmds, cmd)
-
-	return m, tea.Batch(cmds...)
+	return tea.Batch(cmds...)
 }
 
 func (m Model) View() string {
@@ -277,16 +274,16 @@ func (m Model) View() string {
 
 	var content string
 	switch m.state {
-	case workspaceslist.ComponentId:
+	case m.componentWorkspacesList.Id():
 		m.componentWorkspacesList.SetSize(size)
 		content = m.componentWorkspacesList.View()
-	case spaceslist.ComponentId:
+	case m.componentSpacesList.Id():
 		m.componentSpacesList.SetSize(size)
 		content = m.componentSpacesList.View()
-	case folderslist.ComponentId:
+	case m.componentFoldersList.Id():
 		m.componentFoldersList.SetSize(size)
 		content = m.componentFoldersList.View()
-	case listslist.ComponentId:
+	case m.componentListsList.Id():
 		m.componentListsList.SetSize(size)
 		content = m.componentListsList.View()
 	default:
@@ -296,13 +293,21 @@ func (m Model) View() string {
 	return style.Render(content)
 }
 
-func (m Model) SetFocused(f bool) Model {
+func (m *Model) SetFocused(f bool) {
+	m.Focused = f
+}
+
+func (m Model) WithFocused(f bool) Model {
 	m.Focused = f
 	return m
 }
 
 func (m *Model) SetSize(s common.Size) {
 	m.size = s
+}
+
+func (m Model) Size() common.Size {
+	return m.size
 }
 
 func (m Model) GetWorkspace() clickup.Workspace {

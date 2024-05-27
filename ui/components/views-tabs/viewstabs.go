@@ -12,7 +12,7 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const WidgetId = "widgetTasksTabs"
+const id = "TasksTabs"
 
 type Tab struct {
 	Name string
@@ -20,6 +20,7 @@ type Tab struct {
 }
 
 type Model struct {
+	id             common.Id
 	ctx            *context.UserContext
 	log            *log.Logger
 	SelectedTab    string
@@ -33,6 +34,10 @@ type Model struct {
 	StartIdx       int
 	EndIdx         int
 	SelectedTabIdx int
+}
+
+func (m Model) Id() common.Id {
+	return m.id
 }
 
 func (m *Model) SetSize(s common.Size) {
@@ -61,9 +66,10 @@ func (m Model) KeyMap() help.KeyMap {
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/componenet/" + id)
 
 	return Model{
+		id:             id,
 		ctx:            ctx,
 		tabs:           []Tab{},
 		log:            log,
@@ -76,7 +82,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -89,38 +95,38 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			index := prevTab(m.tabs, m.SelectedTabIdx)
 			m.SelectedTabIdx = index
 			m.SelectedTab = m.tabs[index].Id
-			return m, TabChangedCmd(m.SelectedTab)
+			return TabChangedCmd(m.SelectedTab)
 
 		case "L", "shift+right":
 			index := nextTab(m.tabs, m.SelectedTabIdx)
 			m.SelectedTabIdx = index
 			m.SelectedTab = m.tabs[index].Id
-			return m, TabChangedCmd(m.SelectedTab)
+			return TabChangedCmd(m.SelectedTab)
 
 		case "h", "left":
 			index := prevTab(m.tabs, m.SelectedTabIdx)
 			m.SelectedTabIdx = index
 			m.SelectedTab = m.tabs[index].Id
-			return m, nil
+			return nil
 
 		case "l", "right":
 			index := nextTab(m.tabs, m.SelectedTabIdx)
 			m.SelectedTabIdx = index
 			m.SelectedTab = m.tabs[index].Id
-			return m, nil
+			return nil
 
 		case "enter":
 			index := nextTab(m.tabs, m.SelectedTabIdx)
 			m.SelectedTabIdx = index
 			m.SelectedTab = m.tabs[index].Id
-			return m, TabChangedCmd(m.SelectedTab)
+			return TabChangedCmd(m.SelectedTab)
 
 		default:
-			return m, nil
+			return nil
 		}
 	}
 
-	return m, tea.Batch(cmds...)
+	return tea.Batch(cmds...)
 }
 
 func (m Model) View() string {
@@ -223,18 +229,16 @@ func (m Model) GetFocused() bool {
 	return m.Focused
 }
 
-func (m Model) SetFocused(f bool) Model {
+func (m *Model) SetFocused(f bool) {
 	m.Focused = f
-	return m
 }
 
 func (m Model) GetHidden() bool {
 	return m.Hidden
 }
 
-func (m Model) SetHidden(h bool) Model {
+func (m *Model) SetHidden(h bool) {
 	m.Hidden = h
-	return m
 }
 
 func (m *Model) SetTabs(tabs []Tab) {
@@ -246,4 +250,8 @@ func (m *Model) SetTabs(tabs []Tab) {
 		selectedTabId = tabs[0].Id
 	}
 	m.SelectedTab = selectedTabId
+}
+
+func (m Model) Size() common.Size {
+	return m.size
 }
