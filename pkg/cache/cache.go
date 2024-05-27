@@ -75,7 +75,6 @@ func NewCache(logger *slog.Logger, path string) *Cache {
 		logger:    logger,
 		interval:  GarbageCollectorInterval * time.Second,
 		closeChan: make(chan struct{}),
-
 	}
 
 	go c.garbageCollector()
@@ -253,24 +252,24 @@ func (c *Cache) GetEntries() []Entry {
 	return entries
 }
 
-func (c *Cache) saveEntryToFile(entry Entry) error {
-	namespace := entry.Namespace
-	key := entry.Key
-	path := fmt.Sprintf("%s/%s", c.path, namespace)
-	filename := fmt.Sprintf("%s.json", key)
-
-	c.logger.Debug("Writing entry", "namespaces", namespace, "key", key)
-
-
-	return c.clearCacheDir()
-}
-
 func (c *Cache) clearCacheDir() error {
 	c.logger.Debug("Clearing cache dir")
 
 	contents, err := filepath.Glob(c.path + "/*")
 	if err != nil {
 		return err
+	}
+
+	for _, item := range contents {
+		if strings.Contains(item, ".gitkeep") {
+			continue
+		}
+
+		c.logger.Debug("Removing:", "path", item)
+
+		if err = os.RemoveAll(item); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -340,19 +339,6 @@ func (c *Cache) getNamespacesFromCacheFiles() ([]Namespace, error) {
 	return ns, nil
 }
 
-func (c *Cache) GetEntries() []Entry {
-	entries := []Entry{}
-	c.logger.Debug("Getting all cache entries",
-		"entries", len(c.data))
-
-	for _, data := range c.data {
-		for _, entry := range data {
-			entries = append(entries, entry)
-		}
-	}
-	return entries
-}
-
 func (c *Cache) Invalidate() error {
 	c.logger.Debug("Invalidating all cache entries")
 
@@ -382,8 +368,7 @@ func (c *Cache) loadKey(namespace Namespace, key Key) (Entry, error) {
 
 	c.logger.Debug("Loading key", "key", keyId)
 
-	return c.loadFromFile(
-		fmt.Sprintf("%s/%s/%s.json", c.path, namespace, key))
+	return c.loadFromFile(path)
 }
 
 func (c *Cache) loadNamespace(namespace Namespace) (Data, error) {

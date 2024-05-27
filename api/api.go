@@ -103,7 +103,7 @@ func (m *Api) syncSpaces(entry cache.Entry) error {
 	}
 	m.logger.Debugf("Found %d spaces for team: %s", len(data), entry.Key)
 
-	entry.UpdatedTimestamp = time.Now().Unix()
+	entry.UpdatedTs = time.Now().Unix()
 	entry.Value = data
 	m.Cache.Update(entry)
 
@@ -142,7 +142,7 @@ func (m *Api) syncTeams(entry cache.Entry) error {
 	}
 	m.logger.Debugf("Found %d teams", len(data))
 
-	entry.UpdatedTimestamp = time.Now().Unix()
+	entry.UpdatedTs = time.Now().Unix()
 	entry.Value = data
 	m.Cache.Update(entry)
 
@@ -177,7 +177,7 @@ func (m *Api) syncFolders(entry cache.Entry) error {
 	}
 	m.logger.Debugf("Found %d folders for space: %s", len(data), spaceId)
 
-	entry.UpdatedTimestamp = time.Now().Unix()
+	entry.UpdatedTs = time.Now().Unix()
 	entry.Value = data
 	m.Cache.Update(entry)
 
@@ -212,7 +212,7 @@ func (m *Api) syncLists(entry cache.Entry) error {
 	}
 	m.logger.Debugf("Found %d lists for folder: %s", len(data), folderId)
 
-	entry.UpdatedTimestamp = time.Now().Unix()
+	entry.UpdatedTs = time.Now().Unix()
 	entry.Value = data
 	m.Cache.Update(entry)
 
@@ -247,7 +247,7 @@ func (m *Api) syncTask(entry cache.Entry) error {
 	}
 	m.logger.Debug("Found task", "task", taskId)
 
-	entry.UpdatedTimestamp = time.Now().Unix()
+	entry.UpdatedTs = time.Now().Unix()
 	entry.Value = data
 	m.Cache.Update(entry)
 
@@ -297,7 +297,7 @@ func (m *Api) syncTasksFromView(entry cache.Entry) error {
 	}
 	m.logger.Debugf("Found %d tasks in view %s", len(data), viewId)
 
-	entry.UpdatedTimestamp = time.Now().Unix()
+	entry.UpdatedTs = time.Now().Unix()
 	entry.Value = data
 	m.Cache.Update(entry)
 
@@ -420,13 +420,13 @@ func (m *Api) InvalidateCache() error {
 
 	now := time.Now().Unix()
 	for _, entry := range entries {
-		if entry.UpdatedTimestamp+TTL > now {
+		if entry.UpdatedTs+TTL > now {
 			continue
 		}
 
 		var err error
 
-    m.logger.Debug("Invalidating cache", "namespace", entry.Namespace, "key", entry.Key.String())
+		m.logger.Debug("Invalidating cache", "namespace", entry.Namespace, "key", entry.Key.String())
 
 		switch entry.Namespace {
 		case CacheNamespaceTeams:
