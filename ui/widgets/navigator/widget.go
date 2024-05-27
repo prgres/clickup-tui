@@ -246,7 +246,7 @@ func (m Model) View() string {
 		borderMargin = 2
 	}
 
-	styleBorders := m.ctx.Style.Borders.Copy().
+	styleBorders := m.ctx.Style.Borders.
 		BorderForeground(bColor)
 
 	style := lipgloss.NewStyle().
