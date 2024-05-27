@@ -208,7 +208,7 @@ func (m *Model) getColumnsKey(cols []Column) []string {
 	return r
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -230,7 +230,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	m.table, cmd = m.table.Update(msg)
 	cmds = append(cmds, cmd)
 
-	return m, tea.Batch(cmds...)
+	return tea.Batch(cmds...)
 }
 
 func (m Model) GetHighlightedTask() *clickup.Task {

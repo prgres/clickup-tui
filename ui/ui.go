@@ -14,11 +14,12 @@ import (
 )
 
 type Model struct {
-	ctx         *context.UserContext
-	viewCompact common.View
-	log         *log.Logger
-	dialogHelp  help.Model
-	keyMap      KeyMap
+	ctx    *context.UserContext
+	log    *log.Logger
+	keyMap KeyMap
+
+	viewCompact *compact.Model
+	dialogHelp  *help.Model
 }
 
 type KeyMap struct {
@@ -37,17 +38,22 @@ func DefaultKeyMap() KeyMap {
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix("UI")
 
+	var (
+		viewCompact = compact.InitialModel(ctx, log)
+		dialogHelp  = help.InitialModel(ctx, log)
+	)
+
 	return Model{
-		ctx:         ctx,
-		log:         log,
-		viewCompact: compact.InitialModel(ctx, log),
-		dialogHelp:  help.InitialModel(ctx, log),
-		keyMap:      DefaultKeyMap(),
+		ctx:    ctx,
+		log:    log,
+		keyMap: DefaultKeyMap(),
+
+		dialogHelp:  &dialogHelp,
+		viewCompact: &viewCompact,
 	}
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
@@ -69,17 +75,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ctx.WindowSize.Set(msg.Width, msg.Height)
 	}
 
-	m.viewCompact, cmd = m.viewCompact.Update(msg)
-	cmds = append(cmds, cmd)
-
-	m.dialogHelp, cmd = m.dialogHelp.Update(msg)
-	cmds = append(cmds, cmd)
+	cmds = append(cmds,
+		m.viewCompact.Update(msg),
+		m.dialogHelp.Update(msg),
+	)
 
 	return m, tea.Batch(cmds...)
 }
 
 func (m Model) View() string {
-	var viewToRender common.View
+	var viewToRender common.UIElement
 
 	viewToRender = m.viewCompact
 
@@ -97,7 +102,7 @@ func (m Model) View() string {
 	physicalWidth := m.ctx.WindowSize.Width
 
 	viewHeight := physicalHeight - footerHeight
-	viewToRender = viewToRender.SetSize(common.Size{
+	viewToRender.SetSize(common.Size{
 		Width:  physicalWidth,
 		Height: viewHeight - m.ctx.WindowSize.MetaHeight,
 	})
@@ -106,7 +111,6 @@ func (m Model) View() string {
 
 	if dividerHeight < 0 {
 		dividerHeight = 0
-		m.log.Info("dividerHeight", "dividerHeight", dividerHeight)
 	}
 
 	divider := strings.Repeat("\n", dividerHeight)

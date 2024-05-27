@@ -13,28 +13,16 @@ type Size struct {
 type Id string
 
 type UIElement interface {
+	BubblesElem
+
 	Id() Id
+	KeyMap() help.KeyMap
+	SetSize(Size)
+	Size() Size
 }
 
-type View interface {
-	View() string
-	KeyMap() help.KeyMap
-	Ready() bool
-	SetSize(Size) View
-	GetSize() Size
-	Update(msg tea.Msg) (View, tea.Cmd)
+type BubblesElem interface {
 	Init() tea.Cmd
-}
-
-type Widget interface {
-	GetId() Id
+	Update(msg tea.Msg) tea.Cmd
 	View() string
-	KeyMap() help.KeyMap
-	GetFocused() bool
-	SetFocused(f bool) Widget
-	Update(msg tea.Msg) (Widget, tea.Cmd)
-	SetSize(s Size) Widget
-	Init() tea.Cmd
-	SetHidden(h bool) Widget
-	GetHidden() bool
 }

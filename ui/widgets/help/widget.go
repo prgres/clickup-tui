@@ -42,7 +42,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -66,16 +66,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case "?": // key.Matches(msg, m.keys.Help):
 			m.ShowHelp = !m.ShowHelp
 			m.help.ShowAll = !m.help.ShowAll
-			// }
-			// case tea.KeyMsg:
-			// 	switch keypress := msg.String(); keypress {
-			// 	case "enter":
 		}
 	}
 
 	cmds = append(cmds, cmd)
 
-	return m, tea.Batch(cmds...)
+	return tea.Batch(cmds...)
 }
 
 func (m Model) View(keyMap help.KeyMap) string {

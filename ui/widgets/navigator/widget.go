@@ -20,9 +20,9 @@ import (
 const id = "navigator"
 
 type Model struct {
+	id          common.Id
 	log         *log.Logger
 	ctx         *context.UserContext
-	id          common.Id
 	size        common.Size
 	Focused     bool
 	Hidden      bool
@@ -31,10 +31,10 @@ type Model struct {
 	spinner     spinner.Model
 	showSpinner bool
 
-	componentWorkspacesList workspaceslist.Model
-	componentSpacesList     spaceslist.Model
-	componentFoldersList    folderslist.Model
-	componentListsList      listslist.Model
+	componentWorkspacesList *workspaceslist.Model
+	componentSpacesList     *spaceslist.Model
+	componentFoldersList    *folderslist.Model
+	componentListsList      *listslist.Model
 }
 
 func (m Model) Id() common.Id {
@@ -76,7 +76,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 
 	var (
-		componentWorkspacesList = workspaceslist.InitialModel(ctx, log).SetFocused(true)
+		componentWorkspacesList = workspaceslist.InitialModel(ctx, log).WithFocused(true)
 		componentFoldersList    = folderslist.InitialModel(ctx, log)
 		componentSpacesList     = spaceslist.InitialModel(ctx, log)
 		cpomponentListsList     = listslist.InitialModel(ctx, log)
@@ -91,10 +91,10 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		log:       log,
 		ifBorders: true,
 
-		componentWorkspacesList: componentWorkspacesList,
-		componentFoldersList:    componentFoldersList,
-		componentSpacesList:     componentSpacesList,
-		componentListsList:      cpomponentListsList,
+		componentWorkspacesList: &componentWorkspacesList,
+		componentFoldersList:    &componentFoldersList,
+		componentSpacesList:     &componentSpacesList,
+		componentListsList:      &cpomponentListsList,
 
 		state: componentWorkspacesList.Id(),
 
@@ -118,7 +118,7 @@ func (m Model) KeyMap() help.KeyMap {
 	}
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -138,22 +138,22 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			}
 
 			cmds = append(cmds, cmd)
-			return m, tea.Batch(cmds...)
+			return tea.Batch(cmds...)
 		}
 
 		switch m.state {
 		case m.componentWorkspacesList.Id():
-			m.componentWorkspacesList, cmd = m.componentWorkspacesList.Update(msg)
+			cmd = m.componentWorkspacesList.Update(msg)
 		case m.componentSpacesList.Id():
-			m.componentSpacesList, cmd = m.componentSpacesList.Update(msg)
+			cmd = m.componentSpacesList.Update(msg)
 		case m.componentFoldersList.Id():
-			m.componentFoldersList, cmd = m.componentFoldersList.Update(msg)
+			cmd = m.componentFoldersList.Update(msg)
 		case m.componentListsList.Id():
-			m.componentListsList, cmd = m.componentListsList.Update(msg)
+			cmd = m.componentListsList.Update(msg)
 		}
 
 		cmds = append(cmds, cmd)
-		return m, tea.Batch(cmds...)
+		return tea.Batch(cmds...)
 
 	case common.WorkspaceChangeMsg:
 		id := string(msg)
@@ -172,7 +172,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.log.Infof("Received: LoadingSpacesFromWorkspaceMsg: %s", id)
 		if err := m.componentSpacesList.WorkspaceChanged(id); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
-			return m, tea.Batch(cmds...)
+			return tea.Batch(cmds...)
 		}
 		m.showSpinner = false
 		m.state = m.componentSpacesList.Id()
@@ -193,7 +193,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.log.Infof("Received: LoadingFoldersFromSpaceMsg: %s", id)
 		if err := m.componentFoldersList.SpaceChanged(id); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
-			return m, tea.Batch(cmds...)
+			return tea.Batch(cmds...)
 		}
 		m.showSpinner = false
 		m.state = m.componentFoldersList.Id()
@@ -214,7 +214,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.log.Infof("Received: LoadingListsFromFolderMsg: %s", id)
 		if err := m.componentListsList.SpaceChanged(id); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
-			return m, tea.Batch(cmds...)
+			return tea.Batch(cmds...)
 		}
 		m.showSpinner = false
 		m.state = m.componentListsList.Id()
@@ -225,19 +225,14 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, common.ListChangeCmd(id))
 	}
 
-	m.componentWorkspacesList, cmd = m.componentWorkspacesList.Update(msg)
-	cmds = append(cmds, cmd)
+	cmds = append(cmds,
+		m.componentWorkspacesList.Update(msg),
+		m.componentSpacesList.Update(msg),
+		m.componentFoldersList.Update(msg),
+		m.componentListsList.Update(msg),
+	)
 
-	m.componentSpacesList, cmd = m.componentSpacesList.Update(msg)
-	cmds = append(cmds, cmd)
-
-	m.componentFoldersList, cmd = m.componentFoldersList.Update(msg)
-	cmds = append(cmds, cmd)
-
-	m.componentListsList, cmd = m.componentListsList.Update(msg)
-	cmds = append(cmds, cmd)
-
-	return m, tea.Batch(cmds...)
+	return tea.Batch(cmds...)
 }
 
 func (m Model) View() string {
@@ -298,13 +293,21 @@ func (m Model) View() string {
 	return style.Render(content)
 }
 
-func (m Model) SetFocused(f bool) Model {
+func (m *Model) SetFocused(f bool) {
+	m.Focused = f
+}
+
+func (m Model) WithFocused(f bool) Model {
 	m.Focused = f
 	return m
 }
 
 func (m *Model) SetSize(s common.Size) {
 	m.size = s
+}
+
+func (m Model) Size() common.Size {
+	return m.size
 }
 
 func (m Model) GetWorkspace() clickup.Workspace {

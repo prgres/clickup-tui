@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"log"
 	"os/exec"
 	"runtime"
 )

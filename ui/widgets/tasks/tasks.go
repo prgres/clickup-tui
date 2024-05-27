@@ -33,8 +33,8 @@ type Model struct {
 	showSpinner bool
 	copyMode    bool // TODO make as a widget
 
-	componenetTasksTable   tabletasks.Model
-	componenetTasksSidebar taskssidebar.Model
+	componenetTasksTable   *tabletasks.Model
+	componenetTasksSidebar *taskssidebar.Model
 }
 
 func (m Model) Id() common.Id {
@@ -69,8 +69,8 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		spinner:                s,
 		showSpinner:            false,
 		copyMode:               false,
-		componenetTasksTable:   componenetTasksTable,
-		componenetTasksSidebar: componenetTasksSidebar,
+		componenetTasksTable:   &componenetTasksTable,
+		componenetTasksSidebar: &componenetTasksSidebar,
 	}
 }
 
@@ -120,7 +120,6 @@ func DefaultKeyMap() KeyMap {
 			key.WithKeys("esc"),
 			key.WithHelp("esc", "lost pane focus"),
 		),
-
 		Refresh: key.NewBinding(
 			key.WithKeys("R"),
 			key.WithHelp("R", "go to refresh"),
@@ -187,7 +186,7 @@ func (m *Model) SetSpinner(f bool) {
 	m.showSpinner = f
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -215,7 +214,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.copyMode = false
 			}
 
-			return m, tea.Batch(cmds...)
+			return tea.Batch(cmds...)
 		}
 
 		switch {
@@ -264,24 +263,24 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				cmds = append(cmds, LostFocusCmd())
 			}
 
-			m.componenetTasksSidebar, cmd = m.componenetTasksSidebar.Update(msg)
-			cmds = append(cmds, cmd)
-			m.componenetTasksTable, cmd = m.componenetTasksTable.Update(msg)
-			cmds = append(cmds, cmd)
+			cmds = append(cmds,
+				m.componenetTasksSidebar.Update(msg),
+				m.componenetTasksTable.Update(msg),
+			)
 
-			return m, tea.Batch(cmds...)
+			return tea.Batch(cmds...)
 		}
 
 		switch m.state {
 		case m.componenetTasksSidebar.Id():
-			m.componenetTasksSidebar, cmd = m.componenetTasksSidebar.Update(msg)
+			cmd = m.componenetTasksSidebar.Update(msg)
 		case m.componenetTasksTable.Id():
-			m.componenetTasksTable, cmd = m.componenetTasksTable.Update(msg)
+			cmd = m.componenetTasksTable.Update(msg)
 		}
 
 		cmds = append(cmds, cmd)
 
-		return m, tea.Batch(cmds...)
+		return tea.Batch(cmds...)
 
 	case tabletasks.TaskSelectedMsg:
 		id := string(msg)
@@ -302,13 +301,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	}
 
-	m.componenetTasksTable, cmd = m.componenetTasksTable.Update(msg)
-	cmds = append(cmds, cmd)
+	cmds = append(cmds,
+		m.componenetTasksTable.Update(msg),
+		m.componenetTasksSidebar.Update(msg),
+	)
 
-	m.componenetTasksSidebar, cmd = m.componenetTasksSidebar.Update(msg)
-	cmds = append(cmds, cmd)
-
-	return m, tea.Batch(cmds...)
+	return tea.Batch(cmds...)
 }
 
 func (m *Model) SetTasks(tasks []clickup.Task) {
@@ -449,7 +447,7 @@ func (m Model) View() string {
 		))
 }
 
-func (m Model) SetFocused(f bool) Model {
+func (m *Model) SetFocused(f bool) {
 	m.Focused = f
 
 	switch m.state {
@@ -458,8 +456,6 @@ func (m Model) SetFocused(f bool) Model {
 	case m.componenetTasksTable.Id():
 		m.componenetTasksTable.SetFocused(f)
 	}
-
-	return m
 }
 
 func (m *Model) SetSize(s common.Size) {
@@ -469,4 +465,8 @@ func (m *Model) SetSize(s common.Size) {
 func (m *Model) Init() error {
 	m.log.Info("Initializing...")
 	return nil
+}
+
+func (m Model) Size() common.Size {
+	return m.size
 }

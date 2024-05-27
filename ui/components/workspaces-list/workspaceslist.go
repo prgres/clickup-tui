@@ -28,7 +28,11 @@ func (m Model) Id() common.Id {
 	return m.id
 }
 
-func (m Model) SetFocused(f bool) Model {
+func (m *Model) SetFocused(f bool) {
+	m.Focused = f
+}
+
+func (m Model) WithFocused(f bool) Model {
 	m.Focused = f
 	return m
 }
@@ -88,7 +92,7 @@ func (m *Model) syncList(workspaces []clickup.Workspace) {
 	m.log.Info("List synchronized")
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -103,7 +107,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedWorkspace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
 			m.log.Info("Selected workspace", "id", selectedWorkspace.Id, "name", selectedWorkspace.Name)
 			m.SelectedWorkspace = selectedWorkspace
-			return m, common.WorkspaceChangeCmd(selectedWorkspace.Id)
+			return common.WorkspaceChangeCmd(selectedWorkspace.Id)
 
 		case "J", "shift+down":
 			m.list.CursorDown()
@@ -114,7 +118,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedWorkspace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
 			m.log.Info("Selected workspace", "id", selectedWorkspace.Id, "name", selectedWorkspace.Name)
 			m.SelectedWorkspace = selectedWorkspace
-			return m, common.WorkspacePreviewCmd(selectedWorkspace.Id)
+			return common.WorkspacePreviewCmd(selectedWorkspace.Id)
 
 		case "K", "shift+up":
 			m.list.CursorUp()
@@ -125,14 +129,14 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedWorkspace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
 			m.log.Info("Selected workspace", "id", selectedWorkspace.Id, "name", selectedWorkspace.Name)
 			m.SelectedWorkspace = selectedWorkspace
-			return m, common.WorkspacePreviewCmd(selectedWorkspace.Id)
+			return common.WorkspacePreviewCmd(selectedWorkspace.Id)
 		}
 	}
 
 	m.list, cmd = m.list.Update(msg)
 	cmds = append(cmds, cmd)
 
-	return m, tea.Batch(cmds...)
+	return tea.Batch(cmds...)
 }
 
 func (m Model) View() string {

@@ -71,7 +71,7 @@ func (m *Model) syncList(spaces []clickup.Space) {
 	m.log.Info("List synchronized")
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -86,7 +86,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedSpace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
 			m.log.Info("Selected space", "id", selectedSpace.Id, "name", selectedSpace.Name)
 			m.SelectedSpace = selectedSpace
-			return m, SpaceChangedCmd(selectedSpace.Id)
+			return SpaceChangedCmd(selectedSpace.Id)
 
 		case "J", "shift+down":
 			m.list.CursorDown()
@@ -97,7 +97,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedSpace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
 			m.log.Info("Selected space", "id", selectedSpace.Id, "name", selectedSpace.Name)
 			m.SelectedSpace = selectedSpace
-			return m, common.SpacePreviewCmd(selectedSpace.Id)
+			return common.SpacePreviewCmd(selectedSpace.Id)
 
 		case "K", "shift+up":
 			m.list.CursorUp()
@@ -108,14 +108,14 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedSpace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
 			m.log.Info("Selected space", "id", selectedSpace.Id, "name", selectedSpace.Name)
 			m.SelectedSpace = selectedSpace
-			return m, common.SpacePreviewCmd(selectedSpace.Id)
+			return common.SpacePreviewCmd(selectedSpace.Id)
 		}
 	}
 
 	m.list, cmd = m.list.Update(msg)
 	cmds = append(cmds, cmd)
 
-	return m, tea.Batch(cmds...)
+	return tea.Batch(cmds...)
 }
 
 func (m Model) View() string {

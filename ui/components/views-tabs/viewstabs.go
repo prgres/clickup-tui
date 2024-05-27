@@ -82,7 +82,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -95,38 +95,38 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			index := prevTab(m.tabs, m.SelectedTabIdx)
 			m.SelectedTabIdx = index
 			m.SelectedTab = m.tabs[index].Id
-			return m, TabChangedCmd(m.SelectedTab)
+			return TabChangedCmd(m.SelectedTab)
 
 		case "L", "shift+right":
 			index := nextTab(m.tabs, m.SelectedTabIdx)
 			m.SelectedTabIdx = index
 			m.SelectedTab = m.tabs[index].Id
-			return m, TabChangedCmd(m.SelectedTab)
+			return TabChangedCmd(m.SelectedTab)
 
 		case "h", "left":
 			index := prevTab(m.tabs, m.SelectedTabIdx)
 			m.SelectedTabIdx = index
 			m.SelectedTab = m.tabs[index].Id
-			return m, nil
+			return nil
 
 		case "l", "right":
 			index := nextTab(m.tabs, m.SelectedTabIdx)
 			m.SelectedTabIdx = index
 			m.SelectedTab = m.tabs[index].Id
-			return m, nil
+			return nil
 
 		case "enter":
 			index := nextTab(m.tabs, m.SelectedTabIdx)
 			m.SelectedTabIdx = index
 			m.SelectedTab = m.tabs[index].Id
-			return m, TabChangedCmd(m.SelectedTab)
+			return TabChangedCmd(m.SelectedTab)
 
 		default:
-			return m, nil
+			return nil
 		}
 	}
 
-	return m, tea.Batch(cmds...)
+	return tea.Batch(cmds...)
 }
 
 func (m Model) View() string {
@@ -229,18 +229,16 @@ func (m Model) GetFocused() bool {
 	return m.Focused
 }
 
-func (m Model) SetFocused(f bool) Model {
+func (m *Model) SetFocused(f bool) {
 	m.Focused = f
-	return m
 }
 
 func (m Model) GetHidden() bool {
 	return m.Hidden
 }
 
-func (m Model) SetHidden(h bool) Model {
+func (m *Model) SetHidden(h bool) {
 	m.Hidden = h
-	return m
 }
 
 func (m *Model) SetTabs(tabs []Tab) {
@@ -252,4 +250,8 @@ func (m *Model) SetTabs(tabs []Tab) {
 		selectedTabId = tabs[0].Id
 	}
 	m.SelectedTab = selectedTabId
+}
+
+func (m Model) Size() common.Size {
+	return m.size
 }
