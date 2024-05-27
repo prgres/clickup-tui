@@ -21,6 +21,21 @@ type Entry struct {
 	Value     interface{}
 }
 
+func (c *Cache) saveEntryToFile(entry Entry) error {
+	namespace := entry.Namespace
+	key := entry.Key
+	path := fmt.Sprintf("%s/%s", c.path, namespace)
+	filename := fmt.Sprintf("%s.json", key)
+
+	c.logger.Debug("Writing entry", "namespaces", namespace, "key", key)
+
+	if err := c.saveToFile(path, filename, entry); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type Data map[Key]Entry
 
 type Namespace string
@@ -136,17 +151,13 @@ func (c *Cache) Dump() error {
 	c.logger.Debug("Dumping cache")
 
 	errgroup := new(errgroup.Group)
-	for namespace, data := range c.data {
-		for key, value := range data {
-			func(namespace Namespace, key Key, value interface{}) {
-				errgroup.Go(func() error {
-					path := fmt.Sprintf("%s/%s", c.path, namespace)
-					filename := fmt.Sprintf("%s.json", key)
-
-					return c.saveToFile(path, filename, value)
-				})
-			}(namespace, key, value)
-		}
+	entries := c.GetEntries()
+	for _, entry := range entries {
+		func(entry Entry) {
+			errgroup.Go(func() error {
+				return c.saveEntryToFile(entry)
+			})
+		}(entry)
 	}
 
 	return nil
