@@ -62,6 +62,13 @@ func NewCache(logger *slog.Logger, path string) *Cache {
 	}
 }
 
+func (c *Cache) Close() error {
+	if err := c.clearCacheDir(); err != nil {
+		return err
+	}
+
+	return c.Dump()
+}
 func (c *Cache) Load() error {
 	c.logger.Debug("Loading cache from path...", "path", c.path)
 	namespaces, err := c.getNamespacesFromCacheFiles()
@@ -181,6 +188,12 @@ func (c *Cache) Invalidate() error {
 
 	// Clear the in-memory cache
 	c.data = make(map[Namespace]Data)
+
+	return c.clearCacheDir()
+}
+
+func (c *Cache) clearCacheDir() error {
+	c.logger.Debug("Clearing cache dir")
 
 	contents, err := filepath.Glob(c.path + "/*")
 	if err != nil {
