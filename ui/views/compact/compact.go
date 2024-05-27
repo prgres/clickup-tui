@@ -54,7 +54,7 @@ func (m Model) KeyMap() help.KeyMap {
 	case m.widgetNavigator.Id():
 		return m.widgetNavigator.KeyMap()
 	case m.widgetViewsTabs.Id():
-		return m.widgetTasks.KeyMap()
+		return m.widgetViewsTabs.KeyMap()
 	case m.widgetTasks.Id():
 		return m.widgetTasks.KeyMap()
 	default:
