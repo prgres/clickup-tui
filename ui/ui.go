@@ -84,9 +84,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	var viewToRender common.UIElement
-
-	viewToRender = m.viewCompact
+	var viewToRender common.UIElement = m.viewCompact
 
 	viewKm := viewToRender.KeyMap()
 
