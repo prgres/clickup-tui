@@ -340,7 +340,7 @@ func (m Model) View() string {
 		Height(m.size.Height).
 		MaxHeight(m.size.Height)
 
-	styleBorders := m.ctx.Style.Borders.Copy().
+	styleBorders := m.ctx.Style.Borders.
 		BorderForeground(bColor)
 
 	borderMargin := 0
@@ -354,7 +354,7 @@ func (m Model) View() string {
 	}
 
 	if m.showSpinner {
-		return style.Copy().
+		return style.
 			Inherit(styleBorders).
 			Width(m.size.Width - borderMargin).
 			MaxWidth(m.size.Width + borderMargin).
@@ -371,7 +371,7 @@ func (m Model) View() string {
 	}
 
 	if m.componenetTasksTable.TotalRows() == 0 {
-		return style.Copy().
+		return style.
 			Inherit(styleBorders).
 			Width(m.size.Width - borderMargin).
 			MaxWidth(m.size.Width + borderMargin).
@@ -395,7 +395,7 @@ func (m Model) View() string {
 		tasksTableBorders = m.ctx.Theme.BordersColorCopyMode
 	}
 
-	tmpStyle := style.Copy().
+	tmpStyle := style.
 		Inherit(styleBorders)
 
 	var (
@@ -406,7 +406,7 @@ func (m Model) View() string {
 	if m.componenetTasksSidebar.Hidden {
 		m.componenetTasksTable.SetSize(size)
 
-		tmpStyle = tmpStyle.Copy().
+		tmpStyle = tmpStyle.
 			BorderForeground(tasksTableBorders).
 			Width(size.Width).
 			MaxWidth(size.Width + borderMargin).
@@ -426,7 +426,7 @@ func (m Model) View() string {
 
 		size.Width -= borderMargin // size.Width -= 2 * borderMargin
 
-		tmpStyle = tmpStyle.Copy().
+		tmpStyle = tmpStyle.
 			Width(size.Width).
 			BorderForeground(tasksTableBorders).
 			MaxWidth(size.Width + borderMargin).
