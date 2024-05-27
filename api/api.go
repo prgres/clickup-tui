@@ -258,7 +258,7 @@ func (m *Api) GetTasksFromList(listId string) ([]clickup.Task, error) {
 	m.logger.Debug("Getting tasks for a list", "listId", listId)
 
 	var data []clickup.Task
-	cacheNamespace := CacheNamespaceTasks
+	cacheNamespace := CacheNamespaceTasksList
 	key := listId
 	fallback := func() (interface{}, error) { return m.Clickup.GetTasksFromList(key) }
 
@@ -273,7 +273,7 @@ func (m *Api) GetTasksFromView(viewId string) ([]clickup.Task, error) {
 	m.logger.Debug("Getting tasks for a view", "viewId", viewId)
 
 	var data []clickup.Task
-	cacheNamespace := CacheNamespaceTasks
+	cacheNamespace := CacheNamespaceTasksView
 	key := viewId
 	fallback := func() (interface{}, error) { return m.Clickup.GetTasksFromView(key) }
 
@@ -426,7 +426,8 @@ func (m *Api) InvalidateCache() error {
 
 		var err error
 
-		m.logger.Debug("Invalidating cache", "namespace", entry.Namespace)
+    m.logger.Debug("Invalidating cache", "namespace", entry.Namespace, "key", entry.Key.String())
+
 		switch entry.Namespace {
 		case CacheNamespaceTeams:
 			err = m.syncTeams(entry)

@@ -15,21 +15,38 @@ import (
 )
 
 const (
-	TTL                      = 3 * 60  // 3m
-	StaleInterval            = 30 * 60 // 30m
-	GarbageCollectorInterval = 3       // 5s
+	TTL                      = 30
+	StaleInterval            = 10
+	GarbageCollectorInterval = 3
 )
 
 var ErrKeyNotFoundInNamespace = errors.New("key not found in namespace")
 
 type Entry struct {
-	Value             interface{} `json:"value"`
-	Key               Key         `json:"key"`
-	Namespace         Namespace   `json:"namespace"`
-	Stale             bool        `json:"stale"`
-	AccessedTimestamp int64       `json:"accessedtimestamp"`
-	CreatedTimestamp  int64       `json:"createdtimestamp"`
-	UpdatedTimestamp  int64       `json:"updatedTimestamp"`
+	Key       Key         `json:"key"`
+	Namespace Namespace   `json:"namespace"`
+	Value     interface{} `json:"value"`
+
+	Stale bool `json:"-"`
+
+	CreatedTs  int64 `json:"created_ts"`
+	AccessedTs int64 `json:"accessed_ts"`
+	UpdatedTs  int64 `json:"updated_ts"`
+}
+
+func (e Entry) Id() string {
+	return fmt.Sprintf("%s/%s", e.Namespace, e.Key)
+}
+
+func (c *Cache) saveEntryToFile(entry Entry) error {
+	namespace := entry.Namespace
+	key := entry.Key
+	path := fmt.Sprintf("%s/%s", c.path, namespace)
+	filename := fmt.Sprintf("%s.json", key)
+
+	c.logger.Debug("Writing entry", "namespaces", namespace, "key", key)
+
+	return c.saveToFile(path, filename, entry)
 }
 
 type Data map[Key]Entry
@@ -45,24 +62,25 @@ func (k Key) String() string {
 type Cache struct {
 	logger    *slog.Logger
 	data      map[Namespace]Data
-	closeChan chan struct{}
 	path      string
-	interval  time.Duration
 	mutex     sync.RWMutex
+	closeChan chan struct{}
+	interval  time.Duration
 }
 
 func NewCache(logger *slog.Logger, path string) *Cache {
-	c := &Cache{
+	c := Cache{
 		path:      path,
 		data:      map[Namespace]Data{},
 		logger:    logger,
 		interval:  GarbageCollectorInterval * time.Second,
 		closeChan: make(chan struct{}),
+
 	}
 
 	go c.garbageCollector()
 
-	return c
+	return &c
 }
 
 func (c *Cache) garbageCollector() {
@@ -75,21 +93,21 @@ func (c *Cache) garbageCollector() {
 			c.logger.Debug("Garbage Collector: starting")
 			now := time.Now().Unix()
 			entries := c.GetEntries()
+
 			for _, entry := range entries {
-				entryId := fmt.Sprintf("%s/%s", entry.Namespace, entry.Key)
-				if !entry.Stale {
-					if now > entry.AccessedTimestamp+StaleInterval {
-						c.logger.Debug("Garbage Collector: marking as stale", "entry", entryId)
-						entry.Stale = true
-						c.Update(entry)
+				if entry.Stale {
+					if now > entry.AccessedTs+TTL {
+						c.logger.Debug("Garbage Collector: deleting stale", "entry", entry.Id())
+						c.Delete(entry)
 					}
 
 					continue
 				}
 
-				if now > entry.UpdatedTimestamp+TTL {
-					c.logger.Debug("Garbage Collector: deleting stale", "entry", entryId)
-					c.Delete(entry)
+				if now > entry.UpdatedTs+StaleInterval {
+					c.logger.Debug("Garbage Collector: marking as stale", "entry", entry.Id())
+					entry.Stale = true
+					c.Update(entry)
 				}
 			}
 
@@ -99,30 +117,29 @@ func (c *Cache) garbageCollector() {
 	}
 }
 
+func (c *Cache) Close() error {
+	c.closeChan <- struct{}{}
+
+	if err := c.clearCacheDir(); err != nil {
+		return err
+	}
+
+	return c.Dump()
+}
+
 func (c *Cache) Delete(entry Entry) {
-	entryId := fmt.Sprintf("%s/%s", entry.Namespace, entry.Key)
-	c.logger.Debug("Removing", "entry", entryId)
+	c.logger.Debug("Removing", "entry", entry.Id())
 	c.mutex.Lock()
 	delete(c.data[entry.Namespace], entry.Key)
 	c.mutex.Unlock()
 }
 
 func (c *Cache) Update(entry Entry) {
-	entryId := fmt.Sprintf("%s/%s", entry.Namespace, entry.Key)
-	c.logger.Debug("Updating", "entry", entryId)
+	c.logger.Debug("Updating", "entry", entry.Id())
 	c.mutex.Lock()
+	entry.UpdatedTs = time.Now().Unix()
 	c.data[entry.Namespace][entry.Key] = entry
 	c.mutex.Unlock()
-}
-
-func (c *Cache) close() {
-	c.closeChan <- struct{}{}
-}
-
-func (c *Cache) Close() error {
-	c.close()
-
-	return c.Dump()
 }
 
 func (c *Cache) Load() error {
@@ -154,7 +171,7 @@ func (c *Cache) Load() error {
 	return errgroup.Wait()
 }
 
-func (c *Cache) GetNamespace(namespace Namespace) Data {
+func (c *Cache) getNamespace(namespace Namespace) Data {
 	c.mutex.Lock()
 
 	v, ok := c.data[namespace]
@@ -169,21 +186,12 @@ func (c *Cache) GetNamespace(namespace Namespace) Data {
 }
 
 func (c *Cache) Get(namespace Namespace, key Key, target interface{}) error {
-	data := c.GetNamespace(namespace)
+	data := c.getNamespace(namespace)
 
-	// Check if the key exists in the cache
 	value, ok := data[key]
 	if !ok {
-		// If not, try to load it from the file
-		v, err := c.loadKey(namespace, key)
-		if err != nil {
-			c.logger.Debug("Key not found in cache",
-				"namespace", namespace, "key", key)
-			return ErrKeyNotFoundInNamespace
-		}
-
-		value = v
-		value.AccessedTimestamp = time.Now().Unix()
+		c.logger.Debug("Key not found in cache", "namespace", namespace, "key", key)
+		return ErrKeyNotFoundInNamespace
 	}
 
 	c.logger.Debug("Key found in cache", "namespace", namespace, "key", key)
@@ -193,32 +201,22 @@ func (c *Cache) Get(namespace Namespace, key Key, target interface{}) error {
 
 func (c *Cache) Set(namespace Namespace, key Key, value interface{}) {
 	c.logger.Debug("Caching", "namespace", namespace, "key", key)
-	data := c.GetNamespace(namespace)
+	data := c.getNamespace(namespace)
 
 	ts := time.Now().Unix()
-	entry := Entry{
-		Key:               key,
-		Namespace:         namespace,
-		Value:             value,
-		AccessedTimestamp: ts,
-		CreatedTimestamp:  ts,
-		UpdatedTimestamp:  ts,
-		Stale:             false,
-	}
 
 	c.mutex.Lock()
-	data[key] = entry
-	c.mutex.Unlock()
 
-	path := fmt.Sprintf("%s/%s", c.path, namespace)
-	filename := fmt.Sprintf("%s.json", key)
-
-	if err := c.saveToFile(path, filename, entry); err != nil {
-		c.logger.Error(err.Error())
-		panic(err)
+	data[key] = Entry{
+		Key:        key,
+		Namespace:  namespace,
+		Value:      value,
+		AccessedTs: ts,
+		CreatedTs:  ts,
+		UpdatedTs:  ts,
 	}
-
 	c.data[namespace] = data
+
 	c.mutex.Unlock()
 }
 
@@ -230,20 +228,29 @@ func (c *Cache) Dump() error {
 	}
 
 	errgroup := new(errgroup.Group)
-	for namespace, data := range c.data {
-		for key := range data {
-			func(namespace Namespace, key Key) {
-				c.mutex.Lock()
-				entry := c.data[namespace][key]
-				c.mutex.Unlock()
-				errgroup.Go(func() error {
-					return c.saveEntryToFile(entry)
-				})
-			}(namespace, key)
-		}
+	for _, entry := range c.GetEntries() {
+		func(entry Entry) {
+			errgroup.Go(func() error {
+				return c.saveEntryToFile(entry)
+			})
+		}(entry)
 	}
 
 	return errgroup.Wait()
+}
+
+func (c *Cache) GetEntries() []Entry {
+	entries := []Entry{}
+	c.mutex.Lock()
+
+	for _, data := range c.data {
+		for _, entry := range data {
+			entries = append(entries, entry)
+		}
+	}
+
+	c.mutex.Unlock()
+	return entries
 }
 
 func (c *Cache) saveEntryToFile(entry Entry) error {
@@ -254,7 +261,15 @@ func (c *Cache) saveEntryToFile(entry Entry) error {
 
 	c.logger.Debug("Writing entry", "namespaces", namespace, "key", key)
 
-	if err := c.saveToFile(path, filename, entry); err != nil {
+
+	return c.clearCacheDir()
+}
+
+func (c *Cache) clearCacheDir() error {
+	c.logger.Debug("Clearing cache dir")
+
+	contents, err := filepath.Glob(c.path + "/*")
+	if err != nil {
 		return err
 	}
 
@@ -367,24 +382,8 @@ func (c *Cache) loadKey(namespace Namespace, key Key) (Entry, error) {
 
 	c.logger.Debug("Loading key", "key", keyId)
 
-	var entry Entry
-
-	entry, err := c.loadFromFile(path)
-	if err != nil {
-		return entry, fmt.Errorf("loading key error id=%s err=%w", keyId, err)
-	}
-
-	return entry, nil
-}
-
-func filterDir(files []os.DirEntry) []os.DirEntry {
-	var dirs []os.DirEntry
-	for _, file := range files {
-		if file.IsDir() {
-			dirs = append(dirs, file)
-		}
-	}
-	return dirs
+	return c.loadFromFile(
+		fmt.Sprintf("%s/%s/%s.json", c.path, namespace, key))
 }
 
 func (c *Cache) loadNamespace(namespace Namespace) (Data, error) {
@@ -434,34 +433,40 @@ func (c *Cache) saveToFile(path string, filename string, value interface{}) erro
 	}
 
 	_, err = f.Write(data)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (c *Cache) loadFromFile(filepath string) (Entry, error) {
-	var data Entry
+	var entry Entry
 
 	f, err := os.Open(filepath)
 	if err != nil {
-		return data, err
+		return entry, err
 	}
 	defer f.Close()
 
-	if err := json.NewDecoder(f).Decode(&data); err != nil {
-		return data, err
-	}
+	err = json.NewDecoder(f).Decode(&entry)
 
-	return data, nil
+	return entry, err
 }
 
-func (c *Cache) parseData(data interface{}, target interface{}) error {
-	j, err := json.Marshal(data.(Entry).Value)
+func (c *Cache) parseData(data Entry, target interface{}) error {
+	j, err := json.Marshal(data.Value)
 	if err != nil {
 		return err
 	}
 
 	return json.Unmarshal(j, target)
+}
+
+func filterDir(files []os.DirEntry) []os.DirEntry {
+	var dirs []os.DirEntry
+
+	for _, file := range files {
+		if file.IsDir() {
+			dirs = append(dirs, file)
+		}
+	}
+
+	return dirs
 }
