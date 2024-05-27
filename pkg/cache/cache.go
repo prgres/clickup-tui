@@ -175,8 +175,7 @@ func (c *Cache) getNamespace(namespace Namespace) Data {
 
 	v, ok := c.data[namespace]
 	if !ok {
-		c.logger.Debug("Namespace not found. Creating a new one", "namespace", namespace)
-		v = make(Data)
+		v = Data{}
 	}
 
 	c.mutex.Unlock()
@@ -222,10 +221,6 @@ func (c *Cache) Set(namespace Namespace, key Key, value interface{}) {
 func (c *Cache) Dump() error {
 	c.logger.Debug("Dumping cache")
 
-	if err := c.Invalidate(); err != nil {
-		return err
-	}
-
 	errgroup := new(errgroup.Group)
 	for _, entry := range c.GetEntries() {
 		func(entry Entry) {
@@ -250,6 +245,15 @@ func (c *Cache) GetEntries() []Entry {
 
 	c.mutex.Unlock()
 	return entries
+}
+
+func (c *Cache) Invalidate() error {
+	c.logger.Debug("Invalidating all cache entries")
+
+	// Clear the in-memory cache
+	c.data = make(map[Namespace]Data)
+
+	return c.clearCacheDir()
 }
 
 func (c *Cache) clearCacheDir() error {
@@ -339,36 +343,11 @@ func (c *Cache) getNamespacesFromCacheFiles() ([]Namespace, error) {
 	return ns, nil
 }
 
-func (c *Cache) Invalidate() error {
-	c.logger.Debug("Invalidating all cache entries")
-
-	contents, err := filepath.Glob(c.path + "/*")
-	if err != nil {
-		return err
-	}
-
-	for _, item := range contents {
-		if strings.Contains(item, ".gitkeep") {
-			continue
-		}
-
-		c.logger.Debug("Removing:", "path", item)
-
-		if err = os.RemoveAll(item); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (c *Cache) loadKey(namespace Namespace, key Key) (Entry, error) {
-	keyId := fmt.Sprintf("%s/%s", namespace, key)
-	path := fmt.Sprintf("%s/%s/%s.json", c.path, namespace, key)
+	c.logger.Debug("Loading key", "key", fmt.Sprintf("%s/%s", namespace, key))
 
-	c.logger.Debug("Loading key", "key", keyId)
-
-	return c.loadFromFile(path)
+	return c.loadFromFile(
+		fmt.Sprintf("%s/%s/%s.json", c.path, namespace, key))
 }
 
 func (c *Cache) loadNamespace(namespace Namespace) (Data, error) {
