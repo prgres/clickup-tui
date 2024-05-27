@@ -76,9 +76,9 @@ func WorkspacePreviewCmd(workspace string) tea.Cmd {
 	}
 }
 
-type BackToPreviousViewMsg ViewId
+type BackToPreviousViewMsg Id
 
-func BackToPreviousViewCmd(currentView ViewId) tea.Cmd {
+func BackToPreviousViewCmd(currentView Id) tea.Cmd {
 	return func() tea.Msg {
 		return BackToPreviousViewMsg(currentView)
 	}

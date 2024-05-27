@@ -17,34 +17,35 @@ import (
 	"golang.design/x/clipboard"
 )
 
-const WidgetId = "tasks"
+const id = "tasks"
 
 type Model struct {
-	log       *log.Logger
-	ctx       *context.UserContext
-	WidgetId  common.WidgetId
-	size      common.Size
-	Focused   bool
-	Hidden    bool
-	ifBorders bool
-	keyMap    KeyMap
-
-	state common.ComponentId
-
+	log         *log.Logger
+	ctx         *context.UserContext
+	id          common.Id
+	size        common.Size
+	Focused     bool
+	Hidden      bool
+	ifBorders   bool
+	keyMap      KeyMap
+	state       common.Id
 	spinner     spinner.Model
 	showSpinner bool
+	copyMode    bool // TODO make as a widget
 
-	componenetTasksTable   tabletasks.Model
-	componenetTasksSidebar taskssidebar.Model
+	componenetTasksTable   *tabletasks.Model
+	componenetTasksSidebar *taskssidebar.Model
+}
 
-	copyMode bool // TODO make as a widget
+func (m Model) Id() common.Id {
+	return m.id
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + WidgetId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/widget/" + id)
 
 	size := common.Size{
 		Width:  0,
@@ -56,24 +57,20 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	)
 
 	return Model{
-		WidgetId:  WidgetId,
-		ctx:       ctx,
-		size:      size,
-		Focused:   false,
-		Hidden:    false,
-		keyMap:    DefaultKeyMap(),
-		log:       log,
-		ifBorders: true,
-
-		componenetTasksTable:   componenetTasksTable,
-		componenetTasksSidebar: componenetTasksSidebar,
-
-		state: componenetTasksTable.ComponentId,
-
-		spinner:     s,
-		showSpinner: false,
-
-		copyMode: false,
+		id:                     id,
+		ctx:                    ctx,
+		size:                   size,
+		Focused:                false,
+		Hidden:                 false,
+		keyMap:                 DefaultKeyMap(),
+		log:                    log,
+		ifBorders:              true,
+		state:                  componenetTasksTable.Id(),
+		spinner:                s,
+		showSpinner:            false,
+		copyMode:               false,
+		componenetTasksTable:   &componenetTasksTable,
+		componenetTasksSidebar: &componenetTasksSidebar,
 	}
 }
 
@@ -86,6 +83,7 @@ type KeyMap struct {
 	CopyTaskUrl                 key.Binding
 	CopyTaskUrlMd               key.Binding
 	LostFocus                   key.Binding
+	Refresh                     key.Binding
 }
 
 func DefaultKeyMap() KeyMap {
@@ -122,6 +120,10 @@ func DefaultKeyMap() KeyMap {
 			key.WithKeys("esc"),
 			key.WithHelp("esc", "lost pane focus"),
 		),
+		Refresh: key.NewBinding(
+			key.WithKeys("R"),
+			key.WithHelp("R", "go to refresh"),
+		),
 	}
 }
 
@@ -137,6 +139,7 @@ func (m Model) KeyMap() help.KeyMap {
 						m.keyMap.CopyTaskUrl,
 						m.keyMap.CopyTaskUrlMd,
 						m.keyMap.LostFocus,
+						m.keyMap.Refresh,
 					},
 				}
 			},
@@ -146,15 +149,16 @@ func (m Model) KeyMap() help.KeyMap {
 					m.keyMap.CopyTaskUrl,
 					m.keyMap.CopyTaskUrlMd,
 					m.keyMap.LostFocus,
+					m.keyMap.Refresh,
 				}
 			},
 		)
 	}
 
 	switch m.state {
-	case m.componenetTasksSidebar.ComponentId:
+	case m.componenetTasksSidebar.Id():
 		km = m.componenetTasksSidebar.KeyMap()
-	case m.componenetTasksTable.ComponentId:
+	case m.componenetTasksTable.Id():
 		km = m.componenetTasksTable.KeyMap()
 	}
 
@@ -182,7 +186,7 @@ func (m *Model) SetSpinner(f bool) {
 	m.showSpinner = f
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -210,7 +214,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.copyMode = false
 			}
 
-			return m, tea.Batch(cmds...)
+			return tea.Batch(cmds...)
 		}
 
 		switch {
@@ -223,6 +227,13 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 					return m, tea.Batch(cmds...)
 				}
 			}
+
+		case key.Matches(msg, m.keyMap.Refresh):
+			m.log.Info("Refreshing...")
+			if err := m.ctx.Api.InvalidateCache(); err != nil {
+				m.log.Error("Failed to invalidate cache", "error", err)
+			}
+			m.log.Debug("Cache invalidated")
 
 		case key.Matches(msg, m.keyMap.OpenTicketInWebBrowser):
 			task := m.componenetTasksTable.GetHighlightedTask()
@@ -242,42 +253,42 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 		case key.Matches(msg, m.keyMap.LostFocus):
 			switch m.state {
-			case m.componenetTasksSidebar.ComponentId:
-				m.state = m.componenetTasksTable.ComponentId
+			case m.componenetTasksSidebar.Id():
+				m.state = m.componenetTasksTable.Id()
 				m.componenetTasksSidebar.SetFocused(false)
 				m.componenetTasksTable.SetFocused(true)
 
-			case m.componenetTasksTable.ComponentId:
+			case m.componenetTasksTable.Id():
 				m.componenetTasksSidebar.SetFocused(false)
 				m.componenetTasksTable.SetFocused(false)
 
 				cmds = append(cmds, LostFocusCmd())
 			}
 
-			m.componenetTasksSidebar, cmd = m.componenetTasksSidebar.Update(msg)
-			cmds = append(cmds, cmd)
-			m.componenetTasksTable, cmd = m.componenetTasksTable.Update(msg)
-			cmds = append(cmds, cmd)
+			cmds = append(cmds,
+				m.componenetTasksSidebar.Update(msg),
+				m.componenetTasksTable.Update(msg),
+			)
 
-			return m, tea.Batch(cmds...)
+			return tea.Batch(cmds...)
 		}
 
 		switch m.state {
-		case m.componenetTasksSidebar.ComponentId:
-			m.componenetTasksSidebar, cmd = m.componenetTasksSidebar.Update(msg)
-		case m.componenetTasksTable.ComponentId:
-			m.componenetTasksTable, cmd = m.componenetTasksTable.Update(msg)
+		case m.componenetTasksSidebar.Id():
+			cmd = m.componenetTasksSidebar.Update(msg)
+		case m.componenetTasksTable.Id():
+			cmd = m.componenetTasksTable.Update(msg)
 		}
 
 		cmds = append(cmds, cmd)
 
-		return m, tea.Batch(cmds...)
+		return tea.Batch(cmds...)
 
 	case tabletasks.TaskSelectedMsg:
 		id := string(msg)
 		m.log.Infof("Received: taskstable.TaskSelectedMsg: %s", id)
 
-		m.state = m.componenetTasksSidebar.ComponentId
+		m.state = m.componenetTasksSidebar.Id()
 
 		m.componenetTasksSidebar.
 			SetFocused(true).
@@ -298,13 +309,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 	}
 
-	m.componenetTasksTable, cmd = m.componenetTasksTable.Update(msg)
-	cmds = append(cmds, cmd)
+	cmds = append(cmds,
+		m.componenetTasksTable.Update(msg),
+		m.componenetTasksSidebar.Update(msg),
+	)
 
-	m.componenetTasksSidebar, cmd = m.componenetTasksSidebar.Update(msg)
-	cmds = append(cmds, cmd)
-
-	return m, tea.Batch(cmds...)
+	return tea.Batch(cmds...)
 }
 
 func (m *Model) SetTasks(tasks []clickup.Task) error {
@@ -444,17 +454,15 @@ func (m Model) View() string {
 		))
 }
 
-func (m Model) SetFocused(f bool) Model {
+func (m *Model) SetFocused(f bool) {
 	m.Focused = f
 
 	switch m.state {
-	case m.componenetTasksSidebar.ComponentId:
+	case m.componenetTasksSidebar.Id():
 		m.componenetTasksSidebar.SetFocused(f)
-	case m.componenetTasksTable.ComponentId:
+	case m.componenetTasksTable.Id():
 		m.componenetTasksTable.SetFocused(f)
 	}
-
-	return m
 }
 
 func (m *Model) SetSize(s common.Size) {
@@ -483,4 +491,8 @@ func (m *Model) ReloadTasks(viewId string) error {
 func (m *Model) Init() error {
 	m.log.Info("Initializing...")
 	return nil
+}
+
+func (m Model) Size() common.Size {
+	return m.size
 }
