@@ -111,7 +111,7 @@ func main() {
 	)
 
 	defer func() {
-		if err := cache.Dump(); err != nil {
+		if err := cache.Close(); err != nil {
 			termLogger.Fatal(err)
 		}
 	}()

@@ -14,13 +14,14 @@ import (
 )
 
 const (
-	CacheNamespaceTeams   cache.Namespace = "teams"
-	CacheNamespaceSpaces  cache.Namespace = "spaces"
-	CacheNamespaceFolders cache.Namespace = "folders"
-	CacheNamespaceLists   cache.Namespace = "lists"
-	CacheNamespaceViews   cache.Namespace = "views"
-	CacheNamespaceTasks   cache.Namespace = "tasks"
-	CacheNamespaceTask    cache.Namespace = "task"
+	CacheNamespaceTeams     cache.Namespace = "teams"
+	CacheNamespaceSpaces    cache.Namespace = "spaces"
+	CacheNamespaceFolders   cache.Namespace = "folders"
+	CacheNamespaceLists     cache.Namespace = "lists"
+	CacheNamespaceViews     cache.Namespace = "views"
+	CacheNamespaceTasks     cache.Namespace = "tasks"
+	CacheNamespaceTasksList cache.Namespace = "tasks-list"
+	CacheNamespaceTasksView cache.Namespace = "tasks-view"
 )
 
 type Api struct {
@@ -114,7 +115,7 @@ func (m *Api) GetTask(taskId string) (clickup.Task, error) {
 	m.logger.Debug("Getting a task", "taskId", taskId)
 
 	var data clickup.Task
-	cacheNamespace := CacheNamespaceTask
+	cacheNamespace := CacheNamespaceTasks
 	key := taskId
 	fallback := func() (interface{}, error) { return m.Clickup.GetTask(key) }
 
@@ -129,7 +130,7 @@ func (m *Api) GetTasksFromList(listId string) ([]clickup.Task, error) {
 	m.logger.Debug("Getting tasks for a list", "listId", listId)
 
 	var data []clickup.Task
-	cacheNamespace := CacheNamespaceTasks
+	cacheNamespace := CacheNamespaceTasksList
 	key := listId
 	fallback := func() (interface{}, error) { return m.Clickup.GetTasksFromList(key) }
 
@@ -144,7 +145,7 @@ func (m *Api) GetTasksFromView(viewId string) ([]clickup.Task, error) {
 	m.logger.Debug("Getting tasks for a view", "viewId", viewId)
 
 	var data []clickup.Task
-	cacheNamespace := CacheNamespaceTasks
+	cacheNamespace := CacheNamespaceTasksView
 	key := viewId
 	fallback := func() (interface{}, error) { return m.Clickup.GetTasksFromView(key) }
 
@@ -270,52 +271,29 @@ func (m *Api) InvalidateCache() error {
 	}
 
 	for _, entry := range entries {
+		m.logger.Debug("Invalidating cache", "namespace", entry.Namespace, "key", entry.Key.String())
+		var err error
 		switch entry.Namespace {
 		case CacheNamespaceTeams:
-			m.logger.Debug("Invalidating teams cache")
-			_, err := m.GetTeams()
-			if err != nil {
-				m.logger.Error("Failed to invalidate teams cache", "error", err)
-			}
+			_, err = m.GetTeams()
 		case CacheNamespaceSpaces:
-			m.logger.Debug("Invalidating spaces cache")
-			_, err := m.GetSpaces(entry.Key.String())
-			if err != nil {
-				m.logger.Error("Failed to invalidate spaces cache", "error", err)
-			}
+			_, err = m.GetSpaces(entry.Key.String())
 		case CacheNamespaceFolders:
-			m.logger.Debug("Invalidating folders cache")
-			_, err := m.GetFolders(entry.Key.String())
-			if err != nil {
-				m.logger.Error("Failed to invalidate folders cache", "error", err)
-			}
+			_, err = m.GetFolders(entry.Key.String())
 		case CacheNamespaceLists:
-			m.logger.Debug("Invalidating lists cache")
-			_, err := m.GetLists(entry.Key.String())
-			if err != nil {
-				m.logger.Error("Failed to invalidate lists cache", "error", err)
-			}
+			_, err = m.GetLists(entry.Key.String())
 		case CacheNamespaceViews:
-			m.logger.Debug("Invalidating views cache")
-			_, err := m.GetViewsFromSpace(entry.Key.String())
-			if err != nil {
-				m.logger.Error("Failed to invalidate views cache", "error", err)
-			}
+			_, err = m.GetViewsFromSpace(entry.Key.String())
+		case CacheNamespaceTasksList:
+			_, err = m.GetTasksFromList(entry.Key.String())
+		case CacheNamespaceTasksView:
+			_, err = m.GetTasksFromView(entry.Key.String())
 		case CacheNamespaceTasks:
-			m.logger.Debug("Invalidating tasks cache")
-			_, err := m.GetTasksFromList(entry.Key.String())
-			if err != nil {
-				m.logger.Error("Failed to invalidate tasks cache", "error", err)
-			}
-		case CacheNamespaceTask:
-			m.logger.Debug("Invalidating task cache")
-			_, err := m.GetTask(entry.Key.String())
-			if err != nil {
-				m.logger.Error("Failed to invalidate task cache", "error", err)
-			}
-		default:
-			m.logger.Debug("Invalidating cache",
-				"namespace", entry.Namespace, "key", entry.Key.String())
+			_, err = m.GetTask(entry.Key.String())
+		}
+
+		if err != nil {
+			m.logger.Error("Failed to invalidate task cache", "error", err)
 		}
 	}
 
