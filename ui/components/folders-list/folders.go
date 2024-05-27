@@ -11,15 +11,19 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const ComponentId = "widgetFoldersList"
+const id = "folders-list"
 
 type Model struct {
+	id             common.Id
 	list           list.Model
 	ctx            *context.UserContext
 	log            *log.Logger
-	ComponentId    common.ComponentId
 	SelectedFolder clickup.Folder
 	folders        []clickup.Folder
+}
+
+func (m Model) Id() common.Id {
+	return m.id
 }
 
 func (m Model) KeyMap() help.KeyMap {
@@ -37,10 +41,10 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	l.SetShowHelp(false)
 	l.Title = "Folders"
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + ComponentId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
 
 	return Model{
-		ComponentId:    ComponentId,
+		id:             id,
 		list:           l,
 		ctx:            ctx,
 		SelectedFolder: clickup.Folder{},
@@ -67,7 +71,7 @@ func (m *Model) syncList(folders []clickup.Folder) {
 	m.log.Info("List synchronized")
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -82,7 +86,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedFolder := m.list.SelectedItem().(listitem.Item).Data().(clickup.Folder)
 			m.log.Info("Selected folder", "id", selectedFolder.Id, "name", selectedFolder.Name)
 			m.SelectedFolder = selectedFolder
-			return m, FolderChangeCmd(selectedFolder.Id)
+			return FolderChangeCmd(selectedFolder.Id)
 
 		case "J", "shift+down":
 			m.list.CursorDown()
@@ -93,7 +97,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedFolder := m.list.SelectedItem().(listitem.Item).Data().(clickup.Folder)
 			m.log.Info("Selected folder", "id", selectedFolder.Id, "name", selectedFolder.Name)
 			m.SelectedFolder = selectedFolder
-			return m, common.FolderPreviewCmd(selectedFolder.Id)
+			return common.FolderPreviewCmd(selectedFolder.Id)
 
 		case "K", "shift+up":
 			m.list.CursorUp()
@@ -104,14 +108,14 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedFolder := m.list.SelectedItem().(listitem.Item).Data().(clickup.Folder)
 			m.log.Info("Selected folder", "id", selectedFolder.Id, "name", selectedFolder.Name)
 			m.SelectedFolder = selectedFolder
-			return m, common.FolderPreviewCmd(selectedFolder.Id)
+			return common.FolderPreviewCmd(selectedFolder.Id)
 		}
 	}
 
 	m.list, cmd = m.list.Update(msg)
 	cmds = append(cmds, cmd)
 
-	return m, tea.Batch(cmds...)
+	return tea.Batch(cmds...)
 }
 
 func (m Model) View() string {

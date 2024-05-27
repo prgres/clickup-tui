@@ -11,15 +11,19 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const ComponentId = "spacesList"
+const id = "spaces-list"
 
 type Model struct {
+	id            common.Id
 	list          list.Model
 	ctx           *context.UserContext
 	log           *log.Logger
-	ComponentId   common.ComponentId
 	SelectedSpace clickup.Space
 	spaces        []clickup.Space
+}
+
+func (m Model) Id() common.Id {
+	return m.id
 }
 
 func (m Model) KeyMap() help.KeyMap {
@@ -37,10 +41,10 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	l.SetShowHelp(false)
 	l.Title = "Spaces"
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/" + ComponentId)
+	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
 
 	return Model{
-		ComponentId:   ComponentId,
+		id:            id,
 		list:          l,
 		ctx:           ctx,
 		SelectedSpace: clickup.Space{},
@@ -67,7 +71,7 @@ func (m *Model) syncList(spaces []clickup.Space) {
 	m.log.Info("List synchronized")
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -82,7 +86,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedSpace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
 			m.log.Info("Selected space", "id", selectedSpace.Id, "name", selectedSpace.Name)
 			m.SelectedSpace = selectedSpace
-			return m, SpaceChangedCmd(selectedSpace.Id)
+			return SpaceChangedCmd(selectedSpace.Id)
 
 		case "J", "shift+down":
 			m.list.CursorDown()
@@ -93,7 +97,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedSpace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
 			m.log.Info("Selected space", "id", selectedSpace.Id, "name", selectedSpace.Name)
 			m.SelectedSpace = selectedSpace
-			return m, common.SpacePreviewCmd(selectedSpace.Id)
+			return common.SpacePreviewCmd(selectedSpace.Id)
 
 		case "K", "shift+up":
 			m.list.CursorUp()
@@ -104,14 +108,14 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			selectedSpace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
 			m.log.Info("Selected space", "id", selectedSpace.Id, "name", selectedSpace.Name)
 			m.SelectedSpace = selectedSpace
-			return m, common.SpacePreviewCmd(selectedSpace.Id)
+			return common.SpacePreviewCmd(selectedSpace.Id)
 		}
 	}
 
 	m.list, cmd = m.list.Update(msg)
 	cmds = append(cmds, cmd)
 
-	return m, tea.Batch(cmds...)
+	return tea.Batch(cmds...)
 }
 
 func (m Model) View() string {
