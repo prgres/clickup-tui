@@ -154,11 +154,7 @@ func (c *Cache) Dump() error {
 
 func (c *Cache) GetEntries() []Entry {
 	entries := []Entry{}
-	c.logger.Debug("Getting all cache entries",
-		"entries", len(c.data))
-
-	j, _ := json.Marshal(c.data)
-	c.logger.Debug(string(j))
+	c.logger.Debug("Getting all cache entries")
 
 	for _, data := range c.data {
 		for _, entry := range data {
