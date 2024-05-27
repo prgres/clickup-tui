@@ -22,16 +22,11 @@ type Model struct {
 }
 
 type KeyMap struct {
-	Refresh   key.Binding
 	ForceQuit key.Binding
 }
 
 func DefaultKeyMap() KeyMap {
 	return KeyMap{
-		Refresh: key.NewBinding(
-			key.WithKeys("R"),
-			key.WithHelp("R", "go to refresh"),
-		),
 		ForceQuit: key.NewBinding(
 			key.WithKeys("ctrl+c", "q"),
 			key.WithHelp("ctrl+c/q", "quit"),
@@ -64,13 +59,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, m.keyMap.ForceQuit):
 			return m, tea.Quit
-
-		case key.Matches(msg, m.keyMap.Refresh):
-			m.log.Info("Refreshing...")
-			if err := m.ctx.Api.InvalidateCache(); err != nil {
-				m.log.Error("Failed to invalidate cache", "error", err)
-			}
-			m.log.Debug("Cache invalidated")
 		}
 
 	case tea.WindowSizeMsg:
@@ -98,15 +86,7 @@ func (m Model) View() string {
 	viewKm := viewToRender.KeyMap()
 
 	km := common.NewKeyMap(
-		func() [][]key.Binding {
-			return append(
-				viewKm.FullHelp(),
-				[][]key.Binding{
-					{
-						m.keyMap.Refresh,
-					},
-				}...)
-		},
+		viewKm.FullHelp,
 		viewKm.ShortHelp,
 	)
 

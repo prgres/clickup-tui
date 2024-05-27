@@ -83,6 +83,7 @@ type KeyMap struct {
 	CopyTaskUrl                 key.Binding
 	CopyTaskUrlMd               key.Binding
 	LostFocus                   key.Binding
+	Refresh                     key.Binding
 }
 
 func DefaultKeyMap() KeyMap {
@@ -119,6 +120,11 @@ func DefaultKeyMap() KeyMap {
 			key.WithKeys("esc"),
 			key.WithHelp("esc", "lost pane focus"),
 		),
+
+		Refresh: key.NewBinding(
+			key.WithKeys("R"),
+			key.WithHelp("R", "go to refresh"),
+		),
 	}
 }
 
@@ -134,6 +140,7 @@ func (m Model) KeyMap() help.KeyMap {
 						m.keyMap.CopyTaskUrl,
 						m.keyMap.CopyTaskUrlMd,
 						m.keyMap.LostFocus,
+						m.keyMap.Refresh,
 					},
 				}
 			},
@@ -143,6 +150,7 @@ func (m Model) KeyMap() help.KeyMap {
 					m.keyMap.CopyTaskUrl,
 					m.keyMap.CopyTaskUrlMd,
 					m.keyMap.LostFocus,
+					m.keyMap.Refresh,
 				}
 			},
 		)
@@ -219,6 +227,13 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 					m.log.Fatal(err)
 				}
 			}
+
+		case key.Matches(msg, m.keyMap.Refresh):
+			m.log.Info("Refreshing...")
+			if err := m.ctx.Api.InvalidateCache(); err != nil {
+				m.log.Error("Failed to invalidate cache", "error", err)
+			}
+			m.log.Debug("Cache invalidated")
 
 		case key.Matches(msg, m.keyMap.OpenTicketInWebBrowser):
 			task := m.componenetTasksTable.GetHighlightedTask()
