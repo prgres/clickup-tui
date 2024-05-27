@@ -9,16 +9,33 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/sync/errgroup"
+)
+
+const (
+	TTL                      = 30
+	StaleInterval            = 10
+	GarbageCollectorInterval = 3
 )
 
 var ErrKeyNotFoundInNamespace = errors.New("key not found in namespace")
 
 type Entry struct {
-	Key       Key
-	Namespace Namespace
-	Value     interface{}
+	Key       Key         `json:"key"`
+	Namespace Namespace   `json:"namespace"`
+	Value     interface{} `json:"value"`
+
+	Stale bool `json:"-"`
+
+	CreatedTs  int64 `json:"created_ts"`
+	AccessedTs int64 `json:"accessed_ts"`
+	UpdatedTs  int64 `json:"updated_ts"`
+}
+
+func (e Entry) Id() string {
+	return fmt.Sprintf("%s/%s", e.Namespace, e.Key)
 }
 
 func (c *Cache) saveEntryToFile(entry Entry) error {
@@ -29,11 +46,7 @@ func (c *Cache) saveEntryToFile(entry Entry) error {
 
 	c.logger.Debug("Writing entry", "namespaces", namespace, "key", key)
 
-	if err := c.saveToFile(path, filename, entry); err != nil {
-		return err
-	}
-
-	return nil
+	return c.saveToFile(path, filename, entry)
 }
 
 type Data map[Key]Entry
@@ -49,26 +62,86 @@ func (k Key) String() string {
 type Cache struct {
 	logger *slog.Logger
 
-	data  map[Namespace]Data
-	path  string
-	mutex sync.RWMutex
+	data      map[Namespace]Data
+	path      string
+	mutex     sync.RWMutex
+	closeChan chan struct{}
+	interval  time.Duration
 }
 
 func NewCache(logger *slog.Logger, path string) *Cache {
-	return &Cache{
-		path:   path,
-		data:   map[Namespace]Data{},
-		logger: logger,
+	c := Cache{
+		path:      path,
+		data:      map[Namespace]Data{},
+		logger:    logger,
+		interval:  GarbageCollectorInterval * time.Second,
+		closeChan: make(chan struct{}),
+	}
+
+	go c.garbageCollector()
+
+	return &c
+}
+
+func (c *Cache) garbageCollector() {
+	ticker := time.NewTicker(c.interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			c.logger.Debug("Garbage Collector: starting")
+			now := time.Now().Unix()
+			entries := c.GetEntries()
+
+			for _, entry := range entries {
+				if entry.Stale {
+					if now > entry.AccessedTs+TTL {
+						c.logger.Debug("Garbage Collector: deleting stale", "entry", entry.Id())
+						c.Delete(entry)
+					}
+
+					continue
+				}
+
+				if now > entry.UpdatedTs+StaleInterval {
+					c.logger.Debug("Garbage Collector: marking as stale", "entry", entry.Id())
+					entry.Stale = true
+					c.Update(entry)
+				}
+			}
+
+		case <-c.closeChan:
+			return
+		}
 	}
 }
 
 func (c *Cache) Close() error {
+	c.closeChan <- struct{}{}
+
 	if err := c.clearCacheDir(); err != nil {
 		return err
 	}
 
 	return c.Dump()
 }
+
+func (c *Cache) Delete(entry Entry) {
+	c.logger.Debug("Removing", "entry", entry.Id())
+	c.mutex.Lock()
+	delete(c.data[entry.Namespace], entry.Key)
+	c.mutex.Unlock()
+}
+
+func (c *Cache) Update(entry Entry) {
+	c.logger.Debug("Updating", "entry", entry.Id())
+	c.mutex.Lock()
+	entry.UpdatedTs = time.Now().Unix()
+	c.data[entry.Namespace][entry.Key] = entry
+	c.mutex.Unlock()
+}
+
 func (c *Cache) Load() error {
 	c.logger.Debug("Loading cache from path...", "path", c.path)
 	namespaces, err := c.getNamespacesFromCacheFiles()
@@ -98,7 +171,7 @@ func (c *Cache) Load() error {
 	return errgroup.Wait()
 }
 
-func (c *Cache) GetNamespace(namespace Namespace) Data {
+func (c *Cache) getNamespace(namespace Namespace) Data {
 	c.mutex.Lock()
 
 	v, ok := c.data[namespace]
@@ -112,20 +185,12 @@ func (c *Cache) GetNamespace(namespace Namespace) Data {
 }
 
 func (c *Cache) Get(namespace Namespace, key Key, target interface{}) error {
-	data := c.GetNamespace(namespace)
+	data := c.getNamespace(namespace)
 
-	// Check if the key exists in the cache
 	value, ok := data[key]
 	if !ok {
-		// If not, try to load it from the file
-		v, err := c.loadKey(namespace, key)
-		if err != nil {
-			c.logger.Debug("Key not found in cache",
-				"namespace", namespace, "key", key)
-			return ErrKeyNotFoundInNamespace
-		}
-
-		value = v
+		c.logger.Debug("Key not found in cache", "namespace", namespace, "key", key)
+		return ErrKeyNotFoundInNamespace
 	}
 
 	c.logger.Debug("Key found in cache", "namespace", namespace, "key", key)
@@ -135,31 +200,29 @@ func (c *Cache) Get(namespace Namespace, key Key, target interface{}) error {
 
 func (c *Cache) Set(namespace Namespace, key Key, value interface{}) {
 	c.logger.Debug("Caching", "namespace", namespace, "key", key)
-	data := c.GetNamespace(namespace)
+	data := c.getNamespace(namespace)
 
+	ts := time.Now().Unix()
 	c.mutex.Lock()
+
 	data[key] = Entry{
-		Key:       key,
-		Namespace: namespace,
-		Value:     value,
+		Key:        key,
+		Namespace:  namespace,
+		Value:      value,
+		AccessedTs: ts,
+		CreatedTs:  ts,
+		UpdatedTs:  ts,
 	}
+	c.data[namespace] = data
+
 	c.mutex.Unlock()
-
-	path := fmt.Sprintf("%s/%s", c.path, namespace)
-	filename := fmt.Sprintf("%s.json", key)
-
-	if err := c.saveToFile(path, filename, value); err != nil {
-		c.logger.Error(err.Error())
-		panic(err)
-	}
 }
 
 func (c *Cache) Dump() error {
 	c.logger.Debug("Dumping cache")
 
 	errgroup := new(errgroup.Group)
-	entries := c.GetEntries()
-	for _, entry := range entries {
+	for _, entry := range c.GetEntries() {
 		func(entry Entry) {
 			errgroup.Go(func() error {
 				return c.saveEntryToFile(entry)
@@ -167,12 +230,12 @@ func (c *Cache) Dump() error {
 		}(entry)
 	}
 
-	return nil
+	return errgroup.Wait()
 }
 
 func (c *Cache) GetEntries() []Entry {
 	entries := []Entry{}
-	c.logger.Debug("Getting all cache entries")
+	c.mutex.Lock()
 
 	for _, data := range c.data {
 		for _, entry := range data {
@@ -180,6 +243,7 @@ func (c *Cache) GetEntries() []Entry {
 		}
 	}
 
+	c.mutex.Unlock()
 	return entries
 }
 
@@ -282,18 +346,8 @@ func (c *Cache) getNamespacesFromCacheFiles() ([]Namespace, error) {
 func (c *Cache) loadKey(namespace Namespace, key Key) (Entry, error) {
 	c.logger.Debug("Loading key", "key", fmt.Sprintf("%s/%s", namespace, key))
 
-	data, err := c.loadFromFile(
+	return c.loadFromFile(
 		fmt.Sprintf("%s/%s/%s.json", c.path, namespace, key))
-	if err != nil {
-		return Entry{}, err
-	}
-
-	e := Entry{
-		Key:       key,
-		Namespace: namespace,
-		Value:     data,
-	}
-	return e, nil
 }
 
 func (c *Cache) loadNamespace(namespace Namespace) (Data, error) {
@@ -343,30 +397,25 @@ func (c *Cache) saveToFile(path string, filename string, value interface{}) erro
 	}
 
 	_, err = f.Write(data)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
-func (c *Cache) loadFromFile(filepath string) (interface{}, error) {
+func (c *Cache) loadFromFile(filepath string) (Entry, error) {
+	var entry Entry
+
 	f, err := os.Open(filepath)
 	if err != nil {
-		return nil, err
+		return entry, err
 	}
 	defer f.Close()
 
-	var data interface{}
-	if err := json.NewDecoder(f).Decode(&data); err != nil {
-		return nil, err
-	}
+	err = json.NewDecoder(f).Decode(&entry)
 
-	return data, nil
+	return entry, err
 }
 
-func (c *Cache) parseData(data interface{}, target interface{}) error {
-	j, err := json.Marshal(data.(Entry).Value)
+func (c *Cache) parseData(data Entry, target interface{}) error {
+	j, err := json.Marshal(data.Value)
 	if err != nil {
 		return err
 	}
@@ -376,10 +425,12 @@ func (c *Cache) parseData(data interface{}, target interface{}) error {
 
 func filterDir(files []os.DirEntry) []os.DirEntry {
 	var dirs []os.DirEntry
+
 	for _, file := range files {
 		if file.IsDir() {
 			dirs = append(dirs, file)
 		}
 	}
+
 	return dirs
 }
