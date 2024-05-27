@@ -60,7 +60,8 @@ func (k Key) String() string {
 }
 
 type Cache struct {
-	logger    *slog.Logger
+	logger *slog.Logger
+
 	data      map[Namespace]Data
 	path      string
 	mutex     sync.RWMutex
@@ -142,7 +143,7 @@ func (c *Cache) Update(entry Entry) {
 }
 
 func (c *Cache) Load() error {
-	c.logger.Debug("Loading cache", "path", c.path)
+	c.logger.Debug("Loading cache from path...", "path", c.path)
 	namespaces, err := c.getNamespacesFromCacheFiles()
 	if err != nil {
 		return err
@@ -202,7 +203,6 @@ func (c *Cache) Set(namespace Namespace, key Key, value interface{}) {
 	data := c.getNamespace(namespace)
 
 	ts := time.Now().Unix()
-
 	c.mutex.Lock()
 
 	data[key] = Entry{
