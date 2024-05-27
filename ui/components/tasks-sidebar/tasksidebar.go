@@ -150,7 +150,7 @@ func (m Model) View() string {
 		bColor = m.ctx.Theme.BordersColorActive
 	}
 
-	styleBorders := m.ctx.Style.Borders.Copy().
+	styleBorders := m.ctx.Style.Borders.
 		BorderForeground(bColor)
 
 	return lipgloss.NewStyle().
