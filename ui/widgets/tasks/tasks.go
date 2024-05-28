@@ -127,11 +127,11 @@ func DefaultKeyMap() KeyMap {
 	}
 }
 
-func (m Model) KeyMap() help.KeyMap {
-	var km help.KeyMap
+func (m Model) Help() help.KeyMap {
+	var help help.KeyMap
 
 	if m.copyMode {
-		return common.NewKeyMap(
+		return common.NewHelp(
 			func() [][]key.Binding {
 				return [][]key.Binding{
 					{
@@ -157,15 +157,15 @@ func (m Model) KeyMap() help.KeyMap {
 
 	switch m.state {
 	case m.componenetTasksSidebar.Id():
-		km = m.componenetTasksSidebar.KeyMap()
+		help = m.componenetTasksSidebar.Help()
 	case m.componenetTasksTable.Id():
-		km = m.componenetTasksTable.KeyMap()
+		help = m.componenetTasksTable.Help()
 	}
 
-	return common.NewKeyMap(
+	return common.NewHelp(
 		func() [][]key.Binding {
 			return append(
-				km.FullHelp(),
+				help.FullHelp(),
 				[]key.Binding{
 					m.keyMap.OpenTicketInWebBrowser,
 					m.keyMap.ToggleSidebar,
@@ -174,7 +174,7 @@ func (m Model) KeyMap() help.KeyMap {
 		},
 		func() []key.Binding {
 			return append(
-				km.ShortHelp(),
+				help.ShortHelp(),
 				m.keyMap.OpenTicketInWebBrowser,
 				m.keyMap.CopyMode,
 			)

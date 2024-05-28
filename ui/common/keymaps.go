@@ -7,8 +7,8 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 )
 
-func NewEmptyKeyMap() help.KeyMap {
-	return NewKeyMap(
+func NewEmptyHelp() help.KeyMap {
+	return NewHelp(
 		func() [][]key.Binding { return [][]key.Binding{} },
 		func() []key.Binding { return []key.Binding{} },
 	)
@@ -19,20 +19,20 @@ var KeyBindingBack = key.NewBinding(
 	key.WithHelp("escape", "back to previous view"),
 )
 
-type KeyMap struct {
+type Help struct {
 	fullHelp  func() [][]key.Binding
 	shortHelp func() []key.Binding
 }
 
-func NewKeyMap(fullHelp func() [][]key.Binding, shortHelp func() []key.Binding) KeyMap {
-	return KeyMap{
+func NewHelp(fullHelp func() [][]key.Binding, shortHelp func() []key.Binding) Help {
+	return Help{
 		fullHelp:  fullHelp,
 		shortHelp: shortHelp,
 	}
 }
 
-func (km KeyMap) With(kb key.Binding) KeyMap {
-	return NewKeyMap(
+func (km Help) With(kb key.Binding) Help {
+	return NewHelp(
 		func() [][]key.Binding {
 			return append(km.FullHelp(), []key.Binding{kb})
 		},
@@ -42,11 +42,11 @@ func (km KeyMap) With(kb key.Binding) KeyMap {
 	)
 }
 
-func (km KeyMap) FullHelp() [][]key.Binding {
+func (km Help) FullHelp() [][]key.Binding {
 	return km.fullHelp()
 }
 
-func (km KeyMap) ShortHelp() []key.Binding {
+func (km Help) ShortHelp() []key.Binding {
 	return km.shortHelp()
 }
 

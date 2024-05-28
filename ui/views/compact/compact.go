@@ -54,16 +54,16 @@ func (m Model) Init() tea.Cmd {
 	)
 }
 
-func (m Model) KeyMap() help.KeyMap {
+func (m Model) Help() help.KeyMap {
 	switch m.state.Widget {
 	case m.widgetNavigator.Id():
-		return m.widgetNavigator.KeyMap()
+		return m.widgetNavigator.Help()
 	case m.widgetViewsTabs.Id():
-		return m.widgetTasks.KeyMap()
+		return m.widgetViewsTabs.Help()
 	case m.widgetTasks.Id():
-		return m.widgetTasks.KeyMap()
+		return m.widgetTasks.Help()
 	default:
-		return common.NewEmptyKeyMap()
+		return common.NewEmptyHelp()
 	}
 }
 
@@ -407,16 +407,3 @@ func (m *Model) handleListChangePreview(id string) tea.Cmd {
 
 	return LoadingTasksFromViewCmd(initTab)
 }
-
-// func (m *Model) getActiveElement() common.UIElement {
-// 	switch m.state {
-// 	case m.widgetNavigator.Id():
-// 		return m.widgetNavigator
-// 	case m.widgetViewsTabs.Id():
-// 		return m.widgetViewsTabs
-// 	case m.widgetTasks.Id():
-// 		return m.widgetTasks
-// 	default:
-// 		return nil
-// 	}
-// }
