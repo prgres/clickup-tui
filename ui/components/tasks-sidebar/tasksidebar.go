@@ -30,10 +30,25 @@ type Model struct {
 	Hidden       bool
 	Ready        bool
 	ifBorders    bool
+	keyMap       KeyMap
 }
 
 func (m Model) Id() common.Id {
 	return m.id
+}
+
+type KeyMap struct {
+	viewport.KeyMap
+}
+
+func (m Model) KeyMap() KeyMap {
+	return m.keyMap
+}
+
+func DefaultKeyMap() KeyMap {
+	return KeyMap{
+		KeyMap: viewport.DefaultKeyMap(),
+	}
 }
 
 func (m *Model) SetSize(s common.Size) {
@@ -51,8 +66,8 @@ func (m *Model) SetSize(s common.Size) {
 	m.viewport.SetContent(task)
 }
 
-func (m Model) KeyMap() help.KeyMap {
-	km := m.viewport.KeyMap
+func (m Model) Help() help.KeyMap {
+	km := m.keyMap
 
 	return common.NewHelp(
 		func() [][]key.Binding {
@@ -106,6 +121,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		log:          log,
 		ifBorders:    true,
 		size:         size,
+		keyMap:       DefaultKeyMap(),
 	}
 }
 

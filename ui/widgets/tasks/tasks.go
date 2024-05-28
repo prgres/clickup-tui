@@ -157,7 +157,7 @@ func (m Model) Help() help.KeyMap {
 
 	switch m.state {
 	case m.componenetTasksSidebar.Id():
-		help = m.componenetTasksSidebar.KeyMap()
+		help = m.componenetTasksSidebar.Help()
 	case m.componenetTasksTable.Id():
 		help = m.componenetTasksTable.Help()
 	}
