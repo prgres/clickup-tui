@@ -127,11 +127,11 @@ func DefaultKeyMap() KeyMap {
 	}
 }
 
-func (m Model) KeyMap() help.KeyMap {
+func (m Model) Help() help.KeyMap {
 	var km help.KeyMap
 
 	if m.copyMode {
-		return common.NewKeyMap(
+		return common.NewHelp(
 			func() [][]key.Binding {
 				return [][]key.Binding{
 					{
@@ -162,7 +162,7 @@ func (m Model) KeyMap() help.KeyMap {
 		km = m.componenetTasksTable.KeyMap()
 	}
 
-	return common.NewKeyMap(
+	return common.NewHelp(
 		func() [][]key.Binding {
 			return append(
 				km.FullHelp(),

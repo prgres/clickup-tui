@@ -37,8 +37,8 @@ func (m Model) WithFocused(f bool) Model {
 	return m
 }
 
-func (m Model) KeyMap() help.KeyMap {
-	return common.NewKeyMap(
+func (m Model) Help() help.KeyMap {
+	return common.NewHelp(
 		m.list.FullHelp,
 		m.list.ShortHelp,
 	)

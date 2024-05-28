@@ -54,7 +54,7 @@ func (m *Model) SetSize(s common.Size) {
 func (m Model) KeyMap() help.KeyMap {
 	km := m.viewport.KeyMap
 
-	return common.NewKeyMap(
+	return common.NewHelp(
 		func() [][]key.Binding {
 			return [][]key.Binding{
 				{

@@ -46,8 +46,8 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
-func (m Model) KeyMap() help.KeyMap {
-	return common.NewKeyMap(
+func (m Model) Help() help.KeyMap {
+	return common.NewHelp(
 		m.list.FullHelp,
 		m.list.ShortHelp,
 	).With(common.KeyBindingBack)

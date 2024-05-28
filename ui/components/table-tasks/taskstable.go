@@ -80,7 +80,7 @@ func (m *Model) setTableSize(s common.Size) {
 func (m Model) KeyMap() help.KeyMap {
 	km := m.table.KeyMap()
 
-	return common.NewKeyMap(
+	return common.NewHelp(
 		func() [][]key.Binding {
 			return [][]key.Binding{
 				{

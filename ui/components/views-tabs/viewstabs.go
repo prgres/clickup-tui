@@ -44,13 +44,15 @@ func (m *Model) SetSize(s common.Size) {
 	m.size = s
 }
 
-func (m Model) KeyMap() help.KeyMap {
-	return common.NewKeyMap(
+func (m Model) Help() help.KeyMap {
+	return common.NewHelp(
 		func() [][]key.Binding {
 			return [][]key.Binding{
 				{
 					m.keyMap.CursorLeft,
+					m.keyMap.CursorLeftAndSelect,
 					m.keyMap.CursorRight,
+					m.keyMap.CursorRightAndSelect,
 					m.keyMap.Select,
 				},
 			}
