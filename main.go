@@ -140,8 +140,10 @@ func main() {
 	logger.Info("Initializing api...")
 	api := api.NewApi(logger, cache, cfg.Token)
 
+	defer api.Close()
+
 	logger.Info("Initializing user context...")
-	ctx := context.NewUserContext(logger, &api, cfg)
+	ctx := context.NewUserContext(logger, api, cfg)
 
 	logger.Info("Initializing main model...")
 	mainModel := ui.InitialModel(&ctx, logger)

@@ -191,12 +191,12 @@ func (m *Model) SetSize(size common.Size) {
 	m.list.SetSize(size.Width, size.Height)
 }
 
-func (m *Model) SpaceChanged(id string) error {
-	folders, err := m.ctx.Api.GetLists(id)
+func (m *Model) FolderChanged(id string) error {
+	lists, err := m.ctx.Api.Clickup.GetListsFromFolder(id)
 	if err != nil {
 		return err
 	}
-	m.syncList(folders)
+	m.syncList(lists)
 
 	return nil
 }

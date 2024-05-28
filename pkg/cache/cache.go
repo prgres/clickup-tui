@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	TTL                      = 30
-	StaleInterval            = 10
-	GarbageCollectorInterval = 3
+	TTL                      = 5 * 60
+	StaleInterval            = 15
+	GarbageCollectorInterval = 1
 )
 
 var ErrKeyNotFoundInNamespace = errors.New("key not found in namespace")
@@ -60,8 +60,7 @@ func (k Key) String() string {
 }
 
 type Cache struct {
-	logger *slog.Logger
-
+	logger    *slog.Logger
 	data      map[Namespace]Data
 	path      string
 	mutex     sync.RWMutex
@@ -94,22 +93,27 @@ func (c *Cache) garbageCollector() {
 			now := time.Now().Unix()
 			entries := c.GetEntries()
 
+			var wg sync.WaitGroup
 			for _, entry := range entries {
-				if entry.Stale {
+				wg.Add(1)
+				go func(entry Entry) {
+					defer wg.Done()
+
 					if now > entry.AccessedTs+TTL {
 						c.logger.Debug("Garbage Collector: deleting stale", "entry", entry.Id())
 						c.Delete(entry)
+
+						return
 					}
 
-					continue
-				}
-
-				if now > entry.UpdatedTs+StaleInterval {
-					c.logger.Debug("Garbage Collector: marking as stale", "entry", entry.Id())
-					entry.Stale = true
-					c.Update(entry)
-				}
+					if now > entry.UpdatedTs+StaleInterval {
+						c.logger.Debug("Garbage Collector: marking as stale", "entry", entry.Id())
+						entry.Stale = true
+						c.Update(entry)
+					}
+				}(entry)
 			}
+			wg.Wait()
 
 		case <-c.closeChan:
 			return
@@ -187,7 +191,7 @@ func (c *Cache) getNamespace(namespace Namespace) Data {
 func (c *Cache) Get(namespace Namespace, key Key, target interface{}) error {
 	data := c.getNamespace(namespace)
 
-	value, ok := data[key]
+	entry, ok := data[key]
 	if !ok {
 		c.logger.Debug("Key not found in cache", "namespace", namespace, "key", key)
 		return ErrKeyNotFoundInNamespace
@@ -195,7 +199,9 @@ func (c *Cache) Get(namespace Namespace, key Key, target interface{}) error {
 
 	c.logger.Debug("Key found in cache", "namespace", namespace, "key", key)
 
-	return c.parseData(value, target)
+	entry.AccessedTs = time.Now().Unix()
+	c.Update(entry)
+	return c.parseData(entry, target)
 }
 
 func (c *Cache) Set(namespace Namespace, key Key, value interface{}) {
@@ -247,6 +253,7 @@ func (c *Cache) GetEntries() []Entry {
 	return entries
 }
 
+// TODO: rename to clear
 func (c *Cache) Invalidate() error {
 	c.logger.Debug("Invalidating all cache entries")
 
