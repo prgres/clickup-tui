@@ -2,6 +2,7 @@ package listslist
 
 import (
 	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
@@ -20,6 +21,7 @@ type Model struct {
 	log          *log.Logger
 	SelectedList clickup.List
 	lists        []clickup.List
+	keyMap       KeyMap
 }
 
 func (m Model) Id() common.Id {
@@ -31,6 +33,8 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		list.NewDefaultDelegate(),
 		0, 0)
 	l.KeyMap.Quit.Unbind()
+	l.KeyMap.CursorUp.Unbind()
+	l.KeyMap.CursorDown.Unbind()
 	l.SetShowHelp(false)
 	l.Title = "Lists"
 
@@ -46,10 +50,65 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
+type KeyMap struct {
+	CursorUp            key.Binding
+	CursorUpAndSelect   key.Binding
+	CursorDown          key.Binding
+	CursorDownAndSelect key.Binding
+	Select              key.Binding
+}
+
+func DefaultKeyMap() KeyMap {
+	return KeyMap{
+		CursorUp: key.NewBinding(
+			key.WithKeys("k", "up"),
+			key.WithHelp("k, up", "up"),
+		),
+		CursorUpAndSelect: key.NewBinding(
+			key.WithKeys("K", "shift+up"),
+			key.WithHelp("K, shift+up", "up and select"),
+		),
+		CursorDown: key.NewBinding(
+			key.WithKeys("j", "down"),
+			key.WithHelp("j, down", "down"),
+		),
+		CursorDownAndSelect: key.NewBinding(
+			key.WithKeys("J", "shift+down"),
+			key.WithHelp("J, down", "down and select"),
+		),
+		Select: key.NewBinding(
+			key.WithKeys("enter"),
+			key.WithHelp("enter", "select"),
+		),
+	}
+}
+
+func (m Model) KeyMap() KeyMap {
+	return m.keyMap
+}
+
 func (m Model) Help() help.KeyMap {
 	return common.NewHelp(
-		m.list.FullHelp,
-		m.list.ShortHelp,
+		func() [][]key.Binding {
+			return append(
+				m.list.FullHelp(),
+				[]key.Binding{
+					m.keyMap.CursorUp,
+					m.keyMap.CursorUpAndSelect,
+					m.keyMap.CursorDown,
+					m.keyMap.CursorDownAndSelect,
+					m.keyMap.Select,
+				},
+			)
+		},
+		func() []key.Binding {
+			return append(
+				m.list.ShortHelp(),
+				m.keyMap.CursorUp,
+				m.keyMap.CursorDown,
+				m.keyMap.Select,
+			)
+		},
 	).With(common.KeyBindingBack)
 }
 
@@ -70,8 +129,8 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch keypress := msg.String(); keypress {
-		case "enter":
+		switch {
+		case key.Matches(msg, m.keyMap.Select):
 			if m.list.SelectedItem() == nil {
 				m.log.Info("List is empty")
 				break
@@ -81,7 +140,10 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			m.SelectedList = selectedList
 			return ListChangedCmd(m.SelectedList.Id)
 
-		case "J", "shift+down":
+		case key.Matches(msg, m.keyMap.CursorDown):
+			m.list.CursorDown()
+
+		case key.Matches(msg, m.keyMap.CursorDownAndSelect):
 			m.list.CursorDown()
 			if m.list.SelectedItem() == nil {
 				m.log.Info("List is empty")
@@ -92,7 +154,10 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			m.SelectedList = selectedList
 			return common.ListPreviewCmd(m.SelectedList.Id)
 
-		case "K", "shift+up":
+		case key.Matches(msg, m.keyMap.CursorUp):
+			m.list.CursorUp()
+
+		case key.Matches(msg, m.keyMap.CursorUpAndSelect):
 			m.list.CursorUp()
 			if m.list.SelectedItem() == nil {
 				m.log.Info("List is empty")
