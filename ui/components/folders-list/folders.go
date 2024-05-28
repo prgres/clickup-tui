@@ -99,6 +99,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	l.KeyMap.CursorUp.Unbind()
 	l.KeyMap.CursorDown.Unbind()
 
+	l.SetShowHelp(false)
 	l.Title = "Folders"
 
 	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)

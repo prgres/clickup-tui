@@ -32,9 +32,11 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	l := list.New([]list.Item{},
 		list.NewDefaultDelegate(),
 		0, 0)
+
 	l.KeyMap.Quit.Unbind()
 	l.KeyMap.CursorUp.Unbind()
 	l.KeyMap.CursorDown.Unbind()
+
 	l.SetShowHelp(false)
 	l.Title = "Lists"
 
