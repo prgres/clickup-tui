@@ -229,10 +229,10 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 		case key.Matches(msg, m.keyMap.Refresh):
 			m.log.Info("Refreshing...")
-			if err := m.ctx.Api.InvalidateCache(); err != nil {
-				m.log.Error("Failed to invalidate cache", "error", err)
+			if err := m.ctx.Api.Sync(); err != nil {
+				m.log.Error("Failed to sync", "error", err)
 			}
-			m.log.Debug("Cache invalidated")
+			m.log.Debug("API sync")
 
 		case key.Matches(msg, m.keyMap.OpenTicketInWebBrowser):
 			task := m.componenetTasksTable.GetHighlightedTask()

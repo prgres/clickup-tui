@@ -212,7 +212,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	case LoadingListsFromFolderMsg:
 		id := string(msg)
 		m.log.Infof("Received: LoadingListsFromFolderMsg: %s", id)
-		if err := m.componentListsList.SpaceChanged(id); err != nil {
+		if err := m.componentListsList.FolderChanged(id); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
 			return tea.Batch(cmds...)
 		}
