@@ -2,6 +2,7 @@ package folderslist
 
 import (
 	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
@@ -20,16 +21,72 @@ type Model struct {
 	log            *log.Logger
 	SelectedFolder clickup.Folder
 	folders        []clickup.Folder
+	keyMap         KeyMap
+}
+
+type KeyMap struct {
+	CursorUp            key.Binding
+	CursorUpAndSelect   key.Binding
+	CursorDown          key.Binding
+	CursorDownAndSelect key.Binding
+	Select              key.Binding
+}
+
+func (m Model) KeyMap() KeyMap {
+	return m.keyMap
 }
 
 func (m Model) Id() common.Id {
 	return m.id
 }
 
-func (m Model) KeyMap() help.KeyMap {
-	return common.NewKeyMap(
-		m.list.FullHelp,
-		m.list.ShortHelp,
+func DefaultKeyMap() KeyMap {
+	return KeyMap{
+		CursorUp: key.NewBinding(
+			key.WithKeys("k", "up"),
+			key.WithHelp("k, up", "up"),
+		),
+		CursorUpAndSelect: key.NewBinding(
+			key.WithKeys("K", "shift+up"),
+			key.WithHelp("K, shift+up", "up and select"),
+		),
+		CursorDown: key.NewBinding(
+			key.WithKeys("j", "down"),
+			key.WithHelp("j, down", "down"),
+		),
+		CursorDownAndSelect: key.NewBinding(
+			key.WithKeys("J", "shift+down"),
+			key.WithHelp("J, down", "down and select"),
+		),
+		Select: key.NewBinding(
+			key.WithKeys("enter"),
+			key.WithHelp("enter", "select"),
+		),
+	}
+}
+
+func (m Model) Help() help.KeyMap {
+	return common.NewHelp(
+		func() [][]key.Binding {
+			return append(
+				m.list.FullHelp(),
+				[]key.Binding{
+					m.keyMap.CursorUp,
+					m.keyMap.CursorUpAndSelect,
+					m.keyMap.CursorDown,
+					m.keyMap.CursorDownAndSelect,
+					m.keyMap.Select,
+				},
+			)
+		},
+		func() []key.Binding {
+			return append(
+				m.list.ShortHelp(),
+				m.keyMap.CursorUp,
+				m.keyMap.CursorDown,
+				m.keyMap.Select,
+			)
+		},
 	).With(common.KeyBindingBack)
 }
 
@@ -37,7 +94,11 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	l := list.New([]list.Item{},
 		list.NewDefaultDelegate(),
 		0, 0)
+
 	l.KeyMap.Quit.Unbind()
+	l.KeyMap.CursorUp.Unbind()
+	l.KeyMap.CursorDown.Unbind()
+
 	l.SetShowHelp(false)
 	l.Title = "Folders"
 
@@ -49,6 +110,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		ctx:            ctx,
 		SelectedFolder: clickup.Folder{},
 		folders:        []clickup.Folder{},
+		keyMap:         DefaultKeyMap(),
 		log:            log,
 	}
 }
@@ -77,8 +139,8 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch keypress := msg.String(); keypress {
-		case "enter":
+		switch {
+		case key.Matches(msg, m.keyMap.Select):
 			if m.list.SelectedItem() == nil {
 				m.log.Info("List is empty")
 				break
@@ -88,8 +150,11 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			m.SelectedFolder = selectedFolder
 			return FolderChangeCmd(selectedFolder.Id)
 
-		case "J", "shift+down":
-			m.list.CursorDown()
+		case key.Matches(msg, m.keyMap.CursorUp):
+			m.list.CursorUp()
+
+		case key.Matches(msg, m.keyMap.CursorUpAndSelect):
+			m.list.CursorUp()
 			if m.list.SelectedItem() == nil {
 				m.log.Info("List is empty")
 				break
@@ -99,8 +164,11 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			m.SelectedFolder = selectedFolder
 			return common.FolderPreviewCmd(selectedFolder.Id)
 
-		case "K", "shift+up":
-			m.list.CursorUp()
+		case key.Matches(msg, m.keyMap.CursorDown):
+			m.list.CursorDown()
+
+		case key.Matches(msg, m.keyMap.CursorDownAndSelect):
+			m.list.CursorDown()
 			if m.list.SelectedItem() == nil {
 				m.log.Info("List is empty")
 				break

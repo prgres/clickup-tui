@@ -44,13 +44,15 @@ func (m *Model) SetSize(s common.Size) {
 	m.size = s
 }
 
-func (m Model) KeyMap() help.KeyMap {
-	return common.NewKeyMap(
+func (m Model) Help() help.KeyMap {
+	return common.NewHelp(
 		func() [][]key.Binding {
 			return [][]key.Binding{
 				{
 					m.keyMap.CursorLeft,
+					m.keyMap.CursorLeftAndSelect,
 					m.keyMap.CursorRight,
+					m.keyMap.CursorRightAndSelect,
 					m.keyMap.Select,
 				},
 			}
@@ -83,50 +85,42 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 }
 
 func (m *Model) Update(msg tea.Msg) tea.Cmd {
-	var cmd tea.Cmd
-	var cmds []tea.Cmd
-
-	cmds = append(cmds, cmd)
-
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch keypress := msg.String(); keypress {
-		case "H", "shift+left":
-			index := prevTab(m.tabs, m.SelectedTabIdx)
-			m.SelectedTabIdx = index
-			m.SelectedTab = m.tabs[index].Id
-			return TabChangedCmd(m.SelectedTab)
-
-		case "L", "shift+right":
-			index := nextTab(m.tabs, m.SelectedTabIdx)
-			m.SelectedTabIdx = index
-			m.SelectedTab = m.tabs[index].Id
-			return TabChangedCmd(m.SelectedTab)
-
-		case "h", "left":
+		switch {
+		case key.Matches(msg, m.keyMap.CursorLeft):
 			index := prevTab(m.tabs, m.SelectedTabIdx)
 			m.SelectedTabIdx = index
 			m.SelectedTab = m.tabs[index].Id
 			return nil
 
-		case "l", "right":
+		case key.Matches(msg, m.keyMap.CursorRight):
 			index := nextTab(m.tabs, m.SelectedTabIdx)
 			m.SelectedTabIdx = index
 			m.SelectedTab = m.tabs[index].Id
 			return nil
 
-		case "enter":
+		case key.Matches(msg, m.keyMap.Select):
 			index := nextTab(m.tabs, m.SelectedTabIdx)
 			m.SelectedTabIdx = index
 			m.SelectedTab = m.tabs[index].Id
 			return TabChangedCmd(m.SelectedTab)
 
-		default:
-			return nil
+		case key.Matches(msg, m.keyMap.CursorLeftAndSelect):
+			index := prevTab(m.tabs, m.SelectedTabIdx)
+			m.SelectedTabIdx = index
+			m.SelectedTab = m.tabs[index].Id
+			return TabChangedCmd(m.SelectedTab)
+
+		case key.Matches(msg, m.keyMap.CursorRightAndSelect):
+			index := nextTab(m.tabs, m.SelectedTabIdx)
+			m.SelectedTabIdx = index
+			m.SelectedTab = m.tabs[index].Id
+			return TabChangedCmd(m.SelectedTab)
 		}
 	}
 
-	return tea.Batch(cmds...)
+	return nil
 }
 
 func (m Model) View() string {
@@ -198,10 +192,11 @@ func (m Model) Init() tea.Cmd {
 }
 
 type KeyMap struct {
-	CursorLeft         key.Binding
-	CursorRight        key.Binding
-	Select             key.Binding
-	SwitchFocusToTasks key.Binding
+	CursorLeft           key.Binding
+	CursorLeftAndSelect  key.Binding
+	CursorRight          key.Binding
+	CursorRightAndSelect key.Binding
+	Select               key.Binding
 }
 
 func DefaultKeyMap() KeyMap {
@@ -210,17 +205,21 @@ func DefaultKeyMap() KeyMap {
 			key.WithKeys("h", "left"),
 			key.WithHelp("h, left", "previous tab"),
 		),
+		CursorLeftAndSelect: key.NewBinding(
+			key.WithKeys("H", "left"),
+			key.WithHelp("H, shift+left", "select tab"),
+		),
 		CursorRight: key.NewBinding(
 			key.WithKeys("l", "right"),
 			key.WithHelp("l, right", "next tab"),
 		),
+		CursorRightAndSelect: key.NewBinding(
+			key.WithKeys("L", "shift+right"),
+			key.WithHelp("L, shift+right", "select tab"),
+		),
 		Select: key.NewBinding(
 			key.WithKeys("enter"),
 			key.WithHelp("enter", "select"),
-		),
-		SwitchFocusToTasks: key.NewBinding(
-			key.WithKeys("j", "k", "escape"),
-			key.WithHelp("j/k/escape", "switch focus to tasks table"),
 		),
 	}
 }

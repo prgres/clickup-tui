@@ -103,18 +103,18 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
-func (m Model) KeyMap() help.KeyMap {
+func (m Model) Help() help.KeyMap {
 	switch m.state {
 	case m.componentWorkspacesList.Id():
-		return m.componentWorkspacesList.KeyMap()
+		return m.componentWorkspacesList.Help()
 	case m.componentSpacesList.Id():
-		return m.componentSpacesList.KeyMap()
+		return m.componentSpacesList.Help()
 	case m.componentFoldersList.Id():
-		return m.componentFoldersList.KeyMap()
+		return m.componentFoldersList.Help()
 	case m.componentListsList.Id():
-		return m.componentListsList.KeyMap()
+		return m.componentListsList.Help()
 	default:
-		return common.NewEmptyKeyMap()
+		return common.NewEmptyHelp()
 	}
 }
 

@@ -16,7 +16,7 @@ type UIElement interface {
 	BubblesElem
 
 	Id() Id
-	KeyMap() help.KeyMap
+	Help() help.KeyMap
 	SetSize(Size)
 	Size() Size
 }
