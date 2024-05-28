@@ -435,6 +435,8 @@ func (m *Api) Sync() error {
 					_, err = m.syncTasksFromView(key)
 				case CacheNamespaceTasks:
 					_, err = m.syncTask(key)
+				default:
+					m.logger.Warn("Removing cache entry due to invalid namespace", "entry", entry.Id(), "namespace", entry.Namespace)
 				}
 
 				if err != nil {
