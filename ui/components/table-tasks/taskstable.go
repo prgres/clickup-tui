@@ -28,6 +28,7 @@ type Model struct {
 	Focused           bool
 	Hidden            bool
 	ifBorders         bool
+	keyMap            KeyMap
 }
 
 func (m Model) Id() common.Id {
@@ -77,41 +78,70 @@ func (m *Model) setTableSize(s common.Size) {
 		WithPageSize(pageSize)
 }
 
-func (m Model) KeyMap() help.KeyMap {
-	km := m.table.KeyMap()
+type KeyMap struct {
+	table.KeyMap
+}
+
+func (m Model) KeyMap() KeyMap {
+	return m.keyMap
+}
+
+func DefaultKeyMap() KeyMap {
+	km := table.DefaultKeyMap()
+
+	return KeyMap{
+		KeyMap: table.KeyMap{
+			RowDown:         common.KeyBindingWithHelp(km.RowDown, "down"),
+			RowUp:           common.KeyBindingWithHelp(km.RowUp, "up"),
+			RowSelectToggle: common.KeyBindingWithHelp(km.RowSelectToggle, "select"),
+			PageDown:        common.KeyBindingWithHelp(km.PageDown, "next page"),
+			PageUp:          common.KeyBindingWithHelp(km.PageUp, "previous page"),
+			PageFirst:       common.KeyBindingWithHelp(km.PageFirst, "first page"),
+			PageLast:        common.KeyBindingWithHelp(km.PageLast, "last page"),
+			Filter:          common.KeyBindingWithHelp(km.Filter, "filter"),
+			FilterBlur:      common.KeyBindingWithHelp(km.FilterBlur, "filter blur"),
+			FilterClear:     common.KeyBindingWithHelp(km.FilterClear, "filter clear"),
+			ScrollRight:     common.KeyBindingWithHelp(km.ScrollRight, "scroll right"),
+			ScrollLeft:      common.KeyBindingWithHelp(km.ScrollLeft, "scroll left"),
+		},
+	}
+}
+
+func (m Model) Help() help.KeyMap {
+	km := m.keyMap
 
 	return common.NewHelp(
 		func() [][]key.Binding {
 			return [][]key.Binding{
 				{
-					common.KeyBindingWithHelp(km.RowDown, "down"),
-					common.KeyBindingWithHelp(km.RowUp, "up"),
-					common.KeyBindingWithHelp(km.RowSelectToggle, "select"),
+					km.RowDown,
+					km.RowUp,
+					km.RowSelectToggle,
 				},
 				{
-					common.KeyBindingWithHelp(km.PageDown, "next page"),
-					common.KeyBindingWithHelp(km.PageUp, "previous page"),
-					common.KeyBindingWithHelp(km.PageFirst, "first page"),
-					common.KeyBindingWithHelp(km.PageLast, "last page"),
+					km.PageDown,
+					km.PageUp,
+					km.PageFirst,
+					km.PageLast,
 				},
 				{
-					common.KeyBindingWithHelp(km.Filter, "filter"),
-					common.KeyBindingWithHelp(km.FilterBlur, "filter blur"),
-					common.KeyBindingWithHelp(km.FilterClear, "filter clear"),
+					km.Filter,
+					km.FilterBlur,
+					km.FilterClear,
 				},
 				{
-					common.KeyBindingWithHelp(km.ScrollRight, "scroll right"),
-					common.KeyBindingWithHelp(km.ScrollLeft, "scroll left"),
+					km.ScrollRight,
+					km.ScrollLeft,
 				},
 			}
 		},
 		func() []key.Binding {
 			return []key.Binding{
-				common.KeyBindingWithHelp(km.RowDown, "down"),
-				common.KeyBindingWithHelp(km.RowUp, "up"),
-				common.KeyBindingWithHelp(km.RowSelectToggle, "select"),
-				common.KeyBindingWithHelp(km.PageDown, "next page"),
-				common.KeyBindingWithHelp(km.PageUp, "previous page"),
+				km.RowDown,
+				km.RowUp,
+				km.RowSelectToggle,
+				km.PageDown,
+				km.PageUp,
 			}
 		},
 	)
@@ -188,6 +218,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		Hidden:         false,
 		log:            log,
 		ifBorders:      true,
+		keyMap:         DefaultKeyMap(),
 	}
 }
 
