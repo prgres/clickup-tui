@@ -23,11 +23,12 @@ func OpenUrlInWebBrowser(url string) error {
 }
 
 type EditorFinishedMsg struct {
+	Id   string
 	Data interface{}
 	Err  error
 }
 
-func OpenEditor(data string) tea.Cmd {
+func OpenEditor(id string, data string) tea.Cmd {
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
 		editor = "vim"
@@ -49,10 +50,10 @@ func OpenEditor(data string) tea.Cmd {
 		}
 
 		updatedData, err := os.ReadFile(tmpfileName)
-		data = string(updatedData)
 
 		return EditorFinishedMsg{
-			Data: data,
+			Id:   id,
+			Data: string(updatedData),
 			Err:  err,
 		}
 	})
