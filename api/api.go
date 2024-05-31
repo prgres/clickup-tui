@@ -184,7 +184,7 @@ func (m *Api) GetTask(taskId string) (clickup.Task, error) {
 	return m.getTask(true, taskId)
 }
 
-func (m *Api) syncTask(taskId string) (clickup.Task, error) {
+func (m *Api) SyncTask(taskId string) (clickup.Task, error) {
 	return m.getTask(false, taskId)
 }
 
@@ -434,7 +434,7 @@ func (m *Api) Sync() error {
 				case CacheNamespaceTasksView:
 					_, err = m.syncTasksFromView(key)
 				case CacheNamespaceTasks:
-					_, err = m.syncTask(key)
+					_, err = m.SyncTask(key)
 				default:
 					m.logger.Warn("Removing cache entry due to invalid namespace", "entry", entry.Id(), "namespace", entry.Namespace)
 				}
@@ -514,4 +514,21 @@ func (m *Api) get(cacheNamespace cache.Namespace, cacheKey cache.Key, data inter
 	val.Set(newVal)
 
 	return nil
+}
+
+func (m *Api) UpdateTask(task clickup.Task) (clickup.Task, error) {
+	r := clickup.RequestPutTask{
+		Id:          task.Id,
+		Name:        task.Name,
+		Description: task.Description,
+		Status:      task.Status.Status,
+		Points:      task.Points,
+	}
+
+	t, err := m.Clickup.UpdateTask(r)
+	if err != nil {
+		return clickup.Task{}, err
+	}
+
+	return m.SyncTask(t.Id)
 }

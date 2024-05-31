@@ -1,6 +1,7 @@
 package clickup
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -77,6 +78,7 @@ func (c *Client) requestGet(endpoint string, paramsQuery ...string) ([]byte, err
 		return nil, err
 	}
 	req.Header.Add("Authorization", c.token)
+	req.Header.Add("Content-Type", "application/json")
 
 	res, err := c.httpClient.Do(req)
 	if err != nil {
@@ -85,8 +87,39 @@ func (c *Client) requestGet(endpoint string, paramsQuery ...string) ([]byte, err
 
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
-	return body, err
+	return io.ReadAll(res.Body)
+}
+
+func (c *Client) requestPut(endpoint string, data []byte, paramsQuery ...string) ([]byte, error) {
+	reqUrl, err := url.Parse(c.apiUrl + endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(paramsQuery) > 0 {
+		params, err := c.parseQueryParams(paramsQuery...)
+		if err != nil {
+			return nil, err
+		}
+		reqUrl.RawQuery = params
+	}
+
+	c.logger.Debug("Sending PUT request", "request", reqUrl.String())
+	req, err := http.NewRequest("PUT", reqUrl.String(), bytes.NewBuffer(data))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", c.token)
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+
+	return io.ReadAll(res.Body)
 }
 
 func (c *Client) parseQueryParams(p ...string) (string, error) {
@@ -122,6 +155,27 @@ func (c *Client) get(url string, objmap RequestGet) error {
 	if objmap.Error() != "" {
 		return fmt.Errorf(
 			errMsg, url, "API response contains error.", string(rawData))
+	}
+
+	return nil
+}
+
+func (c *Client) update(url string, requestUpdate interface{}, objmap interface{}) error {
+	errMsg := "Error occurs while getting resources from url: %s. Error: %s. Raw data: %s"
+	errApiMsg := errMsg + " API response: %s"
+
+	requestJson, err := json.Marshal(requestUpdate)
+	if err != nil {
+		return err
+	}
+
+	rawData, err := c.requestPut(url, requestJson)
+	if err != nil {
+		return fmt.Errorf(errMsg, url, err, "none")
+	}
+
+	if err := json.Unmarshal(rawData, objmap); err != nil {
+		return fmt.Errorf(errApiMsg, url, err, string(rawData))
 	}
 
 	return nil

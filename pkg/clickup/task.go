@@ -7,12 +7,12 @@ import (
 )
 
 type Task struct {
-	Startdate           interface{}   `json:"startdate"`
-	Duedate             interface{}   `json:"duedate"`
-	Priority            interface{}   `json:"priority"`
+	Startdate           interface{}   `json:"start_date"`
+	Duedate             interface{}   `json:"due_date"`
+	Priority            string        `json:"priority"`
 	Parent              interface{}   `json:"parent"`
-	Timeestimate        interface{}   `json:"timeestimate"`
-	Timespent           interface{}   `json:"timespent"`
+	Timeestimate        interface{}   `json:"time_estimate"`
+	Timespent           interface{}   `json:"time_spent"`
 	DateCreated         string        `json:"date_created"`
 	Orderindex          string        `json:"orderindex"`
 	Id                  string        `json:"id"`
@@ -26,6 +26,7 @@ type Task struct {
 	TextContent         string        `json:"text_content"`
 	Name                string        `json:"name"`
 	CustomId            string        `json:"custom_id"`
+	Points              int           `json:"points"`
 	Status              Status        `json:"status"`
 	Creator             Creator       `json:"creator"`
 	List                TaskList      `json:"list"`
@@ -122,6 +123,41 @@ type RequestGetTask struct {
 	Err  string `json:"err"`
 }
 
+type Assignees struct {
+	Add []int `json:"add,omitempty"`
+	Rem []int `json:"rem,omitempty"`
+}
+
+type Watchers struct {
+	Add []int `json:"add,omitempty"`
+	Rem []int `json:"rem,omitempty"`
+}
+
+type GroupAssignees struct {
+	Add []int `json:"add,omitempty"`
+	Rem []int `json:"rem,omitempty"`
+}
+
+type RequestPutTask struct {
+	CustomItemId   int            `json:"custom_item_id,omitempty"`
+	Id             string         `json:"id"`
+	Name           string         `json:"name,omitempty"`
+	Description    string         `json:"description,omitempty"`
+	Status         string         `json:"status"`
+	Priority       int32          `json:"priority,omitempty"`
+	DueDate        int64          `json:"due_date,omitempty"`
+	DueDateTime    bool           `json:"due_date_time,omitempty"`
+	Parent         string         `json:"parent,omitempty"`
+	TimeEstimate   int32          `json:"time_estimate,omitempty"`
+	StartDate      int64          `json:"start_date,omitempty"`
+	StartDateTime  bool           `json:"start_date_time,omitempty"`
+	Points         int            `json:"points,omitempty"`
+	Assignees      Assignees      `json:"assignees,omitempty"`
+	GroupAssignees GroupAssignees `json:"group_assignees,omitempty"`
+	Watchers       Watchers       `json:"watchers,omitempty"`
+	Archived       bool           `json:"archived,omitempty"`
+}
+
 func (r RequestGetTask) Error() string {
 	return r.Err
 }
@@ -154,4 +190,14 @@ func (c *Client) getTasks(url string) ([]Task, error) {
 		return nil, err
 	}
 	return objmap.Tasks, nil
+}
+
+func (c *Client) UpdateTask(r RequestPutTask) (Task, error) {
+	var objmap Task
+
+	if err := c.update("/task/"+r.Id, r, &objmap); err != nil {
+		return objmap, err
+	}
+
+	return objmap, nil
 }
