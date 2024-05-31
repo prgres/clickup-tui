@@ -184,7 +184,7 @@ func (m *Api) GetTask(taskId string) (clickup.Task, error) {
 	return m.getTask(true, taskId)
 }
 
-func (m *Api) syncTask(taskId string) (clickup.Task, error) {
+func (m *Api) SyncTask(taskId string) (clickup.Task, error) {
 	return m.getTask(false, taskId)
 }
 
@@ -434,7 +434,7 @@ func (m *Api) Sync() error {
 				case CacheNamespaceTasksView:
 					_, err = m.syncTasksFromView(key)
 				case CacheNamespaceTasks:
-					_, err = m.syncTask(key)
+					_, err = m.SyncTask(key)
 				default:
 					m.logger.Warn("Removing cache entry due to invalid namespace", "entry", entry.Id(), "namespace", entry.Namespace)
 				}
@@ -514,4 +514,51 @@ func (m *Api) get(cacheNamespace cache.Namespace, cacheKey cache.Key, data inter
 	val.Set(newVal)
 
 	return nil
+}
+
+func (m *Api) update(cacheNamespace cache.Namespace, cacheKey cache.Key, data interface{}, updateFn func() (interface{}, error)) error {
+	m.logger.Debug("Updating resources", "namespace", cacheNamespace, "id", cacheKey)
+
+	m.logger.Debug("Fetching resources from API", "namespace", cacheNamespace, "id", cacheKey)
+
+	newData, err := updateFn()
+	if err != nil {
+		return err
+	}
+
+	m.Cache.Set(cacheNamespace, cacheKey, newData)
+
+	// Use reflection to set the value of the data
+	val := reflect.ValueOf(data)
+	if val.Kind() != reflect.Ptr || val.IsNil() {
+		return fmt.Errorf("data must be a non-nil pointer")
+	}
+
+	// Ensure newData is assignable to data
+	val = val.Elem()
+	newVal := reflect.ValueOf(newData)
+	if !newVal.Type().AssignableTo(val.Type()) {
+		return fmt.Errorf("cannot assign type %T to type %T", newData, data)
+	}
+
+	val.Set(newVal)
+
+	return nil
+}
+
+func (m *Api) UpdateTask(task clickup.Task) (clickup.Task, error) {
+	r := clickup.RequestPutTask{
+		Id:          task.Id,
+		Name:        task.Name,
+		Description: task.Description,
+		Status:      task.Status.Status,
+		Points:      task.Points,
+	}
+
+	t, err := m.Clickup.UpdateTask(r)
+	if err != nil {
+		return clickup.Task{}, err
+	}
+
+	return m.SyncTask(t.Id)
 }

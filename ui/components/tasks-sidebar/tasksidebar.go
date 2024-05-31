@@ -39,6 +39,7 @@ func (m Model) Id() common.Id {
 
 type KeyMap struct {
 	viewport.KeyMap
+	Edit key.Binding
 }
 
 func (m Model) KeyMap() KeyMap {
@@ -48,6 +49,10 @@ func (m Model) KeyMap() KeyMap {
 func DefaultKeyMap() KeyMap {
 	return KeyMap{
 		KeyMap: viewport.DefaultKeyMap(),
+		Edit: key.NewBinding(
+			key.WithKeys("e"),
+			key.WithHelp("e", "edit task"),
+		),
 	}
 }
 
@@ -60,10 +65,6 @@ func (m *Model) SetSize(s common.Size) {
 	m.size = s
 	m.viewport.Width = m.size.Width
 	m.viewport.Height = m.size.Height
-
-	task := lipgloss.NewStyle().Width(m.size.Width).
-		Render(m.renderTask(m.SelectedTask))
-	m.viewport.SetContent(task)
 }
 
 func (m Model) Help() help.KeyMap {
@@ -84,6 +85,9 @@ func (m Model) Help() help.KeyMap {
 					km.HalfPageUp,
 					km.HalfPageDown,
 				},
+				{
+					km.Edit,
+				},
 			}
 		},
 		func() []key.Binding {
@@ -92,6 +96,7 @@ func (m Model) Help() help.KeyMap {
 				km.Up,
 				km.PageDown,
 				km.PageUp,
+				km.Edit,
 			}
 		},
 	)
@@ -131,13 +136,42 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		cmds []tea.Cmd
 	)
 
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch {
+		case key.Matches(msg, m.keyMap.Edit):
+			data := m.SelectedTask.MarkdownDescription
+			cmds = append(cmds, common.OpenEditor(data))
+		}
+
+	case common.EditorFinishedMsg:
+		data := msg.Data.(string)
+
+		m.SelectedTask.Description = data
+		cmds = append(cmds, UpdateTaskCmd(m.SelectedTask))
+
+		if err := m.setTask(m.SelectedTask); err != nil {
+			return common.ErrCmd(err)
+		}
+
+	case UpdateTaskMsg:
+		t, err := m.ctx.Api.UpdateTask(m.SelectedTask)
+		if err != nil {
+			return common.ErrCmd(err)
+		}
+
+		if err := m.setTask(t); err != nil {
+			return common.ErrCmd(err)
+		}
+	}
+
 	m.viewport, cmd = m.viewport.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return tea.Batch(cmds...)
 }
 
-func (m Model) renderTask(task clickup.Task) string {
+func (m Model) renderTask(task clickup.Task) (string, error) {
 	s := strings.Builder{}
 
 	header := fmt.Sprintf("[#%s] %s\n", task.Id, task.Name)
@@ -146,18 +180,21 @@ func (m Model) renderTask(task clickup.Task) string {
 	divider := strings.Repeat("-", runewidth.StringWidth(header))
 	s.WriteString(divider)
 
-	r, _ := glamour.NewTermRenderer(
+	r, err := glamour.NewTermRenderer(
 		glamour.WithAutoStyle(),
 		glamour.WithWordWrap(m.viewport.Width),
 	)
+	if err != nil {
+		return "", err
+	}
 
 	out, err := r.Render(task.MarkdownDescription)
 	if err != nil {
-		return err.Error()
+		return "", err
 	}
 	s.WriteString(out)
 
-	return s.String()
+	return s.String(), nil
 }
 
 func (m Model) View() string {
@@ -218,11 +255,31 @@ func (m *Model) SetTask(id string) error {
 		return err
 	}
 
-	m.SelectedTask = task
-	m.viewport.SetContent(m.renderTask(task))
-
-	_ = m.viewport.GotoTop()
+	if err := m.setTask(task); err != nil {
+		return err
+	}
 	m.Ready = true
 
 	return nil
+}
+
+func (m *Model) setTask(task clickup.Task) error {
+	m.SelectedTask = task
+	renderedTask, err := m.renderTask(task)
+	if err != nil {
+		return err
+	}
+
+	m.viewport.SetContent(renderedTask)
+	_ = m.viewport.GotoTop()
+
+	return nil
+}
+
+type UpdateTaskMsg clickup.Task
+
+func UpdateTaskCmd(task clickup.Task) tea.Cmd {
+	return func() tea.Msg {
+		return UpdateTaskMsg(task)
+	}
 }
