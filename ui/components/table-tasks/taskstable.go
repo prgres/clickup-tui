@@ -80,6 +80,7 @@ func (m *Model) setTableSize(s common.Size) {
 
 type KeyMap struct {
 	table.KeyMap
+	Select key.Binding
 }
 
 func (m Model) KeyMap() KeyMap {
@@ -104,6 +105,10 @@ func DefaultKeyMap() KeyMap {
 			ScrollRight:     common.KeyBindingWithHelp(km.ScrollRight, "scroll right"),
 			ScrollLeft:      common.KeyBindingWithHelp(km.ScrollLeft, "scroll left"),
 		},
+		Select: key.NewBinding(
+			key.WithKeys("enter"),
+			key.WithHelp("enter", "select"),
+		),
 	}
 }
 
@@ -132,6 +137,7 @@ func (m Model) Help() help.KeyMap {
 				{
 					km.ScrollRight,
 					km.ScrollLeft,
+					m.keyMap.Select,
 				},
 			}
 		},
@@ -142,6 +148,7 @@ func (m Model) Help() help.KeyMap {
 				km.RowSelectToggle,
 				km.PageDown,
 				km.PageUp,
+				m.keyMap.Select,
 			}
 		},
 	)
@@ -245,8 +252,8 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch keypress := msg.String(); keypress {
-		case "enter":
+		switch {
+		case key.Matches(msg, m.keyMap.Select):
 			index := m.table.GetHighlightedRowIndex()
 			if m.table.TotalRows() == 0 {
 				m.log.Info("Table is empty")
