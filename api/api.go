@@ -516,36 +516,6 @@ func (m *Api) get(cacheNamespace cache.Namespace, cacheKey cache.Key, data inter
 	return nil
 }
 
-func (m *Api) update(cacheNamespace cache.Namespace, cacheKey cache.Key, data interface{}, updateFn func() (interface{}, error)) error {
-	m.logger.Debug("Updating resources", "namespace", cacheNamespace, "id", cacheKey)
-
-	m.logger.Debug("Fetching resources from API", "namespace", cacheNamespace, "id", cacheKey)
-
-	newData, err := updateFn()
-	if err != nil {
-		return err
-	}
-
-	m.Cache.Set(cacheNamespace, cacheKey, newData)
-
-	// Use reflection to set the value of the data
-	val := reflect.ValueOf(data)
-	if val.Kind() != reflect.Ptr || val.IsNil() {
-		return fmt.Errorf("data must be a non-nil pointer")
-	}
-
-	// Ensure newData is assignable to data
-	val = val.Elem()
-	newVal := reflect.ValueOf(newData)
-	if !newVal.Type().AssignableTo(val.Type()) {
-		return fmt.Errorf("cannot assign type %T to type %T", newData, data)
-	}
-
-	val.Set(newVal)
-
-	return nil
-}
-
 func (m *Api) UpdateTask(task clickup.Task) (clickup.Task, error) {
 	r := clickup.RequestPutTask{
 		Id:          task.Id,
