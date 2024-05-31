@@ -39,7 +39,6 @@ func (m Model) Id() common.Id {
 
 type KeyMap struct {
 	viewport.KeyMap
-	Edit key.Binding
 }
 
 func (m Model) KeyMap() KeyMap {
@@ -49,10 +48,6 @@ func (m Model) KeyMap() KeyMap {
 func DefaultKeyMap() KeyMap {
 	return KeyMap{
 		KeyMap: viewport.DefaultKeyMap(),
-		Edit: key.NewBinding(
-			key.WithKeys("e"),
-			key.WithHelp("e", "edit task"),
-		),
 	}
 }
 
@@ -85,9 +80,6 @@ func (m Model) Help() help.KeyMap {
 					km.HalfPageUp,
 					km.HalfPageDown,
 				},
-				{
-					km.Edit,
-				},
 			}
 		},
 		func() []key.Binding {
@@ -96,7 +88,6 @@ func (m Model) Help() help.KeyMap {
 				km.Up,
 				km.PageDown,
 				km.PageUp,
-				km.Edit,
 			}
 		},
 	)
@@ -135,35 +126,6 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		cmd  tea.Cmd
 		cmds []tea.Cmd
 	)
-
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch {
-		case key.Matches(msg, m.keyMap.Edit):
-			data := m.SelectedTask.MarkdownDescription
-			cmds = append(cmds, common.OpenEditor(data))
-		}
-
-	case common.EditorFinishedMsg:
-		data := msg.Data.(string)
-
-		m.SelectedTask.Description = data
-		cmds = append(cmds, UpdateTaskCmd(m.SelectedTask))
-
-		if err := m.setTask(m.SelectedTask); err != nil {
-			return common.ErrCmd(err)
-		}
-
-	case UpdateTaskMsg:
-		t, err := m.ctx.Api.UpdateTask(m.SelectedTask)
-		if err != nil {
-			return common.ErrCmd(err)
-		}
-
-		if err := m.setTask(t); err != nil {
-			return common.ErrCmd(err)
-		}
-	}
 
 	m.viewport, cmd = m.viewport.Update(msg)
 	cmds = append(cmds, cmd)
@@ -246,8 +208,7 @@ func (m Model) WithHidden(h bool) Model {
 	return m
 }
 
-func (m *Model) SetTask(id string) error {
-	m.log.Infof("Received: TaskSelectedMsg: %s", id)
+func (m *Model) SelectTask(id string) error {
 	m.Ready = false
 
 	task, err := m.ctx.Api.GetTask(id)
@@ -255,7 +216,7 @@ func (m *Model) SetTask(id string) error {
 		return err
 	}
 
-	if err := m.setTask(task); err != nil {
+	if err := m.SetTask(task); err != nil {
 		return err
 	}
 	m.Ready = true
@@ -263,7 +224,7 @@ func (m *Model) SetTask(id string) error {
 	return nil
 }
 
-func (m *Model) setTask(task clickup.Task) error {
+func (m *Model) SetTask(task clickup.Task) error {
 	m.SelectedTask = task
 	renderedTask, err := m.renderTask(task)
 	if err != nil {
@@ -274,12 +235,4 @@ func (m *Model) setTask(task clickup.Task) error {
 	_ = m.viewport.GotoTop()
 
 	return nil
-}
-
-type UpdateTaskMsg clickup.Task
-
-func UpdateTaskCmd(task clickup.Task) tea.Cmd {
-	return func() tea.Msg {
-		return UpdateTaskMsg(task)
-	}
 }

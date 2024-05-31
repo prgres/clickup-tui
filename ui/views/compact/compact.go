@@ -208,19 +208,19 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case LoadingTasksFromViewMsg:
 		id := string(msg)
+		m.log.Info("Received: LoadingTasksFromViewMsg", "id", id)
 		m.widgetTasks.SetSpinner(false)
 
 		if id == "" {
-			m.log.Info("Received: LoadingTasksFromViewMsg empty")
 			m.widgetTasks.SetTasks(nil)
 			break
 		}
 
-		m.log.Info("Received: LoadingTasksFromViewMsg", "id", id)
 		if err := m.reloadTasks(id); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
-			return tea.Batch(cmds...)
 		}
+
+		return tea.Batch(cmds...)
 
 	case tasks.LostFocusMsg:
 		m.log.Info("Received: tasks.LostFocusMsg")
@@ -327,6 +327,7 @@ func (m *Model) reloadTasks(viewId string) error {
 		return err
 	}
 	m.widgetTasks.SetTasks(tasks)
+	m.widgetTasks.SelectedViewListId = viewId
 	return nil
 }
 

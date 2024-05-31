@@ -207,7 +207,7 @@ func (m *Api) GetTasksFromList(listId string) ([]clickup.Task, error) {
 	return m.getTasksFromList(true, listId)
 }
 
-func (m *Api) syncTasksFromList(listId string) ([]clickup.Task, error) {
+func (m *Api) SyncTasksFromList(listId string) ([]clickup.Task, error) {
 	return m.getTasksFromList(false, listId)
 }
 
@@ -230,7 +230,7 @@ func (m *Api) GetTasksFromView(viewId string) ([]clickup.Task, error) {
 	return m.getTasksFromView(true, viewId)
 }
 
-func (m *Api) syncTasksFromView(viewId string) ([]clickup.Task, error) {
+func (m *Api) SyncTasksFromView(viewId string) ([]clickup.Task, error) {
 	return m.getTasksFromView(false, viewId)
 }
 
@@ -430,9 +430,9 @@ func (m *Api) Sync() error {
 				case CacheNamespaceViewsList:
 					_, err = m.syncViewsFromList(key)
 				case CacheNamespaceTasksList:
-					_, err = m.syncTasksFromList(key)
+					_, err = m.SyncTasksFromList(key)
 				case CacheNamespaceTasksView:
-					_, err = m.syncTasksFromView(key)
+					_, err = m.SyncTasksFromView(key)
 				case CacheNamespaceTasks:
 					_, err = m.SyncTask(key)
 				default:

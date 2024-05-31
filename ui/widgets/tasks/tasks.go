@@ -17,21 +17,29 @@ import (
 	"golang.design/x/clipboard"
 )
 
-const id = "tasks"
+const (
+	id                  = "tasks"
+	editorIdDescription = "description"
+	editorIdName        = "name"
+	editorIdStatus      = "status"
+)
 
 type Model struct {
-	log         *log.Logger
-	ctx         *context.UserContext
-	id          common.Id
-	size        common.Size
-	Focused     bool
-	Hidden      bool
-	ifBorders   bool
-	keyMap      KeyMap
-	state       common.Id
-	spinner     spinner.Model
-	showSpinner bool
-	copyMode    bool // TODO make as a widget
+	log                *log.Logger
+	ctx                *context.UserContext
+	id                 common.Id
+	size               common.Size
+	Focused            bool
+	Hidden             bool
+	ifBorders          bool
+	keyMap             KeyMap
+	state              common.Id
+	spinner            spinner.Model
+	showSpinner        bool
+	SelectedViewListId string
+
+	copyMode bool // TODO make as a widget
+	editMode bool
 
 	componenetTasksTable   *tabletasks.Model
 	componenetTasksSidebar *taskssidebar.Model
@@ -69,6 +77,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		spinner:                s,
 		showSpinner:            false,
 		copyMode:               false,
+		editMode:               false,
 		componenetTasksTable:   &componenetTasksTable,
 		componenetTasksSidebar: &componenetTasksSidebar,
 	}
@@ -83,6 +92,12 @@ type KeyMap struct {
 	CopyTaskUrl                 key.Binding
 	CopyTaskUrlMd               key.Binding
 	LostFocus                   key.Binding
+	EditMode                    key.Binding
+	EditDescription             key.Binding
+	EditName                    key.Binding
+	EditStatus                  key.Binding
+	EditAssigness               key.Binding
+	EditQuit                    key.Binding
 	Refresh                     key.Binding
 }
 
@@ -124,6 +139,30 @@ func DefaultKeyMap() KeyMap {
 			key.WithKeys("R"),
 			key.WithHelp("R", "go to refresh"),
 		),
+		EditMode: key.NewBinding(
+			key.WithKeys("e"),
+			key.WithHelp("e", "edit mode"),
+		),
+		EditDescription: key.NewBinding(
+			key.WithKeys("e"),
+			key.WithHelp("e", "edit description"),
+		),
+		EditName: key.NewBinding(
+			key.WithKeys("n"),
+			key.WithHelp("n", "edit name"),
+		),
+		EditStatus: key.NewBinding(
+			key.WithKeys("s"),
+			key.WithHelp("s", "edit status"),
+		),
+		EditAssigness: key.NewBinding(
+			key.WithKeys("a"),
+			key.WithHelp("a", "edit assigness"),
+		),
+		EditQuit: key.NewBinding(
+			key.WithKeys("esc"),
+			key.WithHelp("esc", "quit edit mode"),
+		),
 	}
 }
 
@@ -155,6 +194,30 @@ func (m Model) Help() help.KeyMap {
 		)
 	}
 
+	if m.editMode {
+		return common.NewHelp(
+			func() [][]key.Binding {
+				return [][]key.Binding{
+					{
+						m.keyMap.EditDescription,
+						m.keyMap.EditName,
+						m.keyMap.EditStatus,
+						m.keyMap.EditAssigness,
+						m.keyMap.EditQuit,
+					},
+				}
+			},
+			func() []key.Binding {
+				return []key.Binding{
+					m.keyMap.EditDescription,
+					m.keyMap.EditName,
+					m.keyMap.EditStatus,
+					m.keyMap.EditAssigness,
+					m.keyMap.EditQuit,
+				}
+			},
+		)
+	}
 	switch m.state {
 	case m.componenetTasksSidebar.Id():
 		help = m.componenetTasksSidebar.Help()
@@ -169,6 +232,7 @@ func (m Model) Help() help.KeyMap {
 				[]key.Binding{
 					m.keyMap.OpenTicketInWebBrowser,
 					m.keyMap.ToggleSidebar,
+					m.keyMap.EditMode,
 				},
 			)
 		},
@@ -177,6 +241,7 @@ func (m Model) Help() help.KeyMap {
 				help.ShortHelp(),
 				m.keyMap.OpenTicketInWebBrowser,
 				m.keyMap.CopyMode,
+				m.keyMap.EditMode,
 			)
 		},
 	)
@@ -217,6 +282,34 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			return tea.Batch(cmds...)
 		}
 
+		if m.editMode {
+			switch {
+			case key.Matches(msg, m.keyMap.EditDescription):
+				data := m.componenetTasksSidebar.SelectedTask.MarkdownDescription
+				cmds = append(cmds, common.OpenEditor(editorIdDescription, data))
+				m.editMode = false
+
+			case key.Matches(msg, m.keyMap.EditName):
+				data := m.componenetTasksSidebar.SelectedTask.Name
+				cmds = append(cmds, common.OpenEditor(editorIdName, data))
+				m.editMode = false
+
+			case key.Matches(msg, m.keyMap.EditStatus):
+				data := m.componenetTasksSidebar.SelectedTask.Status.Status
+				cmds = append(cmds, common.OpenEditor(editorIdStatus, data))
+				m.editMode = false
+
+			// case key.Matches(msg, m.keyMap.EditAssigness):
+			// 	data := m.SelectedTask.Assignees
+			// 	cmds = append(cmds, common.OpenEditor(data))
+			// 	m.editMode = false
+
+			case key.Matches(msg, m.keyMap.EditQuit):
+				m.editMode = false
+			}
+
+			return tea.Batch(cmds...)
+		}
 		switch {
 		case key.Matches(msg, m.keyMap.OpenTicketInWebBrowserBatch):
 			tasks := m.componenetTasksTable.GetSelectedTasks()
@@ -248,6 +341,10 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		case key.Matches(msg, m.keyMap.CopyMode):
 			m.log.Debug("Toggle copy mode")
 			m.copyMode = true
+
+		case key.Matches(msg, m.keyMap.EditMode):
+			m.log.Debug("Toggle edit mode")
+			m.editMode = true
 
 		case key.Matches(msg, m.keyMap.LostFocus):
 			switch m.state {
@@ -294,11 +391,59 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 		m.componenetTasksTable.SetFocused(false)
 
-		if err := m.componenetTasksSidebar.SetTask(id); err != nil {
+		if err := m.componenetTasksSidebar.SelectTask(id); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
 		}
 
 		cmds = append(cmds, cmd)
+
+	case common.EditorFinishedMsg:
+		err := msg.Err
+		id := msg.Id
+		if err := err; err != nil {
+			return common.ErrCmd(err)
+		}
+
+		switch id {
+		case editorIdDescription:
+			data := msg.Data.(string)
+			m.componenetTasksSidebar.SelectedTask.Description = data
+		case editorIdName:
+			data := msg.Data.(string)
+			m.componenetTasksSidebar.SelectedTask.Name = data
+		case editorIdStatus:
+			data := msg.Data.(string)
+			m.componenetTasksSidebar.SelectedTask.Status.Status = data
+		}
+
+		cmds = append(cmds, UpdateTaskCmd(m.componenetTasksSidebar.SelectedTask))
+
+		if err := m.componenetTasksSidebar.SetTask(m.componenetTasksSidebar.SelectedTask); err != nil {
+			return common.ErrCmd(err)
+		}
+
+		tableTasks := m.componenetTasksTable.GetTasks()
+		tableTasks[m.componenetTasksTable.SelectedTaskIndex] = m.componenetTasksSidebar.SelectedTask
+		m.componenetTasksTable.SetTasks(tableTasks)
+
+	case UpdateTaskMsg:
+		t, err := m.ctx.Api.UpdateTask(m.componenetTasksSidebar.SelectedTask)
+		if err != nil {
+			return common.ErrCmd(err)
+		}
+
+		if err := m.componenetTasksSidebar.SetTask(t); err != nil {
+			return common.ErrCmd(err)
+		}
+
+		tableTasks := m.componenetTasksTable.GetTasks()
+		tableTasks[m.componenetTasksTable.SelectedTaskIndex] = m.componenetTasksSidebar.SelectedTask
+		m.componenetTasksTable.SetTasks(tableTasks)
+
+		// TODO: this is temp solution withouth err checking
+		// because we are not able to distinguish upstream
+		m.ctx.Api.SyncTasksFromView(m.SelectedViewListId) //nolint:errcheck
+		m.ctx.Api.SyncTasksFromList(m.SelectedViewListId) //nolint:errcheck
 	}
 
 	cmds = append(cmds,
@@ -320,7 +465,7 @@ func (m *Model) SetTasks(tasks []clickup.Task) {
 
 	// TODO: check if it should yield at all or move it to cmd
 	id := tasks[0].Id
-	if err := m.componenetTasksSidebar.SetTask(id); err != nil {
+	if err := m.componenetTasksSidebar.SelectTask(id); err != nil {
 		m.log.Fatal(err)
 	}
 }
@@ -330,8 +475,13 @@ func (m Model) View() string {
 	if m.Focused {
 		bColor = m.ctx.Theme.BordersColorActive
 	}
+
 	if m.copyMode {
 		bColor = m.ctx.Theme.BordersColorCopyMode
+	}
+
+	if m.editMode {
+		bColor = m.ctx.Theme.BordersColorEditMode
 	}
 
 	style := lipgloss.NewStyle().
@@ -391,8 +541,13 @@ func (m Model) View() string {
 	if m.componenetTasksTable.GetFocused() {
 		tasksTableBorders = m.ctx.Theme.BordersColorActive
 	}
+
 	if m.copyMode {
 		tasksTableBorders = m.ctx.Theme.BordersColorCopyMode
+	}
+
+	if m.editMode {
+		tasksTableBorders = m.ctx.Theme.BordersColorEditMode
 	}
 
 	tmpStyle := style.

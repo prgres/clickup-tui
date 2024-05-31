@@ -78,11 +78,14 @@ type TaskSpace struct {
 }
 
 func (t Task) GetAssignees() string {
-	assignees := []string{}
-	for _, assignee := range t.Assignees {
-		assignees = append(assignees, assignee.Username)
+	assignees := strings.Builder{}
+	for i := range t.Assignees {
+		assignees.WriteString(t.Assignees[i].Username)
+		if i != len(t.Assignees) {
+			assignees.WriteString(", ")
+		}
 	}
-	return strings.Join(assignees, ",")
+	return assignees.String()
 }
 
 type Assignee struct {
