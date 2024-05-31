@@ -440,8 +440,10 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		tableTasks[m.componenetTasksTable.SelectedTaskIndex] = m.componenetTasksSidebar.SelectedTask
 		m.componenetTasksTable.SetTasks(tableTasks)
 
-		m.ctx.Api.SyncTasksFromView(m.SelectedViewListId)
-		m.ctx.Api.SyncTasksFromList(m.SelectedViewListId)
+		// TODO: this is temp solution withouth err checking
+		// because we are not able to distinguish upstream
+		m.ctx.Api.SyncTasksFromView(m.SelectedViewListId) //nolint:errcheck
+		m.ctx.Api.SyncTasksFromList(m.SelectedViewListId) //nolint:errcheck
 	}
 
 	cmds = append(cmds,
