@@ -327,6 +327,7 @@ func (m *Model) reloadTasks(viewId string) error {
 		return err
 	}
 	m.widgetTasks.SetTasks(tasks)
+	m.widgetTasks.SelectedViewListId = viewId
 	return nil
 }
 
