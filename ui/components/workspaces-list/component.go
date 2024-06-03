@@ -68,7 +68,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
-func (m *Model) syncList(workspaces []clickup.Workspace) {
+func (m *Model) SetList(workspaces []clickup.Workspace) {
 	m.log.Info("Synchronizing list...")
 	m.workspaces = workspaces
 
@@ -127,7 +127,7 @@ func (m *Model) InitWorkspaces() error {
 	}
 
 	m.Selected = workspaces[0]
-	m.syncList(workspaces)
+	m.SetList(workspaces)
 
 	return nil
 }

@@ -182,14 +182,11 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		m.widgetViewsTabs.Path = m.widgetNavigator.GetPath()
 	}
 
-	cmd = m.widgetNavigator.Update(msg)
-	cmds = append(cmds, cmd)
-
-	cmd = m.widgetViewsTabs.Update(msg)
-	cmds = append(cmds, cmd)
-
-	cmd = m.widgetTasks.Update(msg)
-	cmds = append(cmds, cmd)
+	cmds = append(cmds,
+		m.widgetNavigator.Update(msg),
+		m.widgetViewsTabs.Update(msg),
+		m.widgetTasks.Update(msg),
+	)
 
 	return tea.Batch(cmds...)
 }
@@ -283,7 +280,7 @@ func (m *Model) reloadTasks(viewId string) error {
 }
 
 func (m *Model) handleWorkspaceChangePreview(id string) tea.Cmd {
-	views, err := m.ctx.Api.GetViewsFromWorkspace(id)
+	views, err := m.ctx.Api.GetViewsFromWorkspace(id) // TODO: should fetch from the list
 	if err != nil {
 		return common.ErrCmd(err)
 	}

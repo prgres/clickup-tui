@@ -56,7 +56,7 @@ func (m Model) KeyMap() KeyMap {
 	return m.keyMap
 }
 
-func (m *Model) syncList(lists []clickup.List) {
+func (m *Model) SetList(lists []clickup.List) {
 	m.log.Info("Synchronizing list")
 	m.lists = lists
 
@@ -96,11 +96,11 @@ func (m *Model) SetSize(size common.Size) {
 }
 
 func (m *Model) FolderChanged(id string) error {
-	lists, err := m.ctx.Api.Clickup.GetListsFromFolder(id)
+	lists, err := m.ctx.Api.GetLists(id)
 	if err != nil {
 		return err
 	}
-	m.syncList(lists)
+	m.SetList(lists)
 
 	return nil
 }

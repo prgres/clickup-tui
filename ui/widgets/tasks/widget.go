@@ -12,6 +12,7 @@ import (
 	tabletasks "github.com/prgrs/clickup/ui/components/table-tasks"
 	taskssidebar "github.com/prgrs/clickup/ui/components/tasks-sidebar"
 	"github.com/prgrs/clickup/ui/context"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -135,6 +136,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		m.componenetTasksTable.SetTasks(tableTasks)
 
 	case UpdateTaskMsg:
+		m.log.Debug("Received: UpdateTaskMsg")
 		t, err := m.ctx.Api.UpdateTask(m.componenetTasksSidebar.SelectedTask)
 		if err != nil {
 			return common.ErrCmd(err)
@@ -148,10 +150,48 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		tableTasks[m.componenetTasksTable.SelectedIdx] = m.componenetTasksSidebar.SelectedTask
 		m.componenetTasksTable.SetTasks(tableTasks)
 
-		// TODO: this is temp solution withouth err checking
-		// because we are not able to distinguish upstream
-		m.ctx.Api.SyncTasksFromView(m.SelectedViewListId) //nolint:errcheck
-		m.ctx.Api.SyncTasksFromList(m.SelectedViewListId) //nolint:errcheck
+		tasks, err := m.ctx.Api.SyncTasksFromView(m.SelectedViewListId)
+		if err != nil {
+			return common.ErrCmd(err)
+		}
+		m.componenetTasksTable.SetTasks(tasks)
+
+	case common.RefreshMsg:
+		m.log.Debug("Received: common.RefreshMsg")
+
+		errgroup := new(errgroup.Group)
+
+		errgroup.Go(func() error {
+			id := m.componenetTasksSidebar.SelectedTask.Id
+			if id != "" {
+				t, err := m.ctx.Api.SyncTask(id)
+				if err != nil {
+					return err
+				}
+
+				if err := m.componenetTasksSidebar.SetTask(t); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+
+		errgroup.Go(func() error {
+			id := m.SelectedViewListId
+			if id != "" {
+				tasks, err := m.ctx.Api.SyncTasksFromView(m.SelectedViewListId)
+				if err != nil {
+					return err
+				}
+				m.componenetTasksTable.SetTasks(tasks)
+			}
+			return nil
+		})
+
+		err := errgroup.Wait()
+		if err != nil {
+			return common.ErrCmd(err)
+		}
 	}
 
 	cmds = append(cmds,

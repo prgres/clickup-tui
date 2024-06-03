@@ -56,7 +56,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
-func (m *Model) syncList(spaces []clickup.Space) {
+func (m *Model) SetList(spaces []clickup.Space) {
 	m.log.Info("Synchronizing list...")
 	m.spaces = spaces
 
@@ -110,7 +110,7 @@ func (m *Model) WorkspaceChanged(id string) error {
 		return err
 	}
 
-	m.syncList(spaces)
+	m.SetList(spaces)
 	return nil
 }
 

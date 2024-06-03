@@ -2,6 +2,7 @@ package ui
 
 import (
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -11,6 +12,10 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 	"github.com/prgrs/clickup/ui/views/compact"
 	"github.com/prgrs/clickup/ui/widgets/help"
+)
+
+const (
+	refreshInterval = 3
 )
 
 type Model struct {
@@ -74,6 +79,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			"height", msg.Height)
 		m.ctx.WindowSize.Set(msg.Width, msg.Height)
 		return m, tea.Batch(cmds...)
+
+	case common.UITickMsg:
+		ts := int64(msg)
+		if time.Now().Unix() > ts {
+			m.log.Debug("Fire refresh tick")
+			return m, tea.Batch(
+				common.UITickCmd(refreshInterval),
+				common.RefreshCmd(),
+			)
+		}
+
+		return m, msg.Tick()
 	}
 
 	cmds = append(cmds,
@@ -134,5 +151,6 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.viewCompact.Init(),
 		m.dialogHelp.Init(),
+		common.UITickCmd(refreshInterval),
 	)
 }
