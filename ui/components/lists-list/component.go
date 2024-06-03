@@ -47,6 +47,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		ctx:      ctx,
 		Selected: clickup.List{},
 		lists:    []clickup.List{},
+		keyMap:   DefaultKeyMap(),
 		log:      log,
 	}
 }
