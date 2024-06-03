@@ -15,13 +15,14 @@ import (
 const id = "folders-list"
 
 type Model struct {
-	id             common.Id
-	list           list.Model
-	ctx            *context.UserContext
-	log            *log.Logger
-	SelectedFolder clickup.Folder
-	folders        []clickup.Folder
-	keyMap         KeyMap
+	id      common.Id
+	list    list.Model
+	ctx     *context.UserContext
+	log     *log.Logger
+	folders []clickup.Folder
+	keyMap  KeyMap
+
+	Selected clickup.Folder
 }
 
 type KeyMap struct {
@@ -105,13 +106,13 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
 
 	return Model{
-		id:             id,
-		list:           l,
-		ctx:            ctx,
-		SelectedFolder: clickup.Folder{},
-		folders:        []clickup.Folder{},
-		keyMap:         DefaultKeyMap(),
-		log:            log,
+		id:       id,
+		list:     l,
+		ctx:      ctx,
+		Selected: clickup.Folder{},
+		folders:  []clickup.Folder{},
+		keyMap:   DefaultKeyMap(),
+		log:      log,
 	}
 }
 
@@ -124,7 +125,7 @@ func (m *Model) syncList(folders []clickup.Folder) {
 	for _, item := range items {
 		i := item.(listitem.Item)
 		if i.Title() == m.ctx.Config.DefaultFolder {
-			m.SelectedFolder = i.Data().(clickup.Folder)
+			m.Selected = i.Data().(clickup.Folder)
 		}
 	}
 
@@ -147,7 +148,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			}
 			selectedFolder := m.list.SelectedItem().(listitem.Item).Data().(clickup.Folder)
 			m.log.Info("Selected folder", "id", selectedFolder.Id, "name", selectedFolder.Name)
-			m.SelectedFolder = selectedFolder
+			m.Selected = selectedFolder
 			return FolderChangeCmd(selectedFolder.Id)
 
 		case key.Matches(msg, m.keyMap.CursorUp):
@@ -161,7 +162,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			}
 			selectedFolder := m.list.SelectedItem().(listitem.Item).Data().(clickup.Folder)
 			m.log.Info("Selected folder", "id", selectedFolder.Id, "name", selectedFolder.Name)
-			m.SelectedFolder = selectedFolder
+			m.Selected = selectedFolder
 			return common.FolderPreviewCmd(selectedFolder.Id)
 
 		case key.Matches(msg, m.keyMap.CursorDown):
@@ -175,7 +176,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			}
 			selectedFolder := m.list.SelectedItem().(listitem.Item).Data().(clickup.Folder)
 			m.log.Info("Selected folder", "id", selectedFolder.Id, "name", selectedFolder.Name)
-			m.SelectedFolder = selectedFolder
+			m.Selected = selectedFolder
 			return common.FolderPreviewCmd(selectedFolder.Id)
 		}
 	}

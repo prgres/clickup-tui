@@ -15,20 +15,21 @@ import (
 const id = "tasks-table"
 
 type Model struct {
-	id                common.Id
-	tasks             []clickup.Task
-	log               *log.Logger
-	ctx               *context.UserContext
-	columns           []Column
-	columnsVisible    []Column
-	columnsHidden     []Column
-	table             table.Model
-	size              common.Size
-	SelectedTaskIndex int
-	Focused           bool
-	Hidden            bool
-	ifBorders         bool
-	keyMap            KeyMap
+	id             common.Id
+	tasks          []clickup.Task
+	log            *log.Logger
+	ctx            *context.UserContext
+	columns        []Column
+	columnsVisible []Column
+	columnsHidden  []Column
+	table          table.Model
+	size           common.Size
+	Focused        bool
+	Hidden         bool
+	ifBorders      bool
+	keyMap         KeyMap
+
+	SelectedIdx int
 }
 
 func (m Model) Id() common.Id {
@@ -339,7 +340,7 @@ func (m Model) TabChanged(tabId string) (Model, tea.Cmd) {
 	m.SetTasks(m.tasks)
 
 	if len(m.tasks) != 0 { // TODO: store tasks list in var
-		taskId := m.tasks[m.SelectedTaskIndex].Id
+		taskId := m.tasks[m.SelectedIdx].Id
 		cmds = append(cmds, TaskSelectedCmd(taskId))
 	}
 

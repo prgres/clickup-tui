@@ -20,20 +20,21 @@ type Tab struct {
 }
 
 type Model struct {
-	id             common.Id
-	ctx            *context.UserContext
-	log            *log.Logger
-	SelectedTab    string
-	keyMap         KeyMap
-	tabs           []Tab
-	size           common.Size
-	Focused        bool
-	Hidden         bool
-	ifBorders      bool
-	Path           string
-	StartIdx       int
-	EndIdx         int
-	SelectedTabIdx int
+	id        common.Id
+	ctx       *context.UserContext
+	log       *log.Logger
+	keyMap    KeyMap
+	tabs      []Tab
+	size      common.Size
+	Focused   bool
+	Hidden    bool
+	ifBorders bool
+	Path      string
+	StartIdx  int
+	EndIdx    int
+
+	SelectedIdx int
+	Selected    string
 }
 
 func (m Model) Id() common.Id {
@@ -71,16 +72,16 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix(logger.GetPrefix() + "/componenet/" + id)
 
 	return Model{
-		id:             id,
-		ctx:            ctx,
-		tabs:           []Tab{},
-		log:            log,
-		keyMap:         DefaultKeyMap(),
-		ifBorders:      true,
-		Path:           "",
-		StartIdx:       0,
-		EndIdx:         0,
-		SelectedTabIdx: 0,
+		id:          id,
+		ctx:         ctx,
+		tabs:        []Tab{},
+		log:         log,
+		keyMap:      DefaultKeyMap(),
+		ifBorders:   true,
+		Path:        "",
+		StartIdx:    0,
+		EndIdx:      0,
+		SelectedIdx: 0,
 	}
 }
 
@@ -89,34 +90,49 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, m.keyMap.CursorLeft):
-			index := prevTab(m.tabs, m.SelectedTabIdx)
-			m.SelectedTabIdx = index
-			m.SelectedTab = m.tabs[index].Id
+			index := prevTab(m.tabs, m.SelectedIdx)
+			if m.SelectedIdx == index {
+				break
+			}
+			m.SelectedIdx = index
+			m.Selected = m.tabs[index].Id
 			return nil
 
 		case key.Matches(msg, m.keyMap.CursorRight):
-			index := nextTab(m.tabs, m.SelectedTabIdx)
-			m.SelectedTabIdx = index
-			m.SelectedTab = m.tabs[index].Id
+			index := nextTab(m.tabs, m.SelectedIdx)
+			if m.SelectedIdx == index {
+				break
+			}
+			m.SelectedIdx = index
+			m.Selected = m.tabs[index].Id
 			return nil
 
 		case key.Matches(msg, m.keyMap.Select):
-			index := nextTab(m.tabs, m.SelectedTabIdx)
-			m.SelectedTabIdx = index
-			m.SelectedTab = m.tabs[index].Id
-			return TabChangedCmd(m.SelectedTab)
+			index := nextTab(m.tabs, m.SelectedIdx)
+			if m.SelectedIdx == index {
+				break
+			}
+			m.SelectedIdx = index
+			m.Selected = m.tabs[index].Id
+			return TabChangedCmd(m.Selected)
 
 		case key.Matches(msg, m.keyMap.CursorLeftAndSelect):
-			index := prevTab(m.tabs, m.SelectedTabIdx)
-			m.SelectedTabIdx = index
-			m.SelectedTab = m.tabs[index].Id
-			return TabChangedCmd(m.SelectedTab)
+			index := prevTab(m.tabs, m.SelectedIdx)
+			if m.SelectedIdx == index {
+				break
+			}
+			m.SelectedIdx = index
+			m.Selected = m.tabs[index].Id
+			return TabChangedCmd(m.Selected)
 
 		case key.Matches(msg, m.keyMap.CursorRightAndSelect):
-			index := nextTab(m.tabs, m.SelectedTabIdx)
-			m.SelectedTabIdx = index
-			m.SelectedTab = m.tabs[index].Id
-			return TabChangedCmd(m.SelectedTab)
+			index := nextTab(m.tabs, m.SelectedIdx)
+			if m.SelectedIdx == index {
+				break
+			}
+			m.SelectedIdx = index
+			m.Selected = m.tabs[index].Id
+			return TabChangedCmd(m.Selected)
 		}
 	}
 
@@ -159,7 +175,7 @@ func (m Model) View() string {
 		tabContent := " " + tab.Name + " "
 
 		style := inactiveTabStyle
-		if m.SelectedTab == tab.Id {
+		if m.Selected == tab.Id {
 			style = activeTabStyle
 		}
 		t = style.Render(tabContent)
@@ -241,14 +257,14 @@ func (m *Model) SetHidden(h bool) {
 }
 
 func (m *Model) SetTabs(tabs []Tab) {
-	m.SelectedTabIdx = 0
+	m.SelectedIdx = 0
 	m.tabs = tabs
 
 	selectedTabId := ""
 	if len(tabs) > 0 {
 		selectedTabId = tabs[0].Id
 	}
-	m.SelectedTab = selectedTabId
+	m.Selected = selectedTabId
 }
 
 func (m Model) Size() common.Size {

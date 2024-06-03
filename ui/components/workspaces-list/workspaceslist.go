@@ -15,15 +15,16 @@ import (
 const id = "workspaces-list"
 
 type Model struct {
-	id                common.Id
-	list              list.Model
-	ctx               *context.UserContext
-	log               *log.Logger
-	SelectedWorkspace clickup.Workspace
-	workspaces        []clickup.Workspace
-	ifBorders         bool
-	Focused           bool
-	keyMap            KeyMap
+	id         common.Id
+	list       list.Model
+	ctx        *context.UserContext
+	log        *log.Logger
+	workspaces []clickup.Workspace
+	ifBorders  bool
+	Focused    bool
+	keyMap     KeyMap
+
+	Selected clickup.Workspace
 }
 
 func (m Model) Id() common.Id {
@@ -115,15 +116,15 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
 
 	return Model{
-		id:                id,
-		list:              l,
-		ctx:               ctx,
-		SelectedWorkspace: clickup.Workspace{},
-		workspaces:        []clickup.Workspace{},
-		log:               log,
-		ifBorders:         true,
-		Focused:           false,
-		keyMap:            DefaultKeyMap(),
+		id:         id,
+		list:       l,
+		ctx:        ctx,
+		Selected:   clickup.Workspace{},
+		workspaces: []clickup.Workspace{},
+		log:        log,
+		ifBorders:  true,
+		Focused:    false,
+		keyMap:     DefaultKeyMap(),
 	}
 }
 
@@ -144,7 +145,7 @@ func (m *Model) syncList(workspaces []clickup.Workspace) {
 		}
 	}
 
-	m.SelectedWorkspace = items[index].(listitem.Item).Data().(clickup.Workspace)
+	m.Selected = items[index].(listitem.Item).Data().(clickup.Workspace)
 	m.list.SetItems(items)
 	m.list.Select(index)
 	m.log.Info("List synchronized")
@@ -162,10 +163,10 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 				m.log.Info("List is empty")
 				break
 			}
-			selectedWorkspace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
-			m.log.Info("Selected workspace", "id", selectedWorkspace.Id, "name", selectedWorkspace.Name)
-			m.SelectedWorkspace = selectedWorkspace
-			return common.WorkspaceChangeCmd(selectedWorkspace.Id)
+			selected := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
+			m.log.Info("Selected workspace", "id", selected.Id, "name", selected.Name)
+			m.Selected = selected
+			return common.WorkspaceChangeCmd(selected.Id)
 
 		case key.Matches(msg, m.keyMap.CursorDown):
 			m.list.CursorDown()
@@ -178,7 +179,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			}
 			selectedWorkspace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
 			m.log.Info("Selected workspace", "id", selectedWorkspace.Id, "name", selectedWorkspace.Name)
-			m.SelectedWorkspace = selectedWorkspace
+			m.Selected = selectedWorkspace
 			return common.WorkspacePreviewCmd(selectedWorkspace.Id)
 
 		case key.Matches(msg, m.keyMap.CursorUp):
@@ -192,7 +193,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			}
 			selectedWorkspace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
 			m.log.Info("Selected workspace", "id", selectedWorkspace.Id, "name", selectedWorkspace.Name)
-			m.SelectedWorkspace = selectedWorkspace
+			m.Selected = selectedWorkspace
 			return common.WorkspacePreviewCmd(selectedWorkspace.Id)
 		}
 	}
@@ -223,7 +224,7 @@ func (m *Model) InitWorkspaces() error {
 		return err
 	}
 
-	m.SelectedWorkspace = workspaces[0]
+	m.Selected = workspaces[0]
 	m.syncList(workspaces)
 
 	return nil

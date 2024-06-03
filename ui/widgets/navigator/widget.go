@@ -43,7 +43,7 @@ func (m Model) Id() common.Id {
 
 // TODO: refactor
 func (m *Model) SetWorksapce(workspace clickup.Workspace) {
-	m.componentWorkspacesList.SelectedWorkspace = workspace
+	m.componentWorkspacesList.Selected = workspace
 }
 
 func (m Model) GetPath() string {
@@ -51,14 +51,14 @@ func (m Model) GetPath() string {
 	case m.componentWorkspacesList.Id():
 		return "/"
 	case m.componentSpacesList.Id():
-		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name
+		return "/" + m.componentWorkspacesList.Selected.Name
 	case m.componentFoldersList.Id():
-		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name
+		return "/" + m.componentWorkspacesList.Selected.Name + "/" + m.componentSpacesList.Selected.Name
 	case m.componentListsList.Id():
 		if m.Focused {
-			return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name + "/" + m.componentFoldersList.SelectedFolder.Name
+			return "/" + m.componentWorkspacesList.Selected.Name + "/" + m.componentSpacesList.Selected.Name + "/" + m.componentFoldersList.Selected.Name
 		}
-		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name + "/" + m.componentFoldersList.SelectedFolder.Name + "/" + m.componentListsList.SelectedList.Name
+		return "/" + m.componentWorkspacesList.Selected.Name + "/" + m.componentSpacesList.Selected.Name + "/" + m.componentFoldersList.Selected.Name + "/" + m.componentListsList.Selected.Name
 	default:
 		return ""
 	}
@@ -311,7 +311,7 @@ func (m Model) Size() common.Size {
 }
 
 func (m Model) GetWorkspace() clickup.Workspace {
-	return m.componentWorkspacesList.SelectedWorkspace
+	return m.componentWorkspacesList.Selected
 }
 
 func (m *Model) Init() error {

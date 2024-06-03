@@ -15,13 +15,14 @@ import (
 const id = "spaces-list"
 
 type Model struct {
-	id            common.Id
-	list          list.Model
-	ctx           *context.UserContext
-	log           *log.Logger
-	SelectedSpace clickup.Space
-	spaces        []clickup.Space
-	keyMap        KeyMap
+	id     common.Id
+	list   list.Model
+	ctx    *context.UserContext
+	log    *log.Logger
+	spaces []clickup.Space
+	keyMap KeyMap
+
+	Selected clickup.Space
 }
 
 func (m Model) Id() common.Id {
@@ -105,13 +106,13 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
 
 	return Model{
-		id:            id,
-		list:          l,
-		ctx:           ctx,
-		SelectedSpace: clickup.Space{},
-		spaces:        []clickup.Space{},
-		log:           log,
-		keyMap:        DefaultKeyMap(),
+		id:       id,
+		list:     l,
+		ctx:      ctx,
+		Selected: clickup.Space{},
+		spaces:   []clickup.Space{},
+		log:      log,
+		keyMap:   DefaultKeyMap(),
 	}
 }
 
@@ -124,7 +125,7 @@ func (m *Model) syncList(spaces []clickup.Space) {
 	for _, item := range items {
 		i := item.(listitem.Item)
 		if i.Title() == m.ctx.Config.DefaultSpace {
-			m.SelectedSpace = i.Data().(clickup.Space)
+			m.Selected = i.Data().(clickup.Space)
 		}
 	}
 
@@ -147,7 +148,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			}
 			selectedSpace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
 			m.log.Info("Selected space", "id", selectedSpace.Id, "name", selectedSpace.Name)
-			m.SelectedSpace = selectedSpace
+			m.Selected = selectedSpace
 			return SpaceChangedCmd(selectedSpace.Id)
 
 		case key.Matches(msg, m.keyMap.CursorDown):
@@ -161,7 +162,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			}
 			selectedSpace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
 			m.log.Info("Selected space", "id", selectedSpace.Id, "name", selectedSpace.Name)
-			m.SelectedSpace = selectedSpace
+			m.Selected = selectedSpace
 			return common.SpacePreviewCmd(selectedSpace.Id)
 
 		case key.Matches(msg, m.keyMap.CursorUp):
@@ -175,7 +176,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			}
 			selectedSpace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
 			m.log.Info("Selected space", "id", selectedSpace.Id, "name", selectedSpace.Name)
-			m.SelectedSpace = selectedSpace
+			m.Selected = selectedSpace
 			return common.SpacePreviewCmd(selectedSpace.Id)
 		}
 	}

@@ -139,7 +139,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		} else {
 			tabs := viewsToTabs(views)
 			m.widgetViewsTabs.SetTabs(tabs)
-			initTab := m.widgetViewsTabs.SelectedTab
+			initTab := m.widgetViewsTabs.Selected
 
 			if err := m.reloadTasks(initTab); err != nil {
 				cmds = append(cmds, common.ErrCmd(err))
@@ -200,7 +200,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case viewstabs.TabChangedMsg:
 		idx := string(msg)
-		initTab := m.widgetViewsTabs.SelectedTab
+		initTab := m.widgetViewsTabs.Selected
 		m.log.Info("Received: TabChangedMsg", "idx", idx, "id", initTab)
 
 		m.widgetTasks.SetSpinner(true)
@@ -339,7 +339,7 @@ func (m *Model) handleWorkspaceChangePreview(id string) tea.Cmd {
 	tabs := viewsToTabs(views)
 	m.widgetViewsTabs.SetTabs(tabs)
 
-	initTab := m.widgetViewsTabs.SelectedTab
+	initTab := m.widgetViewsTabs.Selected
 	m.widgetTasks.SetSpinner(true)
 
 	return LoadingTasksFromViewCmd(initTab)
@@ -353,7 +353,7 @@ func (m *Model) handleSpaceChangePreview(id string) tea.Cmd {
 	tabs := viewsToTabs(views)
 	m.widgetViewsTabs.SetTabs(tabs)
 
-	initTab := m.widgetViewsTabs.SelectedTab
+	initTab := m.widgetViewsTabs.Selected
 	m.widgetTasks.SetSpinner(true)
 
 	return LoadingTasksFromViewCmd(initTab)
@@ -367,7 +367,7 @@ func (m *Model) handleFolderChangePreview(id string) tea.Cmd {
 	tabs := viewsToTabs(views)
 	m.widgetViewsTabs.SetTabs(tabs)
 
-	initTab := m.widgetViewsTabs.SelectedTab
+	initTab := m.widgetViewsTabs.Selected
 	m.widgetTasks.SetSpinner(true)
 
 	return LoadingTasksFromViewCmd(initTab)
@@ -381,7 +381,7 @@ func (m *Model) handleListChangePreview(id string) tea.Cmd {
 	tabs := viewsToTabs(views)
 	m.widgetViewsTabs.SetTabs(tabs)
 
-	initTab := m.widgetViewsTabs.SelectedTab
+	initTab := m.widgetViewsTabs.Selected
 	m.widgetTasks.SetSpinner(true)
 
 	return LoadingTasksFromViewCmd(initTab)

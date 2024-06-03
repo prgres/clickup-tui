@@ -15,13 +15,14 @@ import (
 const id = "lists-list"
 
 type Model struct {
-	id           common.Id
-	list         list.Model
-	ctx          *context.UserContext
-	log          *log.Logger
-	SelectedList clickup.List
-	lists        []clickup.List
-	keyMap       KeyMap
+	id     common.Id
+	list   list.Model
+	ctx    *context.UserContext
+	log    *log.Logger
+	lists  []clickup.List
+	keyMap KeyMap
+
+	Selected clickup.List
 }
 
 func (m Model) Id() common.Id {
@@ -43,12 +44,12 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
 
 	return Model{
-		id:           id,
-		list:         l,
-		ctx:          ctx,
-		SelectedList: clickup.List{},
-		lists:        []clickup.List{},
-		log:          log,
+		id:       id,
+		list:     l,
+		ctx:      ctx,
+		Selected: clickup.List{},
+		lists:    []clickup.List{},
+		log:      log,
 	}
 }
 
@@ -139,8 +140,8 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			}
 			selectedList := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
 			m.log.Info("Selected list", "id", selectedList.Id, "name", selectedList.Name)
-			m.SelectedList = selectedList
-			return ListChangedCmd(m.SelectedList.Id)
+			m.Selected = selectedList
+			return ListChangedCmd(m.Selected.Id)
 
 		case key.Matches(msg, m.keyMap.CursorDown):
 			m.list.CursorDown()
@@ -153,8 +154,8 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			}
 			selectedList := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
 			m.log.Info("Selected list", "id", selectedList.Id, "name", selectedList.Name)
-			m.SelectedList = selectedList
-			return common.ListPreviewCmd(m.SelectedList.Id)
+			m.Selected = selectedList
+			return common.ListPreviewCmd(m.Selected.Id)
 
 		case key.Matches(msg, m.keyMap.CursorUp):
 			m.list.CursorUp()
@@ -167,8 +168,8 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			}
 			selectedList := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
 			m.log.Info("Selected list", "id", selectedList.Id, "name", selectedList.Name)
-			m.SelectedList = selectedList
-			return common.ListPreviewCmd(m.SelectedList.Id)
+			m.Selected = selectedList
+			return common.ListPreviewCmd(m.Selected.Id)
 		}
 	}
 
