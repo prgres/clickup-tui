@@ -185,10 +185,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		tableColumns[i] = columns[i].Column
 	}
 
-	size := common.Size{
-		Width:  0,
-		Height: 0,
-	}
+	size := common.NewEmptySize()
 
 	tableKeyMap := table.DefaultKeyMap()
 	tableKeyMap.RowSelectToggle = key.NewBinding(

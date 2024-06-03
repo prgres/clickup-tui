@@ -10,6 +10,13 @@ type Size struct {
 	Height int
 }
 
+func NewEmptySize() Size {
+	return Size{
+		Width:  0,
+		Height: 0,
+	}
+}
+
 type Id string
 
 type UIElement interface {

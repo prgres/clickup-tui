@@ -54,11 +54,8 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	s.Spinner = spinner.Pulse
 
 	log := common.NewLogger(logger, common.ResourceTypeRegistry.WIDGET, id)
+	size := common.NewEmptySize()
 
-	size := common.Size{
-		Width:  0,
-		Height: 0,
-	}
 	var (
 		componenetTasksTable   = tabletasks.InitialModel(ctx, log)
 		componenetTasksSidebar = taskssidebar.InitialModel(ctx, log).WithHidden(true)

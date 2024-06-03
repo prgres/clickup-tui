@@ -99,11 +99,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		Height(0)
 	v.SetContent("Loading...")
 
-	size := common.Size{
-		Width:  0,
-		Height: 0,
-	}
-
+	size := common.NewEmptySize()
 	log := common.NewLogger(logger, common.ResourceTypeRegistry.COMPONENT, id)
 
 	return Model{
