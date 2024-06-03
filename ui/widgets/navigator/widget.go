@@ -3,7 +3,6 @@ package navigator
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -43,7 +42,7 @@ func (m Model) Id() common.Id {
 
 // TODO: refactor
 func (m *Model) SetWorksapce(workspace clickup.Workspace) {
-	m.componentWorkspacesList.SelectedWorkspace = workspace
+	m.componentWorkspacesList.Selected = workspace
 }
 
 func (m Model) GetPath() string {
@@ -51,14 +50,14 @@ func (m Model) GetPath() string {
 	case m.componentWorkspacesList.Id():
 		return "/"
 	case m.componentSpacesList.Id():
-		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name
+		return "/" + m.componentWorkspacesList.Selected.Name
 	case m.componentFoldersList.Id():
-		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name
+		return "/" + m.componentWorkspacesList.Selected.Name + "/" + m.componentSpacesList.Selected.Name
 	case m.componentListsList.Id():
 		if m.Focused {
-			return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name + "/" + m.componentFoldersList.SelectedFolder.Name
+			return "/" + m.componentWorkspacesList.Selected.Name + "/" + m.componentSpacesList.Selected.Name + "/" + m.componentFoldersList.Selected.Name
 		}
-		return "/" + m.componentWorkspacesList.SelectedWorkspace.Name + "/" + m.componentSpacesList.SelectedSpace.Name + "/" + m.componentFoldersList.SelectedFolder.Name + "/" + m.componentListsList.SelectedList.Name
+		return "/" + m.componentWorkspacesList.Selected.Name + "/" + m.componentSpacesList.Selected.Name + "/" + m.componentFoldersList.Selected.Name + "/" + m.componentListsList.Selected.Name
 	default:
 		return ""
 	}
@@ -68,12 +67,8 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/widget/" + id)
-
-	size := common.Size{
-		Width:  0,
-		Height: 0,
-	}
+	log := common.NewLogger(logger, common.ResourceTypeRegistry.WIDGET, id)
+	size := common.NewEmptySize()
 
 	var (
 		componentWorkspacesList = workspaceslist.InitialModel(ctx, log).WithFocused(true)
@@ -103,57 +98,13 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
-func (m Model) Help() help.KeyMap {
-	switch m.state {
-	case m.componentWorkspacesList.Id():
-		return m.componentWorkspacesList.Help()
-	case m.componentSpacesList.Id():
-		return m.componentSpacesList.Help()
-	case m.componentFoldersList.Id():
-		return m.componentFoldersList.Help()
-	case m.componentListsList.Id():
-		return m.componentListsList.Help()
-	default:
-		return common.NewEmptyHelp()
-	}
-}
-
 func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch keypress := msg.String(); keypress {
-		case "esc":
-			m.log.Info("Received: Go to previous view")
-
-			switch m.state {
-			case m.componentSpacesList.Id():
-				m.state = m.componentWorkspacesList.Id()
-			case m.componentFoldersList.Id():
-				m.state = m.componentSpacesList.Id()
-			case m.componentListsList.Id():
-				m.state = m.componentFoldersList.Id()
-			}
-
-			cmds = append(cmds, cmd)
-			return tea.Batch(cmds...)
-		}
-
-		switch m.state {
-		case m.componentWorkspacesList.Id():
-			cmd = m.componentWorkspacesList.Update(msg)
-		case m.componentSpacesList.Id():
-			cmd = m.componentSpacesList.Update(msg)
-		case m.componentFoldersList.Id():
-			cmd = m.componentFoldersList.Update(msg)
-		case m.componentListsList.Id():
-			cmd = m.componentListsList.Update(msg)
-		}
-
-		cmds = append(cmds, cmd)
-		return tea.Batch(cmds...)
+		return tea.Batch(append(cmds, m.handleKeys(msg))...)
 
 	case common.WorkspaceChangeMsg:
 		id := string(msg)
@@ -311,7 +262,7 @@ func (m Model) Size() common.Size {
 }
 
 func (m Model) GetWorkspace() clickup.Workspace {
-	return m.componentWorkspacesList.SelectedWorkspace
+	return m.componentWorkspacesList.Selected
 }
 
 func (m *Model) Init() error {

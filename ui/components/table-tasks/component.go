@@ -1,7 +1,6 @@
 package tabletasks
 
 import (
-	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -15,20 +14,21 @@ import (
 const id = "tasks-table"
 
 type Model struct {
-	id                common.Id
-	tasks             []clickup.Task
-	log               *log.Logger
-	ctx               *context.UserContext
-	columns           []Column
-	columnsVisible    []Column
-	columnsHidden     []Column
-	table             table.Model
-	size              common.Size
-	SelectedTaskIndex int
-	Focused           bool
-	Hidden            bool
-	ifBorders         bool
-	keyMap            KeyMap
+	id             common.Id
+	tasks          []clickup.Task
+	log            *log.Logger
+	ctx            *context.UserContext
+	columns        []Column
+	columnsVisible []Column
+	columnsHidden  []Column
+	table          table.Model
+	size           common.Size
+	Focused        bool
+	Hidden         bool
+	ifBorders      bool
+	keyMap         KeyMap
+
+	SelectedIdx int
 }
 
 func (m Model) Id() common.Id {
@@ -78,80 +78,8 @@ func (m *Model) setTableSize(s common.Size) {
 		WithPageSize(pageSize)
 }
 
-type KeyMap struct {
-	table.KeyMap
-	Select key.Binding
-}
-
 func (m Model) KeyMap() KeyMap {
 	return m.keyMap
-}
-
-func DefaultKeyMap() KeyMap {
-	km := table.DefaultKeyMap()
-
-	return KeyMap{
-		KeyMap: table.KeyMap{
-			RowDown:         common.KeyBindingWithHelp(km.RowDown, "down"),
-			RowUp:           common.KeyBindingWithHelp(km.RowUp, "up"),
-			RowSelectToggle: common.KeyBindingWithHelp(km.RowSelectToggle, "select"),
-			PageDown:        common.KeyBindingWithHelp(km.PageDown, "next page"),
-			PageUp:          common.KeyBindingWithHelp(km.PageUp, "previous page"),
-			PageFirst:       common.KeyBindingWithHelp(km.PageFirst, "first page"),
-			PageLast:        common.KeyBindingWithHelp(km.PageLast, "last page"),
-			Filter:          common.KeyBindingWithHelp(km.Filter, "filter"),
-			FilterBlur:      common.KeyBindingWithHelp(km.FilterBlur, "filter blur"),
-			FilterClear:     common.KeyBindingWithHelp(km.FilterClear, "filter clear"),
-			ScrollRight:     common.KeyBindingWithHelp(km.ScrollRight, "scroll right"),
-			ScrollLeft:      common.KeyBindingWithHelp(km.ScrollLeft, "scroll left"),
-		},
-		Select: key.NewBinding(
-			key.WithKeys("enter"),
-			key.WithHelp("enter", "select"),
-		),
-	}
-}
-
-func (m Model) Help() help.KeyMap {
-	km := m.keyMap
-
-	return common.NewHelp(
-		func() [][]key.Binding {
-			return [][]key.Binding{
-				{
-					km.RowDown,
-					km.RowUp,
-					km.RowSelectToggle,
-				},
-				{
-					km.PageDown,
-					km.PageUp,
-					km.PageFirst,
-					km.PageLast,
-				},
-				{
-					km.Filter,
-					km.FilterBlur,
-					km.FilterClear,
-				},
-				{
-					km.ScrollRight,
-					km.ScrollLeft,
-					m.keyMap.Select,
-				},
-			}
-		},
-		func() []key.Binding {
-			return []key.Binding{
-				km.RowDown,
-				km.RowUp,
-				km.RowSelectToggle,
-				km.PageDown,
-				km.PageUp,
-				m.keyMap.Select,
-			}
-		},
-	)
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
@@ -184,10 +112,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		tableColumns[i] = columns[i].Column
 	}
 
-	size := common.Size{
-		Width:  0,
-		Height: 0,
-	}
+	size := common.NewEmptySize()
 
 	tableKeyMap := table.DefaultKeyMap()
 	tableKeyMap.RowSelectToggle = key.NewBinding(
@@ -210,7 +135,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 				Bold(true).
 				Foreground(lipgloss.Color("212")))
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
+	log := common.NewLogger(logger, common.ResourceTypeRegistry.COMPONENT, id)
 
 	return Model{
 		id:             id,
@@ -247,22 +172,14 @@ func (m *Model) getColumnsKey(cols []Column) []string {
 }
 
 func (m *Model) Update(msg tea.Msg) tea.Cmd {
-	var cmd tea.Cmd
-	var cmds []tea.Cmd
+	var (
+		cmd  tea.Cmd
+		cmds []tea.Cmd
+	)
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch {
-		case key.Matches(msg, m.keyMap.Select):
-			index := m.table.GetHighlightedRowIndex()
-			if m.table.TotalRows() == 0 {
-				m.log.Info("Table is empty")
-				break
-			}
-			taskId := m.tasks[index].Id
-			m.log.Infof("Receive enter: %d", index)
-			cmds = append(cmds, TaskSelectedCmd(taskId))
-		}
+		return m.handleKeys(msg)
 	}
 
 	m.table, cmd = m.table.Update(msg)
@@ -339,7 +256,7 @@ func (m Model) TabChanged(tabId string) (Model, tea.Cmd) {
 	m.SetTasks(m.tasks)
 
 	if len(m.tasks) != 0 { // TODO: store tasks list in var
-		taskId := m.tasks[m.SelectedTaskIndex].Id
+		taskId := m.tasks[m.SelectedIdx].Id
 		cmds = append(cmds, TaskSelectedCmd(taskId))
 	}
 

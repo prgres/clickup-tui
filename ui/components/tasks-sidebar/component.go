@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
@@ -37,18 +35,8 @@ func (m Model) Id() common.Id {
 	return m.id
 }
 
-type KeyMap struct {
-	viewport.KeyMap
-}
-
 func (m Model) KeyMap() KeyMap {
 	return m.keyMap
-}
-
-func DefaultKeyMap() KeyMap {
-	return KeyMap{
-		KeyMap: viewport.DefaultKeyMap(),
-	}
 }
 
 func (m *Model) SetSize(s common.Size) {
@@ -62,49 +50,14 @@ func (m *Model) SetSize(s common.Size) {
 	m.viewport.Height = m.size.Height
 }
 
-func (m Model) Help() help.KeyMap {
-	km := m.keyMap
-
-	return common.NewHelp(
-		func() [][]key.Binding {
-			return [][]key.Binding{
-				{
-					km.Down,
-					km.Up,
-				},
-				{
-					km.PageDown,
-					km.PageUp,
-				},
-				{
-					km.HalfPageUp,
-					km.HalfPageDown,
-				},
-			}
-		},
-		func() []key.Binding {
-			return []key.Binding{
-				km.Down,
-				km.Up,
-				km.PageDown,
-				km.PageUp,
-			}
-		},
-	)
-}
-
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	v := viewport.New(0, 0)
 	v.Style = lipgloss.NewStyle().
 		Height(0)
 	v.SetContent("Loading...")
 
-	size := common.Size{
-		Width:  0,
-		Height: 0,
-	}
-
-	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
+	size := common.NewEmptySize()
+	log := common.NewLogger(logger, common.ResourceTypeRegistry.COMPONENT, id)
 
 	return Model{
 		id:           id,

@@ -3,7 +3,6 @@ package compact
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -16,15 +15,14 @@ import (
 	"github.com/prgrs/clickup/ui/widgets/tasks"
 )
 
-const id = "Compact"
+const id = "compact"
 
 type Model struct {
-	id    common.Id
-	ctx   *context.UserContext
-	log   *log.Logger
-	state common.Id
-	size  common.Size
-
+	id          common.Id
+	ctx         *context.UserContext
+	log         *log.Logger
+	state       common.Id
+	size        common.Size
 	spinner     spinner.Model
 	showSpinner bool
 
@@ -49,19 +47,6 @@ func (m Model) Init() tea.Cmd {
 	)
 }
 
-func (m Model) Help() help.KeyMap {
-	switch m.state {
-	case m.widgetNavigator.Id():
-		return m.widgetNavigator.Help()
-	case m.widgetViewsTabs.Id():
-		return m.widgetViewsTabs.Help()
-	case m.widgetTasks.Id():
-		return m.widgetTasks.Help()
-	default:
-		return common.NewEmptyHelp()
-	}
-}
-
 func (m Model) Ready() bool {
 	return !m.showSpinner
 }
@@ -78,41 +63,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch keypress := msg.String(); keypress {
-		case "tab":
-			switch m.state {
-			case m.widgetNavigator.Id():
-				m.state = m.widgetTasks.Id()
-				m.widgetTasks.SetFocused(true)
-				m.widgetViewsTabs.SetFocused(false)
-				m.widgetNavigator.SetFocused(false)
-			case m.widgetViewsTabs.Id():
-				m.state = m.widgetNavigator.Id()
-				m.widgetTasks.SetFocused(false)
-				m.widgetViewsTabs.SetFocused(false)
-				m.widgetNavigator.SetFocused(true)
-			case m.widgetTasks.Id():
-				m.state = m.widgetViewsTabs.Id()
-				m.widgetTasks.SetFocused(false)
-				m.widgetViewsTabs.SetFocused(true)
-				m.widgetNavigator.SetFocused(false)
-			}
-		}
-
-		// m.getActiveElement().
-		switch m.state {
-		case m.widgetNavigator.Id():
-			cmd = m.widgetNavigator.Update(msg)
-		case m.widgetViewsTabs.Id():
-			cmd = m.widgetViewsTabs.Update(msg)
-		case m.widgetTasks.Id():
-			cmd = m.widgetTasks.Update(msg)
-		}
-
-		m.widgetViewsTabs.Path = m.widgetNavigator.GetPath()
-
-		cmds = append(cmds, cmd)
-		return tea.Batch(cmds...)
+		return tea.Batch(append(cmds, m.handleKeys(msg))...)
 
 	case InitCompactMsg:
 		m.showSpinner = false
@@ -139,7 +90,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		} else {
 			tabs := viewsToTabs(views)
 			m.widgetViewsTabs.SetTabs(tabs)
-			initTab := m.widgetViewsTabs.SelectedTab
+			initTab := m.widgetViewsTabs.Selected
 
 			if err := m.reloadTasks(initTab); err != nil {
 				cmds = append(cmds, common.ErrCmd(err))
@@ -200,7 +151,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case viewstabs.TabChangedMsg:
 		idx := string(msg)
-		initTab := m.widgetViewsTabs.SelectedTab
+		initTab := m.widgetViewsTabs.Selected
 		m.log.Info("Received: TabChangedMsg", "idx", idx, "id", initTab)
 
 		m.widgetTasks.SetSpinner(true)
@@ -288,7 +239,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/view/" + id)
+	log := common.NewLogger(logger, common.ResourceTypeRegistry.VIEW, id)
 
 	var (
 		widgetViewsTabs = viewstabs.InitialModel(ctx, log)
@@ -339,7 +290,7 @@ func (m *Model) handleWorkspaceChangePreview(id string) tea.Cmd {
 	tabs := viewsToTabs(views)
 	m.widgetViewsTabs.SetTabs(tabs)
 
-	initTab := m.widgetViewsTabs.SelectedTab
+	initTab := m.widgetViewsTabs.Selected
 	m.widgetTasks.SetSpinner(true)
 
 	return LoadingTasksFromViewCmd(initTab)
@@ -353,7 +304,7 @@ func (m *Model) handleSpaceChangePreview(id string) tea.Cmd {
 	tabs := viewsToTabs(views)
 	m.widgetViewsTabs.SetTabs(tabs)
 
-	initTab := m.widgetViewsTabs.SelectedTab
+	initTab := m.widgetViewsTabs.Selected
 	m.widgetTasks.SetSpinner(true)
 
 	return LoadingTasksFromViewCmd(initTab)
@@ -367,7 +318,7 @@ func (m *Model) handleFolderChangePreview(id string) tea.Cmd {
 	tabs := viewsToTabs(views)
 	m.widgetViewsTabs.SetTabs(tabs)
 
-	initTab := m.widgetViewsTabs.SelectedTab
+	initTab := m.widgetViewsTabs.Selected
 	m.widgetTasks.SetSpinner(true)
 
 	return LoadingTasksFromViewCmd(initTab)
@@ -381,7 +332,7 @@ func (m *Model) handleListChangePreview(id string) tea.Cmd {
 	tabs := viewsToTabs(views)
 	m.widgetViewsTabs.SetTabs(tabs)
 
-	initTab := m.widgetViewsTabs.SelectedTab
+	initTab := m.widgetViewsTabs.Selected
 	m.widgetTasks.SetSpinner(true)
 
 	return LoadingTasksFromViewCmd(initTab)

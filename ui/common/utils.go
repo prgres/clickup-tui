@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/log"
 )
 
 func OpenUrlInWebBrowser(url string) error {
@@ -72,4 +73,20 @@ func createTempFileWithData(data string) (string, error) {
 	}
 
 	return tmpfile.Name(), nil
+}
+
+type ResourceType string
+
+var ResourceTypeRegistry = struct {
+	VIEW      ResourceType
+	WIDGET    ResourceType
+	COMPONENT ResourceType
+}{
+	VIEW:      "view",
+	WIDGET:    "widget",
+	COMPONENT: "component",
+}
+
+func NewLogger(l *log.Logger, resourceType ResourceType, id string) *log.Logger {
+	return l.WithPrefix(l.GetPrefix() + "/" + string(resourceType) + "/" + id)
 }
