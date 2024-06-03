@@ -41,7 +41,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	l.SetShowHelp(false)
 	l.Title = "Lists"
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
+	log := common.NewLogger(logger, common.ResourceTypeRegistry.COMPONENT, id)
 
 	return Model{
 		id:       id,

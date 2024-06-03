@@ -30,7 +30,7 @@ func (m Model) Id() common.Id {
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
-	log := logger.WithPrefix(logger.GetPrefix() + "/widget/" + id)
+	log := common.NewLogger(logger, common.ResourceTypeRegistry.WIDGET, id)
 
 	return Model{
 		inputStyle: lipgloss.NewStyle().Foreground(lipgloss.Color("#FF75B7")),

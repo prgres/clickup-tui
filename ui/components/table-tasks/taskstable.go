@@ -211,7 +211,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 				Bold(true).
 				Foreground(lipgloss.Color("212")))
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
+	log := common.NewLogger(logger, common.ResourceTypeRegistry.COMPONENT, id)
 
 	return Model{
 		id:             id,

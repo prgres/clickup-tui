@@ -104,7 +104,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		Height: 0,
 	}
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/component/" + id)
+	log := common.NewLogger(logger, common.ResourceTypeRegistry.COMPONENT, id)
 
 	return Model{
 		id:           id,

@@ -69,7 +69,7 @@ func (m Model) Help() help.KeyMap {
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
-	log := logger.WithPrefix(logger.GetPrefix() + "/componenet/" + id)
+	log := common.NewLogger(logger, common.ResourceTypeRegistry.COMPONENT, id)
 
 	return Model{
 		id:          id,

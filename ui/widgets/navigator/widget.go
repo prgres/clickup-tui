@@ -68,12 +68,12 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/widget/" + id)
 
 	size := common.Size{
 		Width:  0,
 		Height: 0,
 	}
+	log := common.NewLogger(logger, common.ResourceTypeRegistry.WIDGET, id)
 
 	var (
 		componentWorkspacesList = workspaceslist.InitialModel(ctx, log).WithFocused(true)

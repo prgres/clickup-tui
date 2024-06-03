@@ -53,7 +53,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/widget/" + id)
+	log := common.NewLogger(logger, common.ResourceTypeRegistry.WIDGET, id)
 
 	size := common.Size{
 		Width:  0,

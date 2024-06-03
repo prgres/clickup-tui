@@ -288,7 +288,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Pulse
 
-	log := logger.WithPrefix(logger.GetPrefix() + "/view/" + id)
+	log := common.NewLogger(logger, common.ResourceTypeRegistry.VIEW, id)
 
 	var (
 		widgetViewsTabs = viewstabs.InitialModel(ctx, log)
