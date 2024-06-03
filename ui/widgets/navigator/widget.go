@@ -104,7 +104,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		return tea.Batch(append(cmds, m.handleKeys(msg))...)
+		return m.handleKeys(msg)
 
 	case common.WorkspaceChangeMsg:
 		id := string(msg)
