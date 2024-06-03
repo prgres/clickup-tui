@@ -283,7 +283,7 @@ func (m *Model) reloadTasks(viewId string) error {
 }
 
 func (m *Model) handleWorkspaceChangePreview(id string) tea.Cmd {
-	views, err := m.ctx.Api.GetViewsFromWorkspace(id)
+	views, err := m.ctx.Api.GetViewsFromWorkspace(id) // TODO: should fetch from the list
 	if err != nil {
 		return common.ErrCmd(err)
 	}

@@ -3,7 +3,6 @@ package navigator
 import tea "github.com/charmbracelet/bubbletea"
 
 func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
-	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
 	switch keypress := msg.String(); keypress {
@@ -19,9 +18,10 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 			m.state = m.componentFoldersList.Id()
 		}
 
-		cmds = append(cmds, cmd)
-		return tea.Batch(cmds...)
+		return nil
 	}
+
+	var cmd tea.Cmd
 
 	switch m.state {
 	case m.componentWorkspacesList.Id():
@@ -34,6 +34,5 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 		cmd = m.componentListsList.Update(msg)
 	}
 
-	cmds = append(cmds, cmd)
-	return tea.Batch(cmds...)
+	return tea.Batch(append(cmds, cmd)...)
 }
