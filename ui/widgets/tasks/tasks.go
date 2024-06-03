@@ -423,7 +423,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		}
 
 		tableTasks := m.componenetTasksTable.GetTasks()
-		tableTasks[m.componenetTasksTable.SelectedTaskIndex] = m.componenetTasksSidebar.SelectedTask
+		tableTasks[m.componenetTasksTable.SelectedIdx] = m.componenetTasksSidebar.SelectedTask
 		m.componenetTasksTable.SetTasks(tableTasks)
 
 	case UpdateTaskMsg:
@@ -437,7 +437,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		}
 
 		tableTasks := m.componenetTasksTable.GetTasks()
-		tableTasks[m.componenetTasksTable.SelectedTaskIndex] = m.componenetTasksSidebar.SelectedTask
+		tableTasks[m.componenetTasksTable.SelectedIdx] = m.componenetTasksSidebar.SelectedTask
 		m.componenetTasksTable.SetTasks(tableTasks)
 
 		// TODO: this is temp solution withouth err checking
