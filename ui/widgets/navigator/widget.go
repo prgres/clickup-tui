@@ -14,6 +14,7 @@ import (
 	spaceslist "github.com/prgrs/clickup/ui/components/spaces-list"
 	workspaceslist "github.com/prgrs/clickup/ui/components/workspaces-list"
 	"github.com/prgrs/clickup/ui/context"
+	"golang.org/x/sync/errgroup"
 )
 
 const id = "navigator"
@@ -38,6 +39,10 @@ type Model struct {
 
 func (m Model) Id() common.Id {
 	return m.id
+}
+
+func (m Model) State() common.Id {
+	return m.state
 }
 
 // TODO: refactor
@@ -174,6 +179,61 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		id := string(msg)
 		m.log.Infof("Received: ListChangedMsg: %s", id)
 		cmds = append(cmds, common.ListChangeCmd(id))
+
+	case common.RefreshMsg:
+		m.log.Debug("Received: common.RefreshMsg")
+
+		errgroup := new(errgroup.Group)
+
+		errgroup.Go(func() error {
+			t, err := m.ctx.Api.SyncTeams()
+			if err != nil {
+				return err
+			}
+			m.componentWorkspacesList.SetList(t)
+			return nil
+		})
+
+		errgroup.Go(func() error {
+			id := m.componentWorkspacesList.Selected.Id
+			if id != "" {
+				t, err := m.ctx.Api.SyncSpaces(id)
+				if err != nil {
+					return err
+				}
+				m.componentSpacesList.SetList(t)
+			}
+			return nil
+		})
+
+		errgroup.Go(func() error {
+			id := m.componentSpacesList.Selected.Id
+			if id != "" {
+				t, err := m.ctx.Api.SyncFolders(id)
+				if err != nil {
+					return err
+				}
+				m.componentFoldersList.SetList(t)
+			}
+			return nil
+		})
+
+		errgroup.Go(func() error {
+			id := m.componentFoldersList.Selected.Id
+			if id != "" {
+				t, err := m.ctx.Api.SyncLists(id)
+				if err != nil {
+					return err
+				}
+				m.componentListsList.SetList(t)
+			}
+			return nil
+		})
+
+		err := errgroup.Wait()
+		if err != nil {
+			return common.ErrCmd(err)
+		}
 	}
 
 	cmds = append(cmds,

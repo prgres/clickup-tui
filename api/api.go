@@ -87,7 +87,7 @@ func (m *Api) GetSpaces(teamId string) ([]clickup.Space, error) {
 	return m.getSpaces(true, teamId)
 }
 
-func (m *Api) syncSpaces(teamId string) ([]clickup.Space, error) {
+func (m *Api) SyncSpaces(teamId string) ([]clickup.Space, error) {
 	return m.getSpaces(false, teamId)
 }
 
@@ -115,7 +115,7 @@ func (m *Api) GetTeams() ([]clickup.Team, error) {
 	return m.getTeams(true)
 }
 
-func (m *Api) syncTeams() ([]clickup.Team, error) {
+func (m *Api) SyncTeams() ([]clickup.Team, error) {
 	return m.getTeams(false)
 }
 
@@ -138,7 +138,7 @@ func (m *Api) GetFolders(spaceId string) ([]clickup.Folder, error) {
 	return m.getFolders(true, spaceId)
 }
 
-func (m *Api) syncFolders(spaceId string) ([]clickup.Folder, error) {
+func (m *Api) SyncFolders(spaceId string) ([]clickup.Folder, error) {
 	return m.getFolders(false, spaceId)
 }
 
@@ -157,11 +157,11 @@ func (m *Api) getFolders(cached bool, spaceId string) ([]clickup.Folder, error) 
 	return data, nil
 }
 
-func (m *Api) GetListsFromFolder(folderId string) ([]clickup.List, error) {
+func (m *Api) GetLists(folderId string) ([]clickup.List, error) {
 	return m.getListsFromFolder(true, folderId)
 }
 
-func (m *Api) syncListsFromFolder(folderId string) ([]clickup.List, error) {
+func (m *Api) SyncLists(folderId string) ([]clickup.List, error) {
 	return m.getListsFromFolder(false, folderId)
 }
 
@@ -373,7 +373,7 @@ func (m *Api) GetList(listId string) (clickup.List, error) {
 	return m.getList(true, listId)
 }
 
-func (m *Api) syncList(listId string) (clickup.List, error) {
+func (m *Api) SyncList(listId string) (clickup.List, error) {
 	return m.getList(false, listId)
 }
 
@@ -412,15 +412,15 @@ func (m *Api) Sync() error {
 
 				switch entry.Namespace {
 				case CacheNamespaceTeams:
-					_, err = m.syncTeams()
+					_, err = m.SyncTeams()
 				case CacheNamespaceSpaces:
-					_, err = m.syncSpaces(key)
+					_, err = m.SyncSpaces(key)
 				case CacheNamespaceFolders:
-					_, err = m.syncFolders(key)
-				case CacheNamespaceListsFolder:
-					_, err = m.syncListsFromFolder(key)
+					_, err = m.SyncFolders(key)
 				case CacheNamespaceLists:
-					_, err = m.syncList(key)
+					_, err = m.SyncList(key)
+				case CacheNamespaceListsFolder:
+					_, err = m.SyncLists(key)
 				case CacheNamespaceViewsWorkspace:
 					_, err = m.syncViewsFromWorkspace(key)
 				case CacheNamespaceViewsSpace:

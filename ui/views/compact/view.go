@@ -182,14 +182,11 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		m.widgetViewsTabs.Path = m.widgetNavigator.GetPath()
 	}
 
-	cmd = m.widgetNavigator.Update(msg)
-	cmds = append(cmds, cmd)
-
-	cmd = m.widgetViewsTabs.Update(msg)
-	cmds = append(cmds, cmd)
-
-	cmd = m.widgetTasks.Update(msg)
-	cmds = append(cmds, cmd)
+	cmds = append(cmds,
+		m.widgetNavigator.Update(msg),
+		m.widgetViewsTabs.Update(msg),
+		m.widgetTasks.Update(msg),
+	)
 
 	return tea.Batch(cmds...)
 }

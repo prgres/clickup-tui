@@ -12,6 +12,7 @@ import (
 	tabletasks "github.com/prgrs/clickup/ui/components/table-tasks"
 	taskssidebar "github.com/prgrs/clickup/ui/components/tasks-sidebar"
 	"github.com/prgrs/clickup/ui/context"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -157,20 +158,40 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case common.RefreshMsg:
 		m.log.Debug("Received: common.RefreshMsg")
-		t, err := m.ctx.Api.SyncTask(m.componenetTasksSidebar.SelectedTask.Id)
+
+		errgroup := new(errgroup.Group)
+
+		errgroup.Go(func() error {
+			id := m.componenetTasksSidebar.SelectedTask.Id
+			if id != "" {
+				t, err := m.ctx.Api.SyncTask(id)
+				if err != nil {
+					return err
+				}
+
+				if err := m.componenetTasksSidebar.SetTask(t); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+
+		errgroup.Go(func() error {
+			id := m.SelectedViewListId
+			if id != "" {
+				tasks, err := m.ctx.Api.SyncTasksFromView(m.SelectedViewListId)
+				if err != nil {
+					return err
+				}
+				m.componenetTasksTable.SetTasks(tasks)
+			}
+			return nil
+		})
+
+		err := errgroup.Wait()
 		if err != nil {
 			return common.ErrCmd(err)
 		}
-
-		if err := m.componenetTasksSidebar.SetTask(t); err != nil {
-			return common.ErrCmd(err)
-		}
-
-		tasks, err := m.ctx.Api.SyncTasksFromView(m.SelectedViewListId)
-		if err != nil {
-			return common.ErrCmd(err)
-		}
-		m.componenetTasksTable.SetTasks(tasks)
 	}
 
 	cmds = append(cmds,
