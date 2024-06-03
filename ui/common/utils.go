@@ -88,5 +88,5 @@ var ResourceTypeRegistry = struct {
 }
 
 func NewLogger(l *log.Logger, resourceType ResourceType, id string) *log.Logger {
-	return l.WithPrefix(l.GetPrefix() + string(resourceType) + id)
+	return l.WithPrefix(l.GetPrefix() + "/" + string(resourceType) + "/" + id)
 }
