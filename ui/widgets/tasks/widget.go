@@ -154,6 +154,23 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			return common.ErrCmd(err)
 		}
 		m.componenetTasksTable.SetTasks(tasks)
+
+	case common.RefreshMsg:
+		m.log.Debug("Received: common.RefreshMsg")
+		t, err := m.ctx.Api.SyncTask(m.componenetTasksSidebar.SelectedTask.Id)
+		if err != nil {
+			return common.ErrCmd(err)
+		}
+
+		if err := m.componenetTasksSidebar.SetTask(t); err != nil {
+			return common.ErrCmd(err)
+		}
+
+		tasks, err := m.ctx.Api.SyncTasksFromView(m.SelectedViewListId)
+		if err != nil {
+			return common.ErrCmd(err)
+		}
+		m.componenetTasksTable.SetTasks(tasks)
 	}
 
 	cmds = append(cmds,
