@@ -164,7 +164,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		errgroup.Go(func() error {
 			id := m.componenetTasksSidebar.SelectedTask.Id
 			if id != "" {
-				t, err := m.ctx.Api.SyncTask(id)
+				t, err := m.ctx.Api.GetTask(id)
 				if err != nil {
 					return err
 				}
@@ -179,7 +179,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		errgroup.Go(func() error {
 			id := m.SelectedViewListId
 			if id != "" {
-				tasks, err := m.ctx.Api.SyncTasksFromView(m.SelectedViewListId)
+				tasks, err := m.ctx.Api.GetTasksFromView(m.SelectedViewListId)
 				if err != nil {
 					return err
 				}

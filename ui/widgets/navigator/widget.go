@@ -186,7 +186,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		errgroup := new(errgroup.Group)
 
 		errgroup.Go(func() error {
-			t, err := m.ctx.Api.SyncTeams()
+			t, err := m.ctx.Api.GetTeams()
 			if err != nil {
 				return err
 			}
@@ -197,7 +197,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		errgroup.Go(func() error {
 			id := m.componentWorkspacesList.Selected.Id
 			if id != "" {
-				t, err := m.ctx.Api.SyncSpaces(id)
+				t, err := m.ctx.Api.GetSpaces(id)
 				if err != nil {
 					return err
 				}
@@ -209,7 +209,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		errgroup.Go(func() error {
 			id := m.componentSpacesList.Selected.Id
 			if id != "" {
-				t, err := m.ctx.Api.SyncFolders(id)
+				t, err := m.ctx.Api.GetFolders(id)
 				if err != nil {
 					return err
 				}
@@ -221,7 +221,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		errgroup.Go(func() error {
 			id := m.componentFoldersList.Selected.Id
 			if id != "" {
-				t, err := m.ctx.Api.SyncLists(id)
+				t, err := m.ctx.Api.GetLists(id)
 				if err != nil {
 					return err
 				}
