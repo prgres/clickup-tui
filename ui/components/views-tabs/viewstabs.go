@@ -12,7 +12,7 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const id = "TasksTabs"
+const id = "tasks-tab"
 
 type Tab struct {
 	Name string
