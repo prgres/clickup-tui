@@ -73,6 +73,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			"width", msg.Width,
 			"height", msg.Height)
 		m.ctx.WindowSize.Set(msg.Width, msg.Height)
+		return m, tea.Batch(cmds...)
 	}
 
 	cmds = append(cmds,
@@ -93,11 +94,16 @@ func (m Model) View() string {
 		viewKm.ShortHelp,
 	)
 
-	footer := m.dialogHelp.View(km)
-	footerHeight := lipgloss.Height(footer)
-
 	physicalHeight := m.ctx.WindowSize.Height
 	physicalWidth := m.ctx.WindowSize.Width
+
+	m.dialogHelp.SetSize(common.Size{
+		Width:  physicalWidth,
+		Height: physicalHeight,
+	})
+
+	footer := m.dialogHelp.View(km)
+	footerHeight := lipgloss.Height(footer)
 
 	viewHeight := physicalHeight - footerHeight
 	viewToRender.SetSize(common.Size{

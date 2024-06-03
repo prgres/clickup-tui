@@ -1,7 +1,6 @@
 package help
 
 import (
-	"os"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -10,7 +9,6 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/prgrs/clickup/ui/common"
 	"github.com/prgrs/clickup/ui/context"
-	"golang.org/x/term"
 )
 
 const id = "widgetHelp"
@@ -23,6 +21,7 @@ type Model struct {
 	log        *log.Logger
 	help       help.Model
 	inputStyle lipgloss.Style
+	size       common.Size
 }
 
 func (m Model) Id() common.Id {
@@ -83,12 +82,12 @@ func (m Model) View(keyMap help.KeyMap) string {
 	m.help.ShowAll = m.ShowHelp
 	helpView := m.help.View(keyMap)
 
-	physicalWidth, _, _ := term.GetSize(int(os.Stdout.Fd()))
-	dividerWidth := physicalWidth - lipgloss.Width(helpView) - lipgloss.Width(status)
+	dividerWidth := m.size.Width - lipgloss.Width(helpView) - lipgloss.Width(status)
 
 	if dividerWidth < 0 {
 		dividerWidth = 0
 	}
+
 	divider := strings.Repeat(" ", dividerWidth)
 
 	return lipgloss.JoinHorizontal(
@@ -102,4 +101,9 @@ func (m Model) View(keyMap help.KeyMap) string {
 func (m Model) Init() tea.Cmd {
 	m.log.Info("Initializing...")
 	return nil
+}
+
+func (m *Model) SetSize(s common.Size) {
+	m.size = s
+	m.help.Width = s.Width
 }
