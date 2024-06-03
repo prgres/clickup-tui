@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
@@ -37,18 +35,8 @@ func (m Model) Id() common.Id {
 	return m.id
 }
 
-type KeyMap struct {
-	viewport.KeyMap
-}
-
 func (m Model) KeyMap() KeyMap {
 	return m.keyMap
-}
-
-func DefaultKeyMap() KeyMap {
-	return KeyMap{
-		KeyMap: viewport.DefaultKeyMap(),
-	}
 }
 
 func (m *Model) SetSize(s common.Size) {
@@ -60,37 +48,6 @@ func (m *Model) SetSize(s common.Size) {
 	m.size = s
 	m.viewport.Width = m.size.Width
 	m.viewport.Height = m.size.Height
-}
-
-func (m Model) Help() help.KeyMap {
-	km := m.keyMap
-
-	return common.NewHelp(
-		func() [][]key.Binding {
-			return [][]key.Binding{
-				{
-					km.Down,
-					km.Up,
-				},
-				{
-					km.PageDown,
-					km.PageUp,
-				},
-				{
-					km.HalfPageUp,
-					km.HalfPageDown,
-				},
-			}
-		},
-		func() []key.Binding {
-			return []key.Binding{
-				km.Down,
-				km.Up,
-				km.PageDown,
-				km.PageUp,
-			}
-		},
-	)
 }
 
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {

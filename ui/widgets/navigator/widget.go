@@ -3,7 +3,6 @@ package navigator
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -99,57 +98,13 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	}
 }
 
-func (m Model) Help() help.KeyMap {
-	switch m.state {
-	case m.componentWorkspacesList.Id():
-		return m.componentWorkspacesList.Help()
-	case m.componentSpacesList.Id():
-		return m.componentSpacesList.Help()
-	case m.componentFoldersList.Id():
-		return m.componentFoldersList.Help()
-	case m.componentListsList.Id():
-		return m.componentListsList.Help()
-	default:
-		return common.NewEmptyHelp()
-	}
-}
-
 func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch keypress := msg.String(); keypress {
-		case "esc":
-			m.log.Info("Received: Go to previous view")
-
-			switch m.state {
-			case m.componentSpacesList.Id():
-				m.state = m.componentWorkspacesList.Id()
-			case m.componentFoldersList.Id():
-				m.state = m.componentSpacesList.Id()
-			case m.componentListsList.Id():
-				m.state = m.componentFoldersList.Id()
-			}
-
-			cmds = append(cmds, cmd)
-			return tea.Batch(cmds...)
-		}
-
-		switch m.state {
-		case m.componentWorkspacesList.Id():
-			cmd = m.componentWorkspacesList.Update(msg)
-		case m.componentSpacesList.Id():
-			cmd = m.componentSpacesList.Update(msg)
-		case m.componentFoldersList.Id():
-			cmd = m.componentFoldersList.Update(msg)
-		case m.componentListsList.Id():
-			cmd = m.componentListsList.Update(msg)
-		}
-
-		cmds = append(cmds, cmd)
-		return tea.Batch(cmds...)
+		return tea.Batch(append(cmds, m.handleKeys(msg))...)
 
 	case common.WorkspaceChangeMsg:
 		id := string(msg)

@@ -11,7 +11,7 @@ import (
 	"github.com/prgrs/clickup/ui/context"
 )
 
-const id = "widgetHelp"
+const id = "help"
 
 type Model struct {
 	id         common.Id
@@ -22,6 +22,7 @@ type Model struct {
 	help       help.Model
 	inputStyle lipgloss.Style
 	size       common.Size
+	keyMap     KeyMap
 }
 
 func (m Model) Id() common.Id {
@@ -38,6 +39,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		log:        log,
 		help:       help.New(),
 		ShowHelp:   false,
+		keyMap:     DefaultKeyMap(),
 	}
 }
 
@@ -46,28 +48,11 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.log.Info("Received: tea.WindowSizeMsg",
-			"width", msg.Width,
-			"height", msg.Height)
-		m.help.Width = msg.Width
 	case tea.KeyMsg:
-		m.lastKey = msg.String()
-		switch keypress := msg.String(); keypress {
-		// case key.Matches(msg, m.keys.Up):
-		// 	m.lastKey = "↑"
-		// case key.Matches(msg, m.keys.Down):
-		// 	m.lastKey = "↓"
-		// case key.Matches(msg, m.keys.Left):
-		// 	m.lastKey = "←"
-		// case key.Matches(msg, m.keys.Right):
-		// 	m.lastKey = "→"
-		case "?": // key.Matches(msg, m.keys.Help):
-			m.ShowHelp = !m.ShowHelp
-			m.help.ShowAll = !m.help.ShowAll
-		}
+		return m.handleKeys(msg)
 	}
 
+	m.help, cmd = m.help.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return tea.Batch(cmds...)

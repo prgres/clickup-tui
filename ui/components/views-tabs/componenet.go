@@ -3,8 +3,6 @@ package viewstabs
 import (
 	"strings"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
@@ -45,29 +43,6 @@ func (m *Model) SetSize(s common.Size) {
 	m.size = s
 }
 
-func (m Model) Help() help.KeyMap {
-	return common.NewHelp(
-		func() [][]key.Binding {
-			return [][]key.Binding{
-				{
-					m.keyMap.CursorLeft,
-					m.keyMap.CursorLeftAndSelect,
-					m.keyMap.CursorRight,
-					m.keyMap.CursorRightAndSelect,
-					m.keyMap.Select,
-				},
-			}
-		},
-		func() []key.Binding {
-			return []key.Binding{
-				m.keyMap.CursorLeft,
-				m.keyMap.CursorRight,
-				m.keyMap.Select,
-			}
-		},
-	)
-}
-
 func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 	log := common.NewLogger(logger, common.ResourceTypeRegistry.COMPONENT, id)
 
@@ -88,52 +63,7 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch {
-		case key.Matches(msg, m.keyMap.CursorLeft):
-			index := prevTab(m.tabs, m.SelectedIdx)
-			if m.SelectedIdx == index {
-				break
-			}
-			m.SelectedIdx = index
-			m.Selected = m.tabs[index].Id
-			return nil
-
-		case key.Matches(msg, m.keyMap.CursorRight):
-			index := nextTab(m.tabs, m.SelectedIdx)
-			if m.SelectedIdx == index {
-				break
-			}
-			m.SelectedIdx = index
-			m.Selected = m.tabs[index].Id
-			return nil
-
-		case key.Matches(msg, m.keyMap.Select):
-			index := nextTab(m.tabs, m.SelectedIdx)
-			if m.SelectedIdx == index {
-				break
-			}
-			m.SelectedIdx = index
-			m.Selected = m.tabs[index].Id
-			return TabChangedCmd(m.Selected)
-
-		case key.Matches(msg, m.keyMap.CursorLeftAndSelect):
-			index := prevTab(m.tabs, m.SelectedIdx)
-			if m.SelectedIdx == index {
-				break
-			}
-			m.SelectedIdx = index
-			m.Selected = m.tabs[index].Id
-			return TabChangedCmd(m.Selected)
-
-		case key.Matches(msg, m.keyMap.CursorRightAndSelect):
-			index := nextTab(m.tabs, m.SelectedIdx)
-			if m.SelectedIdx == index {
-				break
-			}
-			m.SelectedIdx = index
-			m.Selected = m.tabs[index].Id
-			return TabChangedCmd(m.Selected)
-		}
+		return m.handleKeys(msg)
 	}
 
 	return nil
@@ -205,39 +135,6 @@ func (m Model) View() string {
 func (m Model) Init() tea.Cmd {
 	m.log.Info("Initializing...")
 	return nil
-}
-
-type KeyMap struct {
-	CursorLeft           key.Binding
-	CursorLeftAndSelect  key.Binding
-	CursorRight          key.Binding
-	CursorRightAndSelect key.Binding
-	Select               key.Binding
-}
-
-func DefaultKeyMap() KeyMap {
-	return KeyMap{
-		CursorLeft: key.NewBinding(
-			key.WithKeys("h", "left"),
-			key.WithHelp("h, left", "previous tab"),
-		),
-		CursorLeftAndSelect: key.NewBinding(
-			key.WithKeys("H", "left"),
-			key.WithHelp("H, shift+left", "select tab"),
-		),
-		CursorRight: key.NewBinding(
-			key.WithKeys("l", "right"),
-			key.WithHelp("l, right", "next tab"),
-		),
-		CursorRightAndSelect: key.NewBinding(
-			key.WithKeys("L", "shift+right"),
-			key.WithHelp("L, shift+right", "select tab"),
-		),
-		Select: key.NewBinding(
-			key.WithKeys("enter"),
-			key.WithHelp("enter", "select"),
-		),
-	}
 }
 
 func (m Model) GetFocused() bool {
