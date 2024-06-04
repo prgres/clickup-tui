@@ -2,7 +2,6 @@ package navigator
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -108,14 +107,13 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
-	m.log.Debug("2222", "t", reflect.TypeOf(msg))
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		return m.handleKeys(msg)
 
 	case workspaceslist.WorkspaceChangedMsg:
 		id := string(msg)
-		m.log.Infof("Received: WorkspaceChangeMsg: %s", id)
+		m.log.Debug("Received: WorkspaceChangeMsg", "id", id)
 		m.showSpinner = true
 		cmds = append(cmds,
 			m.spinner.Tick,
@@ -131,7 +129,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case LoadingSpacesFromWorkspaceMsg:
 		id := string(msg)
-		m.log.Infof("Received: LoadingSpacesFromWorkspaceMsg: %s", id)
+		m.log.Debug("Received: LoadingSpacesFromWorkspaceMsg", "id", id)
 		if err := m.componentSpacesList.WorkspaceChanged(id); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
 			return tea.Batch(cmds...)
@@ -141,7 +139,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case spaceslist.SpaceChangedMsg:
 		id := string(msg)
-		m.log.Infof("Received: spaceslist.SpaceChangedMsg: %s", id)
+		m.log.Debug("Received: spaceslist.SpaceChangedMsg", "id", id)
 		m.showSpinner = true
 		cmds = append(cmds,
 			m.spinner.Tick,
@@ -151,7 +149,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case LoadingFoldersFromSpaceMsg:
 		id := string(msg)
-		m.log.Infof("Received: LoadingFoldersFromSpaceMsg: %s", id)
+		m.log.Debug("Received: LoadingFoldersFromSpaceMsg", "id", id)
 		if err := m.componentFoldersList.SpaceChanged(id); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
 			return tea.Batch(cmds...)
@@ -161,7 +159,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case folderslist.FolderChangedMsg:
 		id := string(msg)
-		m.log.Infof("Received: FolderChangeMsg: %s", id)
+		m.log.Debug("Received: folderslist.FolderChangeMsg", "id", id)
 		m.showSpinner = true
 		cmds = append(cmds,
 			m.spinner.Tick,
@@ -171,7 +169,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case LoadingListsFromFolderMsg:
 		id := string(msg)
-		m.log.Infof("Received: LoadingListsFromFolderMsg: %s", id)
+		m.log.Debug("Received: LoadingListsFromFolderMsg", "id", id)
 		if err := m.componentListsList.FolderChanged(id); err != nil {
 			cmds = append(cmds, common.ErrCmd(err))
 			return tea.Batch(cmds...)
@@ -181,9 +179,8 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case listslist.ListChangedMsg:
 		id := string(msg)
-		m.log.Infof("Received: ListChangedMsg: %s", id)
-		// m.showSpinner = true
-		cmds = append(cmds, m.spinner.Tick, ListChangedCmd(id))
+		m.log.Debug("Received: listslist.ListChangedMsg", "id", id)
+		cmds = append(cmds, ListChangedCmd(id))
 
 	case common.RefreshMsg:
 		m.log.Debug("Received: common.RefreshMsg")
