@@ -1,8 +1,6 @@
 package folderslist
 
 import (
-	"reflect"
-
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
@@ -54,9 +52,7 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 		selectedFolder := m.list.SelectedItem().(listitem.Item).Data().(clickup.Folder)
 		m.log.Info("Selected folder", "id", selectedFolder.Id, "name", selectedFolder.Name)
 		m.Selected = selectedFolder
-		tmp := FolderChangedCmd(selectedFolder.Id)
-		m.log.Debug(tmp, "t", reflect.TypeOf(tmp), "x")
-		return tmp
+		return FolderChangedCmd(selectedFolder.Id)
 
 	case key.Matches(msg, m.keyMap.CursorUp):
 		m.list.CursorUp()

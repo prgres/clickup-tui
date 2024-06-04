@@ -131,12 +131,12 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case navigator.FolderChangedMsg:
 		id := string(msg)
-		m.log.Infof("Received: FolderChangeMsg: %s", id)
+		m.log.Info("Received: FolderChangeMsg", "id", id)
 		cmds = append(cmds, m.handleFolderChangePreview(id))
 
 	case navigator.ListPreviewMsg:
 		id := string(msg)
-		m.log.Infof("Received: ListPreviewMsg: %s", id)
+		m.log.Info("Received: ListPreviewMsg", "id", id)
 		cmds = append(cmds, m.handleListChangePreview(id))
 
 	case navigator.ListChangedMsg:
@@ -334,16 +334,3 @@ func (m *Model) handleListChangePreview(id string) tea.Cmd {
 
 	return LoadingTasksFromViewCmd(initTab)
 }
-
-// func (m *Model) getActiveElement() common.UIElement {
-// 	switch m.state {
-// 	case m.widgetNavigator.Id():
-// 		return m.widgetNavigator
-// 	case m.widgetViewsTabs.Id():
-// 		return m.widgetViewsTabs
-// 	case m.widgetTasks.Id():
-// 		return m.widgetTasks
-// 	default:
-// 		return nil
-// 	}
-// }

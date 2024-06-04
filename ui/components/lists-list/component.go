@@ -59,12 +59,8 @@ func (m Model) KeyMap() KeyMap {
 func (m *Model) SetList(lists []clickup.List) {
 	m.log.Info("Synchronizing list")
 	m.lists = lists
-
 	items := NewListItem(lists)
-
 	m.list.SetItems(items)
-	m.list.Select(0)
-	m.log.Info("List synchronized")
 }
 
 func (m *Model) Update(msg tea.Msg) tea.Cmd {
