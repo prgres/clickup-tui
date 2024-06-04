@@ -53,7 +53,7 @@ func (m *Model) SetWorksapce(workspace clickup.Workspace) {
 func (m Model) GetPath() string {
 	switch m.state {
 	case m.componentWorkspacesList.Id():
-		return "/"
+		return ""
 	case m.componentSpacesList.Id():
 		return "/" + m.componentWorkspacesList.Selected.Name
 	case m.componentFoldersList.Id():
