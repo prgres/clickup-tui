@@ -90,16 +90,41 @@ func (m Model) View() string {
 		Width(m.size.Width - borderMargin).
 		MaxWidth(m.size.Width + borderMargin)
 
-	var s []string
-
 	moreTabsIcon := " + "
-	tabPrefix := " Views |"
+	prefix := " Views |"
 	suffix := ""
 
 	if m.Path != "" {
-		suffix += " | " + m.Path
+		suffixMaxWidth := int(float32(m.size.Width-borderMargin) * 0.4)
+		pathMaxWidth := suffixMaxWidth - lipgloss.Width(" "+"|"+" "+""+" ")
+		path := m.Path
+
+		if lipgloss.Width(m.Path) > pathMaxWidth {
+			pathParts := strings.Split(m.Path, "/")
+			for i := range pathParts {
+				if i == 0 {
+					pathParts[i] = ""
+					// the first elem is / so it has to be skipped
+					continue
+				}
+				if i == len(pathParts)-1 {
+					// the last elem has to be always visible
+					continue
+				}
+
+				pathParts[i] = "..."
+
+				if lipgloss.Width(strings.Join(pathParts, "/")) <= pathMaxWidth {
+					break
+				}
+			}
+			path = strings.Join(pathParts, "/")
+		}
+
+		suffix = " " + "|" + " " + path + " "
 	}
 
+	var s []string
 	for _, tab := range m.tabs {
 		t := ""
 		tabContent := " " + tab.Name + " "
@@ -112,7 +137,7 @@ func (m Model) View() string {
 
 		content := " " + t + " "
 
-		if lipgloss.Width(tabPrefix+strings.Join(s, "")+content+moreTabsIcon+suffix) >= m.size.Width-borderMargin {
+		if lipgloss.Width(prefix+strings.Join(s, "")+content+moreTabsIcon+suffix) >= m.size.Width-borderMargin {
 			s = append(s, moreTabsIcon)
 			break
 		}
@@ -121,14 +146,14 @@ func (m Model) View() string {
 	}
 	content := strings.Join(s, "")
 
-	dividerWidth := m.size.Width - borderMargin - lipgloss.Width(tabPrefix+content+moreTabsIcon+suffix)
+	dividerWidth := m.size.Width - borderMargin - lipgloss.Width(prefix+content+moreTabsIcon+suffix)
 	if dividerWidth < 0 {
 		dividerWidth = 0
 	}
 	divider := strings.Repeat(" ", dividerWidth)
 
 	return style.Render(
-		tabPrefix + content + divider + suffix,
+		prefix + content + divider + suffix,
 	)
 }
 
