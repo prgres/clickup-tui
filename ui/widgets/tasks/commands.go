@@ -5,15 +5,16 @@ import (
 	"github.com/prgrs/clickup/pkg/clickup"
 )
 
-type LostFocusMsg string
+type (
+	LostFocusMsg  string
+	UpdateTaskMsg clickup.Task
+)
 
 func LostFocusCmd() tea.Cmd {
 	return func() tea.Msg {
 		return LostFocusMsg("")
 	}
 }
-
-type UpdateTaskMsg clickup.Task
 
 func UpdateTaskCmd(task clickup.Task) tea.Cmd {
 	return func() tea.Msg {
