@@ -59,16 +59,22 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (m Model) View(keyMap help.KeyMap) string {
-	status := "Waiting for input..."
+	availableWidth := m.size.Width
+
+	status := " Waiting for input... "
 	if m.lastKey != "" {
-		status = "You chose: " + m.inputStyle.Render(m.lastKey)
+		status = " You chose: " + m.inputStyle.Render(m.lastKey) + " "
 	}
 
+	availableWidth -= lipgloss.Width(status)
+
+	m.help.Width = availableWidth
 	m.help.ShowAll = m.ShowHelp
 	helpView := m.help.View(keyMap)
 
-	dividerWidth := m.size.Width - lipgloss.Width(helpView) - lipgloss.Width(status)
+	availableWidth -= lipgloss.Width(helpView)
 
+	dividerWidth := availableWidth
 	if dividerWidth < 0 {
 		dividerWidth = 0
 	}
