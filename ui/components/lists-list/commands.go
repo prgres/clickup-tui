@@ -5,18 +5,19 @@ import (
 )
 
 type (
-	ListChangedMsg string
-	ListPreviewMsg string
+	ListChangedMsg  string
+	ListPreviewMsg  string
+	ListSelectedMsg string
 )
 
 func ListChangedCmd(id string) tea.Cmd {
-	return func() tea.Msg {
-		return ListChangedMsg(id)
-	}
+	return func() tea.Msg { return ListChangedMsg(id) }
 }
 
 func ListPreviewCmd(id string) tea.Cmd {
-	return func() tea.Msg {
-		return ListPreviewMsg(id)
-	}
+	return func() tea.Msg { return ListPreviewMsg(id) }
+}
+
+func ListSelectedCmd(id string) tea.Cmd {
+	return func() tea.Msg { return ListSelectedMsg(id) }
 }

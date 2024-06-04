@@ -113,13 +113,19 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case workspaceslist.WorkspaceChangedMsg:
 		id := string(msg)
-		m.log.Debug("Received: WorkspaceChangeMsg", "id", id)
+		m.log.Debug("Received: workspacelist.WorkspaceChangeMsg", "id", id)
 		m.showSpinner = true
 		cmds = append(cmds,
 			m.spinner.Tick,
 			LoadingSpacesFromWorkspaceCmd(id),
 			WorkspaceChangedCmd(id),
 		)
+
+	case workspaceslist.WorkspaceSelectedMsg:
+		id := string(msg)
+		m.log.Debug("Received: workspaceslist.WorkspaceSelectedMsg", "id", id)
+		m.state = m.componentSpacesList.Id()
+		cmds = append(cmds, WorkspaceChangedCmd(id))
 
 	case workspaceslist.WorkspacePreviewMsg:
 		id := string(msg)
@@ -151,6 +157,11 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			LoadingFoldersFromSpaceCmd(id),
 			SpaceChangedCmd(id),
 		)
+	case spaceslist.SpaceSelectedMsg:
+		id := string(msg)
+		m.log.Debug("Received: spaceslist.SpaceSelectedMsg", "id", id)
+		m.state = m.componentFoldersList.Id()
+		cmds = append(cmds, SpaceChangedCmd(id))
 
 	case spaceslist.SpacePreviewMsg:
 		id := string(msg)
@@ -182,6 +193,12 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		m.log.Debug("Received: folderslist.FolderPreviewMsg", "id", id)
 		cmds = append(cmds, FolderPreviewCmd(id))
 
+	case folderslist.FolderSelectedMsg:
+		id := string(msg)
+		m.log.Debug("Received: folderslist.FolderSelectedMsg", "id", id)
+		m.state = m.componentListsList.Id()
+		cmds = append(cmds, FolderChangedCmd(id))
+
 	case LoadingListsFromFolderMsg:
 		id := string(msg)
 		m.log.Debug("Received: LoadingListsFromFolderMsg", "id", id)
@@ -201,6 +218,11 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		id := string(msg)
 		m.log.Debug("Received: listslist.ListPreviewMsg", "id", id)
 		cmds = append(cmds, ListPreviewCmd(id))
+
+	case listslist.ListSelectedMsg:
+		id := string(msg)
+		m.log.Debug("Received: listslist.ListSelectedMsg", "id", id)
+		cmds = append(cmds, ListChangedCmd(id))
 
 	case common.RefreshMsg:
 		m.log.Debug("Received: common.RefreshMsg")

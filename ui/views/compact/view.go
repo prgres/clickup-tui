@@ -7,6 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/prgrs/clickup/api"
 	"github.com/prgrs/clickup/pkg/clickup"
 	"github.com/prgrs/clickup/ui/common"
 	viewstabs "github.com/prgrs/clickup/ui/components/views-tabs"
@@ -70,33 +71,11 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		m.log.Info("Received: InitCompactMsg")
 
 		if err := m.widgetNavigator.Init(); err != nil {
-			cmds = append(cmds, common.ErrCmd(err))
-			return tea.Batch(cmds...)
+			return common.ErrCmd(err)
 		}
 
 		initWorkspace := m.widgetNavigator.GetWorkspace()
 		m.widgetNavigator.SetWorksapce(initWorkspace)
-		cmds = append(cmds, navigator.WorkspacePreviewCmd(initWorkspace.Id))
-
-		views, err := m.ctx.Api.GetViewsFromWorkspace(initWorkspace.Id)
-		if err != nil {
-			cmds = append(cmds, common.ErrCmd(err))
-			return tea.Batch(cmds...)
-		}
-
-		if len(views) == 0 {
-			m.widgetTasks.SetTasks(nil)
-			m.widgetViewsTabs.SetTabs(nil)
-		} else {
-			tabs := viewsToTabs(views)
-			m.widgetViewsTabs.SetTabs(tabs)
-			initTab := m.widgetViewsTabs.Selected
-
-			if err := m.reloadTasks(initTab); err != nil {
-				cmds = append(cmds, common.ErrCmd(err))
-				return tea.Batch(cmds...)
-			}
-		}
 
 	case spinner.TickMsg:
 		if m.showSpinner {
@@ -111,7 +90,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case navigator.WorkspaceChangedMsg:
 		id := string(msg)
-		m.log.Infof("Received: WorkspaceChangeMsg: %s", id)
+		m.log.Infof("Received: WorkspaceChangedMsg: %s", id)
 		cmds = append(cmds, m.handleWorkspaceChangePreview(id))
 
 	case navigator.SpacePreviewMsg:
@@ -121,7 +100,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case navigator.SpaceChangedMsg:
 		id := string(msg)
-		m.log.Infof("Received: received SpaceChangeMsg: %s", id)
+		m.log.Infof("Received: received SpaceChangedMsg: %s", id)
 		cmds = append(cmds, m.handleSpaceChangePreview(id))
 
 	case navigator.FolderPreviewMsg:
@@ -131,7 +110,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case navigator.FolderChangedMsg:
 		id := string(msg)
-		m.log.Info("Received: FolderChangeMsg", "id", id)
+		m.log.Info("Received: FolderChangedMsg", "id", id)
 		cmds = append(cmds, m.handleFolderChangePreview(id))
 
 	case navigator.ListPreviewMsg:
@@ -141,7 +120,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case navigator.ListChangedMsg:
 		id := string(msg)
-		m.log.Info("Received: ListChangeMsg", "id", id)
+		m.log.Info("Received: ListChangedMsg", "id", id)
 		// TODO: make state change as func
 		m.state = m.widgetTasks.Id()
 		m.widgetTasks.SetFocused(true)
@@ -150,16 +129,25 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		return m.handleListChangePreview(id)
 
 	case viewstabs.TabChangedMsg:
-		idx := string(msg)
-		initTab := m.widgetViewsTabs.Selected
-		m.log.Info("Received: TabChangedMsg", "idx", idx, "id", initTab)
+		id := string(msg)
+		m.log.Info("Received: TabChangedMsg", "id", id, "id2", m.widgetTasks.SelectedViewListId)
 
-		m.widgetTasks.SetSpinner(true)
-		cmds = append(cmds, LoadingTasksFromViewCmd(initTab))
+		if m.widgetTasks.SelectedViewListId == id {
+			m.log.Debug("Incoming viewId is the same", "id", id)
+			break
+		}
+
+		// TODO: rather tmp solution but it may live it forver 🤷
+		if !m.ctx.Api.CheckIfCached(api.CacheNamespaceTasksView, id) {
+			m.widgetTasks.SetSpinner(true)
+		}
+
+		cmds = append(cmds, LoadingTasksFromViewCmd(id))
 
 	case LoadingTasksFromViewMsg:
 		id := string(msg)
 		m.log.Info("Received: LoadingTasksFromViewMsg", "id", id)
+
 		m.widgetTasks.SetSpinner(false)
 
 		if id == "" {
@@ -168,7 +156,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		}
 
 		if err := m.reloadTasks(id); err != nil {
-			cmds = append(cmds, common.ErrCmd(err))
+			return common.ErrCmd(err)
 		}
 
 		return tea.Batch(cmds...)
@@ -280,57 +268,29 @@ func (m *Model) reloadTasks(viewId string) error {
 }
 
 func (m *Model) handleWorkspaceChangePreview(id string) tea.Cmd {
-	views, err := m.ctx.Api.GetViewsFromWorkspace(id) // TODO: should fetch from the list
-	if err != nil {
-		return common.ErrCmd(err)
-	}
-	tabs := viewsToTabs(views)
-	m.widgetViewsTabs.SetTabs(tabs)
-
-	initTab := m.widgetViewsTabs.Selected
-	m.widgetTasks.SetSpinner(true)
-
-	return LoadingTasksFromViewCmd(initTab)
+	return m.handleChangePreview(id, m.ctx.Api.GetViewsFromWorkspace) // TODO: should fetch from the list
 }
 
 func (m *Model) handleSpaceChangePreview(id string) tea.Cmd {
-	views, err := m.ctx.Api.GetViewsFromSpace(id)
-	if err != nil {
-		return common.ErrCmd(err)
-	}
-	tabs := viewsToTabs(views)
-	m.widgetViewsTabs.SetTabs(tabs)
-
-	initTab := m.widgetViewsTabs.Selected
-	m.widgetTasks.SetSpinner(true)
-
-	return LoadingTasksFromViewCmd(initTab)
+	return m.handleChangePreview(id, m.ctx.Api.GetViewsFromSpace)
 }
 
 func (m *Model) handleFolderChangePreview(id string) tea.Cmd {
-	views, err := m.ctx.Api.GetViewsFromFolder(id)
-	if err != nil {
-		return common.ErrCmd(err)
-	}
-	tabs := viewsToTabs(views)
-	m.widgetViewsTabs.SetTabs(tabs)
-
-	initTab := m.widgetViewsTabs.Selected
-	m.widgetTasks.SetSpinner(true)
-
-	return LoadingTasksFromViewCmd(initTab)
+	return m.handleChangePreview(id, m.ctx.Api.GetViewsFromFolder)
 }
 
 func (m *Model) handleListChangePreview(id string) tea.Cmd {
-	views, err := m.ctx.Api.GetViewsFromList(id)
+	return m.handleChangePreview(id, m.ctx.Api.GetViewsFromList)
+}
+
+func (m *Model) handleChangePreview(id string, fn func(id string) ([]clickup.View, error)) tea.Cmd {
+	views, err := fn(id)
 	if err != nil {
 		return common.ErrCmd(err)
 	}
 	tabs := viewsToTabs(views)
 	m.widgetViewsTabs.SetTabs(tabs)
-
 	initTab := m.widgetViewsTabs.Selected
-	m.widgetTasks.SetSpinner(true)
 
-	return LoadingTasksFromViewCmd(initTab)
+	return viewstabs.TabChangedCmd(initTab)
 }

@@ -29,7 +29,8 @@ const (
 	CacheNamespaceTasksList      cache.Namespace = "tasks-list"
 	CacheNamespaceTasksView      cache.Namespace = "tasks-view"
 
-	SyncInterval = 1
+	SyncInterval = 1000
+	// SyncInterval = 1
 )
 
 type Api struct {
@@ -465,6 +466,11 @@ func filterViews(views []clickup.View, filters []clickup.ViewType) []clickup.Vie
 	return result
 }
 
+func (m *Api) CheckIfCached(namespace cache.Namespace, key string) bool {
+	ok, _ := m.getFromCache(namespace, cache.Key(key), nil)
+	return ok
+}
+
 func (m *Api) getFromCache(namespace cache.Namespace, key cache.Key, v interface{}) (bool, error) {
 	err := m.Cache.Get(namespace, key, v)
 	if err == nil {
@@ -475,7 +481,7 @@ func (m *Api) getFromCache(namespace cache.Namespace, key cache.Key, v interface
 		return false, nil
 	}
 
-	return false, err
+	return true, err
 }
 
 func (m *Api) get(cacheNamespace cache.Namespace, cacheKey cache.Key, data interface{}, fallback func() (interface{}, error), cache bool) error {

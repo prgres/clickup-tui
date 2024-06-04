@@ -49,6 +49,9 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 		}
 		selected := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
 		m.log.Info("Selected workspace", "id", selected.Id, "name", selected.Name)
+		if m.Selected.Id == selected.Id {
+			return WorkspaceSelectedCmd(m.Selected.Id)
+		}
 		m.Selected = selected
 		return WorkspaceChangedCmd(selected.Id)
 
@@ -61,10 +64,13 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 			m.log.Info("List is empty")
 			break
 		}
-		selectedWorkspace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
-		m.log.Info("Selected workspace", "id", selectedWorkspace.Id, "name", selectedWorkspace.Name)
-		m.Selected = selectedWorkspace
-		return WorkspacePreviewCmd(selectedWorkspace.Id)
+		selected := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
+		m.log.Info("Selected workspace", "id", selected.Id, "name", selected.Name)
+		if m.Selected.Id == selected.Id {
+			return WorkspaceSelectedCmd(m.Selected.Id)
+		}
+		m.Selected = selected
+		return WorkspacePreviewCmd(selected.Id)
 
 	case key.Matches(msg, m.keyMap.CursorUp):
 		m.list.CursorUp()
@@ -75,10 +81,13 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 			m.log.Info("List is empty")
 			break
 		}
-		selectedWorkspace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
-		m.log.Info("Selected workspace", "id", selectedWorkspace.Id, "name", selectedWorkspace.Name)
-		m.Selected = selectedWorkspace
-		return WorkspacePreviewCmd(selectedWorkspace.Id)
+		selected := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
+		m.log.Info("Selected workspace", "id", selected.Id, "name", selected.Name)
+		if m.Selected.Id == selected.Id {
+			return WorkspaceSelectedCmd(m.Selected.Id)
+		}
+		m.Selected = selected
+		return WorkspacePreviewCmd(selected.Id)
 	}
 
 	return nil
