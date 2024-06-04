@@ -90,7 +90,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		} else {
 			tabs := viewsToTabs(views)
 			m.widgetViewsTabs.SetTabs(tabs)
-			initTab := m.widgetViewsTabs.Selected
+			initTab := m.widgetViewsTabs.Selected()
 
 			if err := m.reloadTasks(initTab); err != nil {
 				cmds = append(cmds, common.ErrCmd(err))
@@ -109,7 +109,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		m.log.Infof("Received: WorkspacePreviewMsg: %s", id)
 		return m.handleWorkspaceChangePreview(id)
 
-	case common.WorkspaceChangeMsg:
+	case common.WorkspaceChangedMsg:
 		id := string(msg)
 		m.log.Infof("Received: WorkspaceChangeMsg: %s", id)
 		cmds = append(cmds, m.handleWorkspaceChangePreview(id))
@@ -119,7 +119,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		m.log.Infof("Received: received SpacePreviewMsg: %s", id)
 		return m.handleSpaceChangePreview(id)
 
-	case common.SpaceChangeMsg:
+	case common.SpaceChangedMsg:
 		id := string(msg)
 		m.log.Infof("Received: received SpaceChangeMsg: %s", id)
 		cmds = append(cmds, m.handleSpaceChangePreview(id))
@@ -129,17 +129,17 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		m.log.Infof("Received: FolderPreviewMsg: %s", id)
 		return m.handleFolderChangePreview(id)
 
-	case common.FolderChangeMsg:
+	case common.FolderChangedMsg:
 		id := string(msg)
 		m.log.Infof("Received: FolderChangeMsg: %s", id)
 		cmds = append(cmds, m.handleFolderChangePreview(id))
 
-	case common.ListPreviewMsg:
+	case navigator.ListPreviewMsg:
 		id := string(msg)
 		m.log.Infof("Received: ListPreviewMsg: %s", id)
 		cmds = append(cmds, m.handleListChangePreview(id))
 
-	case common.ListChangeMsg:
+	case navigator.ListChangedMsg:
 		id := string(msg)
 		m.log.Info("Received: ListChangeMsg", "id", id)
 		// TODO: make state change as func
@@ -149,9 +149,18 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		m.widgetNavigator.SetFocused(false)
 		return m.handleListChangePreview(id)
 
+	case navigator.ListSelectedMsg:
+		id := string(msg)
+		m.log.Info("Received: ListSelectedMsg", "id", id)
+		m.state = m.widgetTasks.Id()
+		m.widgetTasks.SetFocused(true)
+		m.widgetViewsTabs.SetFocused(false)
+		m.widgetNavigator.SetFocused(false)
+		return nil
+
 	case viewstabs.TabChangedMsg:
 		idx := string(msg)
-		initTab := m.widgetViewsTabs.Selected
+		initTab := m.widgetViewsTabs.Selected()
 		m.log.Info("Received: TabChangedMsg", "idx", idx, "id", initTab)
 
 		m.widgetTasks.SetSpinner(true)
@@ -287,7 +296,7 @@ func (m *Model) handleWorkspaceChangePreview(id string) tea.Cmd {
 	tabs := viewsToTabs(views)
 	m.widgetViewsTabs.SetTabs(tabs)
 
-	initTab := m.widgetViewsTabs.Selected
+	initTab := m.widgetViewsTabs.Selected()
 	m.widgetTasks.SetSpinner(true)
 
 	return LoadingTasksFromViewCmd(initTab)
@@ -301,7 +310,7 @@ func (m *Model) handleSpaceChangePreview(id string) tea.Cmd {
 	tabs := viewsToTabs(views)
 	m.widgetViewsTabs.SetTabs(tabs)
 
-	initTab := m.widgetViewsTabs.Selected
+	initTab := m.widgetViewsTabs.Selected()
 	m.widgetTasks.SetSpinner(true)
 
 	return LoadingTasksFromViewCmd(initTab)
@@ -315,7 +324,7 @@ func (m *Model) handleFolderChangePreview(id string) tea.Cmd {
 	tabs := viewsToTabs(views)
 	m.widgetViewsTabs.SetTabs(tabs)
 
-	initTab := m.widgetViewsTabs.Selected
+	initTab := m.widgetViewsTabs.Selected()
 	m.widgetTasks.SetSpinner(true)
 
 	return LoadingTasksFromViewCmd(initTab)
@@ -329,21 +338,8 @@ func (m *Model) handleListChangePreview(id string) tea.Cmd {
 	tabs := viewsToTabs(views)
 	m.widgetViewsTabs.SetTabs(tabs)
 
-	initTab := m.widgetViewsTabs.Selected
+	initTab := m.widgetViewsTabs.Selected()
 	m.widgetTasks.SetSpinner(true)
 
 	return LoadingTasksFromViewCmd(initTab)
 }
-
-// func (m *Model) getActiveElement() common.UIElement {
-// 	switch m.state {
-// 	case m.widgetNavigator.Id():
-// 		return m.widgetNavigator
-// 	case m.widgetViewsTabs.Id():
-// 		return m.widgetViewsTabs
-// 	case m.widgetTasks.Id():
-// 		return m.widgetTasks
-// 	default:
-// 		return nil
-// 	}
-// }

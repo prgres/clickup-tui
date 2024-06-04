@@ -2,10 +2,18 @@ package folderslist
 
 import tea "github.com/charmbracelet/bubbletea"
 
-type FolderChangeMsg string
+type FolderChangedMsg string
 
-func FolderChangeCmd(space string) tea.Cmd {
+func FolderChangeCmd(id string) tea.Cmd {
 	return func() tea.Msg {
-		return FolderChangeMsg(space)
+		return FolderChangedMsg(id)
+	}
+}
+
+type FolderSelectedMsg string
+
+func FolderSelectedCmd(id string) tea.Cmd {
+	return func() tea.Msg {
+		return FolderSelectedCmd(id)
 	}
 }

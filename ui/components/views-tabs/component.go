@@ -28,11 +28,23 @@ type Model struct {
 	Hidden    bool
 	ifBorders bool
 	Path      string
-	StartIdx  int
-	EndIdx    int
 
-	SelectedIdx int
-	Selected    string
+	selectedIdx int
+	hoveredIdx  int
+}
+
+func (m Model) Selected() string {
+	if len(m.tabs) == 0 {
+		return ""
+	}
+	return m.tabs[m.selectedIdx].Id
+}
+
+func (m Model) Hovered() string {
+	if len(m.tabs) == 0 {
+		return ""
+	}
+	return m.tabs[m.hoveredIdx].Id
 }
 
 func (m Model) Id() common.Id {
@@ -54,9 +66,8 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 		keyMap:      DefaultKeyMap(),
 		ifBorders:   true,
 		Path:        "",
-		StartIdx:    0,
-		EndIdx:      0,
-		SelectedIdx: 0,
+		selectedIdx: 0,
+		hoveredIdx:  0,
 	}
 }
 
@@ -105,7 +116,7 @@ func (m Model) View() string {
 		tabContent := " " + tab.Name + " "
 
 		style := inactiveTabStyle
-		if m.Selected == tab.Id {
+		if m.Hovered() == tab.Id {
 			style = activeTabStyle
 		}
 		t = style.Render(tabContent)
@@ -154,14 +165,8 @@ func (m *Model) SetHidden(h bool) {
 }
 
 func (m *Model) SetTabs(tabs []Tab) {
-	m.SelectedIdx = 0
+	m.selectedIdx = 0
 	m.tabs = tabs
-
-	selectedTabId := ""
-	if len(tabs) > 0 {
-		selectedTabId = tabs[0].Id
-	}
-	m.Selected = selectedTabId
 }
 
 func (m Model) Size() common.Size {

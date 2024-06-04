@@ -41,49 +41,29 @@ func DefaultKeyMap() KeyMap {
 func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 	switch {
 	case key.Matches(msg, m.keyMap.CursorLeft):
-		index := prevTab(m.tabs, m.SelectedIdx)
-		if m.SelectedIdx == index {
-			break
-		}
-		m.SelectedIdx = index
-		m.Selected = m.tabs[index].Id
+		m.hoveredIdx = prevTab(m.tabs, m.hoveredIdx)
 		return nil
 
 	case key.Matches(msg, m.keyMap.CursorRight):
-		index := nextTab(m.tabs, m.SelectedIdx)
-		if m.SelectedIdx == index {
-			break
-		}
-		m.SelectedIdx = index
-		m.Selected = m.tabs[index].Id
+		m.hoveredIdx = nextTab(m.tabs, m.hoveredIdx)
 		return nil
 
 	case key.Matches(msg, m.keyMap.Select):
-		index := nextTab(m.tabs, m.SelectedIdx)
-		if m.SelectedIdx == index {
-			break
+		if m.selectedIdx == m.hoveredIdx {
+			return nil
 		}
-		m.SelectedIdx = index
-		m.Selected = m.tabs[index].Id
-		return TabChangedCmd(m.Selected)
+		m.selectedIdx = m.hoveredIdx
+		return TabChangedCmd(m.Selected())
 
 	case key.Matches(msg, m.keyMap.CursorLeftAndSelect):
-		index := prevTab(m.tabs, m.SelectedIdx)
-		if m.SelectedIdx == index {
-			break
-		}
-		m.SelectedIdx = index
-		m.Selected = m.tabs[index].Id
-		return TabChangedCmd(m.Selected)
+		m.hoveredIdx = prevTab(m.tabs, m.hoveredIdx)
+		m.selectedIdx = m.hoveredIdx
+		return TabChangedCmd(m.Selected())
 
 	case key.Matches(msg, m.keyMap.CursorRightAndSelect):
-		index := nextTab(m.tabs, m.SelectedIdx)
-		if m.SelectedIdx == index {
-			break
-		}
-		m.SelectedIdx = index
-		m.Selected = m.tabs[index].Id
-		return TabChangedCmd(m.Selected)
+		m.hoveredIdx = nextTab(m.tabs, m.hoveredIdx)
+		m.selectedIdx = m.hoveredIdx
+		return TabChangedCmd(m.Selected())
 	}
 
 	return nil

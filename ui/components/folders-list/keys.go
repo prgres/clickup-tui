@@ -50,10 +50,13 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 			m.log.Info("List is empty")
 			break
 		}
-		selectedFolder := m.list.SelectedItem().(listitem.Item).Data().(clickup.Folder)
-		m.log.Info("Selected folder", "id", selectedFolder.Id, "name", selectedFolder.Name)
-		m.Selected = selectedFolder
-		return FolderChangeCmd(selectedFolder.Id)
+		selected := m.list.SelectedItem().(listitem.Item).Data().(clickup.Folder)
+		m.log.Info("Selected folder", "id", selected.Id, "name", selected.Name)
+		if m.Selected.Id == selected.Id {
+			return FolderSelectedCmd(m.Selected.Id)
+		}
+		m.Selected = selected
+		return FolderChangeCmd(m.Selected.Id)
 
 	case key.Matches(msg, m.keyMap.CursorUp):
 		m.list.CursorUp()

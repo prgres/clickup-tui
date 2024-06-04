@@ -1,6 +1,9 @@
 package navigator
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	tea "github.com/charmbracelet/bubbletea"
+	listslist "github.com/prgrs/clickup/ui/components/lists-list"
+)
 
 type LoadingSpacesFromWorkspaceMsg string
 
@@ -25,3 +28,14 @@ func LoadingListsFromFolderCmd(id string) tea.Cmd {
 		return LoadingListsFromFolderMsg(id)
 	}
 }
+
+type (
+	ListPreviewMsg  = listslist.ListPreviewMsg
+	ListChangedMsg  = listslist.ListChangedMsg
+	ListSelectedMsg = listslist.ListSelectedMsg
+)
+
+var (
+	ListChangedCmd  = listslist.ListChangedCmd
+	ListSelectedCmd = listslist.ListSelectedCmd
+)
