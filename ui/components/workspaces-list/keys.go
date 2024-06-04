@@ -4,7 +4,6 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
-	"github.com/prgrs/clickup/ui/common"
 	listitem "github.com/prgrs/clickup/ui/components/list-item"
 )
 
@@ -51,7 +50,7 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 		selected := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
 		m.log.Info("Selected workspace", "id", selected.Id, "name", selected.Name)
 		m.Selected = selected
-		return common.WorkspaceChangeCmd(selected.Id)
+		return WorkspaceChangedCmd(selected.Id)
 
 	case key.Matches(msg, m.keyMap.CursorDown):
 		m.list.CursorDown()
@@ -65,7 +64,7 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 		selectedWorkspace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
 		m.log.Info("Selected workspace", "id", selectedWorkspace.Id, "name", selectedWorkspace.Name)
 		m.Selected = selectedWorkspace
-		return common.WorkspacePreviewCmd(selectedWorkspace.Id)
+		return WorkspacePreviewCmd(selectedWorkspace.Id)
 
 	case key.Matches(msg, m.keyMap.CursorUp):
 		m.list.CursorUp()
@@ -79,7 +78,7 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 		selectedWorkspace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
 		m.log.Info("Selected workspace", "id", selectedWorkspace.Id, "name", selectedWorkspace.Name)
 		m.Selected = selectedWorkspace
-		return common.WorkspacePreviewCmd(selectedWorkspace.Id)
+		return WorkspacePreviewCmd(selectedWorkspace.Id)
 	}
 
 	return nil

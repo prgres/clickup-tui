@@ -76,7 +76,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 		initWorkspace := m.widgetNavigator.GetWorkspace()
 		m.widgetNavigator.SetWorksapce(initWorkspace)
-		cmds = append(cmds, common.WorkspacePreviewCmd(initWorkspace.Id))
+		cmds = append(cmds, navigator.WorkspacePreviewCmd(initWorkspace.Id))
 
 		views, err := m.ctx.Api.GetViewsFromWorkspace(initWorkspace.Id)
 		if err != nil {
@@ -104,42 +104,42 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 			cmds = append(cmds, cmd)
 		}
 
-	case common.WorkspacePreviewMsg:
+	case navigator.WorkspacePreviewMsg:
 		id := string(msg)
 		m.log.Infof("Received: WorkspacePreviewMsg: %s", id)
 		return m.handleWorkspaceChangePreview(id)
 
-	case common.WorkspaceChangeMsg:
+	case navigator.WorkspaceChangedMsg:
 		id := string(msg)
 		m.log.Infof("Received: WorkspaceChangeMsg: %s", id)
 		cmds = append(cmds, m.handleWorkspaceChangePreview(id))
 
-	case common.SpacePreviewMsg:
+	case navigator.SpacePreviewMsg:
 		id := string(msg)
 		m.log.Infof("Received: received SpacePreviewMsg: %s", id)
 		return m.handleSpaceChangePreview(id)
 
-	case common.SpaceChangeMsg:
+	case navigator.SpaceChangedMsg:
 		id := string(msg)
 		m.log.Infof("Received: received SpaceChangeMsg: %s", id)
 		cmds = append(cmds, m.handleSpaceChangePreview(id))
 
-	case common.FolderPreviewMsg:
+	case navigator.FolderPreviewMsg:
 		id := string(msg)
 		m.log.Infof("Received: FolderPreviewMsg: %s", id)
 		return m.handleFolderChangePreview(id)
 
-	case common.FolderChangeMsg:
+	case navigator.FolderChangedMsg:
 		id := string(msg)
 		m.log.Infof("Received: FolderChangeMsg: %s", id)
 		cmds = append(cmds, m.handleFolderChangePreview(id))
 
-	case common.ListPreviewMsg:
+	case navigator.ListPreviewMsg:
 		id := string(msg)
 		m.log.Infof("Received: ListPreviewMsg: %s", id)
 		cmds = append(cmds, m.handleListChangePreview(id))
 
-	case common.ListChangeMsg:
+	case navigator.ListChangedMsg:
 		id := string(msg)
 		m.log.Info("Received: ListChangeMsg", "id", id)
 		// TODO: make state change as func

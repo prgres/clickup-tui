@@ -4,7 +4,6 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
-	"github.com/prgrs/clickup/ui/common"
 	listitem "github.com/prgrs/clickup/ui/components/list-item"
 )
 
@@ -65,7 +64,7 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 		selectedList := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
 		m.log.Info("Selected list", "id", selectedList.Id, "name", selectedList.Name)
 		m.Selected = selectedList
-		return common.ListPreviewCmd(m.Selected.Id)
+		return ListPreviewCmd(m.Selected.Id)
 
 	case key.Matches(msg, m.keyMap.CursorUp):
 		m.list.CursorUp()
@@ -79,7 +78,7 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 		selectedList := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
 		m.log.Info("Selected list", "id", selectedList.Id, "name", selectedList.Name)
 		m.Selected = selectedList
-		return common.ListPreviewCmd(m.Selected.Id)
+		return ListPreviewCmd(m.Selected.Id)
 	}
 
 	return nil

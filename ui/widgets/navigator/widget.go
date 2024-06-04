@@ -2,6 +2,7 @@ package navigator
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -107,15 +108,20 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
+	m.log.Debug("2222", "t", reflect.TypeOf(msg))
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		return m.handleKeys(msg)
 
-	case common.WorkspaceChangeMsg:
+	case workspaceslist.WorkspaceChangedMsg:
 		id := string(msg)
 		m.log.Infof("Received: WorkspaceChangeMsg: %s", id)
 		m.showSpinner = true
-		cmds = append(cmds, m.spinner.Tick, LoadingSpacesFromWorkspaceCmd(id))
+		cmds = append(cmds,
+			m.spinner.Tick,
+			LoadingSpacesFromWorkspaceCmd(id),
+			WorkspaceChangedCmd(id),
+		)
 
 	case spinner.TickMsg:
 		if m.showSpinner {
@@ -135,14 +141,13 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 
 	case spaceslist.SpaceChangedMsg:
 		id := string(msg)
-		m.log.Infof("Received: SpaceChangedMsg: %s", id)
-		cmds = append(cmds, common.SpaceChangeCmd(id))
-
-	case common.SpaceChangeMsg:
-		id := string(msg)
-		m.log.Infof("Received: received SpaceChangeMsg: %s", id)
+		m.log.Infof("Received: spaceslist.SpaceChangedMsg: %s", id)
 		m.showSpinner = true
-		cmds = append(cmds, m.spinner.Tick, LoadingFoldersFromSpaceCmd(id))
+		cmds = append(cmds,
+			m.spinner.Tick,
+			LoadingFoldersFromSpaceCmd(id),
+			SpaceChangedCmd(id),
+		)
 
 	case LoadingFoldersFromSpaceMsg:
 		id := string(msg)
@@ -154,16 +159,15 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		m.showSpinner = false
 		m.state = m.componentFoldersList.Id()
 
-	case folderslist.FolderChangeMsg:
-		id := string(msg)
-		m.log.Infof("Received: FolderChangeMsg: %s", id)
-		cmds = append(cmds, common.FolderChangeCmd(id))
-
-	case common.FolderChangeMsg:
+	case folderslist.FolderChangedMsg:
 		id := string(msg)
 		m.log.Infof("Received: FolderChangeMsg: %s", id)
 		m.showSpinner = true
-		cmds = append(cmds, m.spinner.Tick, LoadingListsFromFolderCmd(id))
+		cmds = append(cmds,
+			m.spinner.Tick,
+			LoadingListsFromFolderCmd(id),
+			FolderChangedCmd(id),
+		)
 
 	case LoadingListsFromFolderMsg:
 		id := string(msg)
@@ -178,7 +182,8 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	case listslist.ListChangedMsg:
 		id := string(msg)
 		m.log.Infof("Received: ListChangedMsg: %s", id)
-		cmds = append(cmds, common.ListChangeCmd(id))
+		// m.showSpinner = true
+		cmds = append(cmds, m.spinner.Tick, ListChangedCmd(id))
 
 	case common.RefreshMsg:
 		m.log.Debug("Received: common.RefreshMsg")
