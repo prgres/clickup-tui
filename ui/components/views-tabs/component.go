@@ -145,7 +145,7 @@ func (m Model) View() string {
 
 	selectedIdx := 0
 	for i := range m.tabs {
-		if m.Selected == m.tabs[i].Id {
+		if m.Hovered() == m.tabs[i].Id {
 			selectedIdx = i
 			break
 		}
