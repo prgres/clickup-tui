@@ -19,7 +19,5 @@ func TasksListReadyCmd() tea.Cmd {
 }
 
 func HideTableCmd() tea.Cmd {
-	return func() tea.Msg {
-		return HideTableMsg(true)
-	}
+	return func() tea.Msg { return HideTableMsg(true) }
 }

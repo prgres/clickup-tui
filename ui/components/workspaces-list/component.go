@@ -110,7 +110,6 @@ func (m *Model) InitWorkspaces() error {
 		return err
 	}
 
-	m.Selected = workspaces[0]
 	m.SetList(workspaces)
 
 	return nil

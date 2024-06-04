@@ -59,12 +59,7 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 		return nil
 
 	case key.Matches(msg, m.keyMap.Select):
-		index := nextTab(m.tabs, m.SelectedIdx)
-		if m.SelectedIdx == index {
-			break
-		}
-		m.SelectedIdx = index
-		m.Selected = m.tabs[index].Id
+		m.Selected = m.tabs[m.SelectedIdx].Id
 		return TabChangedCmd(m.Selected)
 
 	case key.Matches(msg, m.keyMap.CursorLeftAndSelect):

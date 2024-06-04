@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	refreshInterval = 3
+	// refreshInterval = 3
+	refreshInterval = 3000
 )
 
 type Model struct {

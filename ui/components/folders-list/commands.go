@@ -3,8 +3,9 @@ package folderslist
 import tea "github.com/charmbracelet/bubbletea"
 
 type (
-	FolderChangedMsg string
-	FolderPreviewMsg string
+	FolderChangedMsg  string
+	FolderPreviewMsg  string
+	FolderSelectedMsg string
 )
 
 func FolderChangedCmd(id string) tea.Cmd {
@@ -13,4 +14,8 @@ func FolderChangedCmd(id string) tea.Cmd {
 
 func FolderPreviewCmd(id string) tea.Cmd {
 	return func() tea.Msg { return FolderPreviewMsg(id) }
+}
+
+func FolderSelectedCmd(id string) tea.Cmd {
+	return func() tea.Msg { return FolderSelectedMsg(id) }
 }

@@ -47,9 +47,12 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 			m.log.Info("List is empty")
 			break
 		}
-		selectedList := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
-		m.log.Info("Selected list", "id", selectedList.Id, "name", selectedList.Name)
-		m.Selected = selectedList
+		selected := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
+		m.log.Info("Selected list", "id", selected.Id, "name", selected.Name)
+		if m.Selected.Id == selected.Id {
+			return ListSelectedCmd(m.Selected.Id)
+		}
+		m.Selected = selected
 		return ListChangedCmd(m.Selected.Id)
 
 	case key.Matches(msg, m.keyMap.CursorDown):
@@ -61,9 +64,12 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 			m.log.Info("List is empty")
 			break
 		}
-		selectedList := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
-		m.log.Info("Selected list", "id", selectedList.Id, "name", selectedList.Name)
-		m.Selected = selectedList
+		selected := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
+		m.log.Info("Selected list", "id", selected.Id, "name", selected.Name)
+		if m.Selected.Id == selected.Id {
+			return ListSelectedCmd(m.Selected.Id)
+		}
+		m.Selected = selected
 		return ListPreviewCmd(m.Selected.Id)
 
 	case key.Matches(msg, m.keyMap.CursorUp):
@@ -75,9 +81,12 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 			m.log.Info("List is empty")
 			break
 		}
-		selectedList := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
-		m.log.Info("Selected list", "id", selectedList.Id, "name", selectedList.Name)
-		m.Selected = selectedList
+		selected := m.list.SelectedItem().(listitem.Item).Data().(clickup.List)
+		m.log.Info("Selected list", "id", selected.Id, "name", selected.Name)
+		if m.Selected.Id == selected.Id {
+			return ListSelectedCmd(m.Selected.Id)
+		}
+		m.Selected = selected
 		return ListPreviewCmd(m.Selected.Id)
 	}
 

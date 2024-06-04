@@ -5,9 +5,14 @@ import (
 )
 
 type (
-	TabChangedMsg string
+	TabChangedMsg  string
+	TabSelectedMsg string
 )
 
 func TabChangedCmd(id string) tea.Cmd {
 	return func() tea.Msg { return TabChangedMsg(id) }
+}
+
+func TabSelectedCmd(id string) tea.Cmd {
+	return func() tea.Msg { return TabSelectedMsg(id) }
 }

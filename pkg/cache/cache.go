@@ -17,7 +17,8 @@ import (
 const (
 	TTL                      = 5 * 60
 	StaleInterval            = 15
-	GarbageCollectorInterval = 1
+	GarbageCollectorInterval = 1000
+	// GarbageCollectorInterval = 1
 )
 
 var ErrKeyNotFoundInNamespace = errors.New("key not found in namespace")

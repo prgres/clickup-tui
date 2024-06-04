@@ -47,10 +47,13 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 			m.log.Info("List is empty")
 			break
 		}
-		selectedSpace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
-		m.log.Info("Selected space", "id", selectedSpace.Id, "name", selectedSpace.Name)
-		m.Selected = selectedSpace
-		return SpaceChangedCmd(selectedSpace.Id)
+		selected := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
+		m.log.Info("Selected space", "id", selected.Id, "name", selected.Name)
+		if m.Selected.Id == selected.Id {
+			return SpaceSelectedCmd(m.Selected.Id)
+		}
+		m.Selected = selected
+		return SpaceChangedCmd(selected.Id)
 
 	case key.Matches(msg, m.keyMap.CursorDown):
 		m.list.CursorDown()
@@ -61,10 +64,13 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 			m.log.Info("List is empty")
 			break
 		}
-		selectedSpace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
-		m.log.Info("Selected space", "id", selectedSpace.Id, "name", selectedSpace.Name)
-		m.Selected = selectedSpace
-		return SpacePreviewCmd(selectedSpace.Id)
+		selected := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
+		m.log.Info("Selected space", "id", selected.Id, "name", selected.Name)
+		if m.Selected.Id == selected.Id {
+			return SpaceSelectedCmd(m.Selected.Id)
+		}
+		m.Selected = selected
+		return SpacePreviewCmd(selected.Id)
 
 	case key.Matches(msg, m.keyMap.CursorUp):
 		m.list.CursorUp()
@@ -75,10 +81,13 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 			m.log.Info("List is empty")
 			break
 		}
-		selectedSpace := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
-		m.log.Info("Selected space", "id", selectedSpace.Id, "name", selectedSpace.Name)
-		m.Selected = selectedSpace
-		return SpacePreviewCmd(selectedSpace.Id)
+		selected := m.list.SelectedItem().(listitem.Item).Data().(clickup.Space)
+		m.log.Info("Selected space", "id", selected.Id, "name", selected.Name)
+		if m.Selected.Id == selected.Id {
+			return SpaceSelectedCmd(m.Selected.Id)
+		}
+		m.Selected = selected
+		return SpacePreviewCmd(selected.Id)
 	}
 
 	return nil

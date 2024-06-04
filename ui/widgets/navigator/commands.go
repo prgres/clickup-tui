@@ -5,6 +5,7 @@ import (
 	folderslist "github.com/prgrs/clickup/ui/components/folders-list"
 	listslist "github.com/prgrs/clickup/ui/components/lists-list"
 	spaceslist "github.com/prgrs/clickup/ui/components/spaces-list"
+	workspaceslist "github.com/prgrs/clickup/ui/components/workspaces-list"
 )
 
 type (
@@ -26,17 +27,21 @@ func LoadingListsFromFolderCmd(id string) tea.Cmd {
 }
 
 type (
-	ListPreviewMsg listslist.ListPreviewMsg
-	ListChangedMsg listslist.ListChangedMsg
+	ListPreviewMsg  listslist.ListPreviewMsg
+	ListChangedMsg  listslist.ListChangedMsg
+	ListSelectedMsg listslist.ListSelectedMsg
 
-	FolderPreviewMsg folderslist.FolderPreviewMsg
-	FolderChangedMsg folderslist.FolderChangedMsg
+	FolderPreviewMsg  folderslist.FolderPreviewMsg
+	FolderChangedMsg  folderslist.FolderChangedMsg
+	FolderSelectedMsg folderslist.FolderSelectedMsg
 
-	SpacePreviewMsg spaceslist.SpacePreviewMsg
-	SpaceChangedMsg spaceslist.SpaceChangedMsg
+	SpacePreviewMsg  spaceslist.SpacePreviewMsg
+	SpaceChangedMsg  spaceslist.SpaceChangedMsg
+	SpaceSelectedMsg spaceslist.SpaceSelectedMsg
 
-	WorkspacePreviewMsg string
-	WorkspaceChangedMsg string
+	WorkspacePreviewMsg  workspaceslist.WorkspacePreviewMsg
+	WorkspaceChangedMsg  workspaceslist.WorkspaceChangedMsg
+	WorkspaceSelectedMsg workspaceslist.WorkspaceSelectedMsg
 )
 
 func FolderChangedCmd(id string) tea.Cmd {
