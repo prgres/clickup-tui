@@ -1,10 +1,11 @@
 package folderslist
 
 import (
+	"reflect"
+
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prgrs/clickup/pkg/clickup"
-	"github.com/prgrs/clickup/ui/common"
 	listitem "github.com/prgrs/clickup/ui/components/list-item"
 )
 
@@ -53,7 +54,9 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 		selectedFolder := m.list.SelectedItem().(listitem.Item).Data().(clickup.Folder)
 		m.log.Info("Selected folder", "id", selectedFolder.Id, "name", selectedFolder.Name)
 		m.Selected = selectedFolder
-		return FolderChangeCmd(selectedFolder.Id)
+		tmp := FolderChangedCmd(selectedFolder.Id)
+		m.log.Debug(tmp, "t", reflect.TypeOf(tmp), "x")
+		return tmp
 
 	case key.Matches(msg, m.keyMap.CursorUp):
 		m.list.CursorUp()
@@ -67,7 +70,7 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 		selectedFolder := m.list.SelectedItem().(listitem.Item).Data().(clickup.Folder)
 		m.log.Info("Selected folder", "id", selectedFolder.Id, "name", selectedFolder.Name)
 		m.Selected = selectedFolder
-		return common.FolderPreviewCmd(selectedFolder.Id)
+		return FolderPreviewCmd(selectedFolder.Id)
 
 	case key.Matches(msg, m.keyMap.CursorDown):
 		m.list.CursorDown()
@@ -81,7 +84,7 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 		selectedFolder := m.list.SelectedItem().(listitem.Item).Data().(clickup.Folder)
 		m.log.Info("Selected folder", "id", selectedFolder.Id, "name", selectedFolder.Name)
 		m.Selected = selectedFolder
-		return common.FolderPreviewCmd(selectedFolder.Id)
+		return FolderPreviewCmd(selectedFolder.Id)
 	}
 
 	return tea.Batch(cmds...)
