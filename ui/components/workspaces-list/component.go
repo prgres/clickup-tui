@@ -71,24 +71,8 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 func (m *Model) SetList(workspaces []clickup.Workspace) {
 	m.log.Info("Synchronizing list...")
 	m.workspaces = workspaces
-
 	items := NewListItem(workspaces)
-	if len(items) == 0 {
-		panic("list is empty")
-	}
-
-	index := 0
-	for i, item := range items {
-		it := item.(listitem.Item)
-		if it.Title() == m.ctx.Config.DefaultWorkspace {
-			index = i
-		}
-	}
-
-	m.Selected = items[index].(listitem.Item).Data().(clickup.Workspace)
 	m.list.SetItems(items)
-	m.list.Select(index)
-	m.log.Info("List synchronized")
 }
 
 func (m *Model) Update(msg tea.Msg) tea.Cmd {

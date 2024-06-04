@@ -59,19 +59,8 @@ func InitialModel(ctx *context.UserContext, logger *log.Logger) Model {
 func (m *Model) SetList(folders []clickup.Folder) {
 	m.log.Info("Synchronizing list")
 	m.folders = folders
-
 	items := NewListItem(folders)
-
-	for _, item := range items {
-		i := item.(listitem.Item)
-		if i.Title() == m.ctx.Config.DefaultFolder {
-			m.Selected = i.Data().(clickup.Folder)
-		}
-	}
-
 	m.list.SetItems(items)
-	m.list.Select(0)
-	m.log.Info("List synchronized")
 }
 
 func (m *Model) Update(msg tea.Msg) tea.Cmd {
