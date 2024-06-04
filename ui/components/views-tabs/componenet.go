@@ -92,8 +92,11 @@ func (m Model) View() string {
 
 	moreTabsIcon := "+"
 	tabSeperatorIcon := "|"
-	prefix := " Views " + tabSeperatorIcon + " "
 	suffix := ""
+	prefix := " Views "
+	if len(m.tabs) == 0 {
+		prefix += tabSeperatorIcon + " "
+	}
 
 	availableWidth := m.size.Width - borderMargin
 
@@ -129,26 +132,36 @@ func (m Model) View() string {
 
 	availableWidth -= lipgloss.Width(prefix + suffix)
 
+	selectedIdx := 0
+	for i := range m.tabs {
+		if m.Selected == m.tabs[i].Id {
+			selectedIdx = i
+			break
+		}
+	}
+
 	var s []string
 
 	for i, tab := range m.tabs {
-		if i != 0 {
-			s = append(s, tabSeperatorIcon)
-		}
-
 		style := inactiveTabStyle
-		if m.Selected == tab.Id {
+		if i == selectedIdx {
 			style = activeTabStyle
 		}
 		content := style.Render(" " + tab.Name + " ")
 
-		if lipgloss.Width(strings.Join(append(s, content), " ")) >= availableWidth {
+		if lipgloss.Width(strings.Join(append(s, tabSeperatorIcon+" "+content), " ")) >= availableWidth {
+			if i <= selectedIdx {
+				s = append(s, tabSeperatorIcon+" "+content)
+				s = s[1:]
+				continue
+			}
 
-			s = append(s, moreTabsIcon)
+			s = append(s, tabSeperatorIcon+" "+moreTabsIcon)
 			break
 		}
 
-		s = append(s, content)
+		s = append(s, tabSeperatorIcon+" "+content)
+
 	}
 
 	content := strings.Join(s, " ")

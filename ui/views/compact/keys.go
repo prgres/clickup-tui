@@ -27,7 +27,6 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 		}
 	}
 
-	// m.getActiveElement().
 	switch m.state {
 	case m.widgetNavigator.Id():
 		cmd = m.widgetNavigator.Update(msg)
