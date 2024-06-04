@@ -95,11 +95,39 @@ func (m Model) View() string {
 	prefix := " Views " + tabSeperatorIcon + " "
 	suffix := ""
 
+	availableWidth := m.size.Width - borderMargin
+
 	if m.Path != "" {
-		suffix = " " + tabSeperatorIcon + " " + m.Path + " "
+		suffixMaxWidth := int(float32(availableWidth) * 0.4)
+		pathMaxWidth := suffixMaxWidth - lipgloss.Width(" "+tabSeperatorIcon+" "+""+" ")
+		path := m.Path
+
+		if lipgloss.Width(m.Path) > pathMaxWidth {
+			pathParts := strings.Split(m.Path, "/")
+			for i := range pathParts {
+				if i == 0 {
+					pathParts[i] = ""
+					// the first elem is / so it has to be skipped
+					continue
+				}
+				if i == len(pathParts)-1 {
+					// the last elem has to be always visible
+					continue
+				}
+
+				pathParts[i] = "..."
+
+				if lipgloss.Width(strings.Join(pathParts, "/")) <= pathMaxWidth {
+					break
+				}
+			}
+			path = strings.Join(pathParts, "/")
+		}
+
+		suffix = " " + tabSeperatorIcon + " " + path + " "
 	}
 
-	availableWidth := m.size.Width - borderMargin - lipgloss.Width(prefix+suffix)
+	availableWidth -= lipgloss.Width(prefix + suffix)
 
 	var s []string
 
