@@ -101,13 +101,19 @@ func (m Model) View() string {
 		Width(m.size.Width - borderMargin).
 		MaxWidth(m.size.Width + borderMargin)
 
-	moreTabsIcon := " + "
-	prefix := " Views |"
+	moreTabsIcon := "+"
+	tabSeperatorIcon := "|"
 	suffix := ""
+	prefix := " Views "
+	if len(m.tabs) == 0 {
+		prefix += tabSeperatorIcon + " "
+	}
+
+	availableWidth := m.size.Width - borderMargin
 
 	if m.Path != "" {
-		suffixMaxWidth := int(float32(m.size.Width-borderMargin) * 0.4)
-		pathMaxWidth := suffixMaxWidth - lipgloss.Width(" "+"|"+" "+""+" ")
+		suffixMaxWidth := int(float32(availableWidth) * 0.4)
+		pathMaxWidth := suffixMaxWidth - lipgloss.Width(" "+tabSeperatorIcon+" "+""+" ")
 		path := m.Path
 
 		if lipgloss.Width(m.Path) > pathMaxWidth {
@@ -132,32 +138,46 @@ func (m Model) View() string {
 			path = strings.Join(pathParts, "/")
 		}
 
-		suffix = " " + "|" + " " + path + " "
+		suffix = " " + tabSeperatorIcon + " " + path + " "
+	}
+
+	availableWidth -= lipgloss.Width(prefix + suffix)
+
+	selectedIdx := 0
+	for i := range m.tabs {
+		if m.Selected == m.tabs[i].Id {
+			selectedIdx = i
+			break
+		}
 	}
 
 	var s []string
-	for _, tab := range m.tabs {
-		t := ""
-		tabContent := " " + tab.Name + " "
 
+	for i, tab := range m.tabs {
 		style := inactiveTabStyle
-		if m.Hovered() == tab.Id {
+		if i == selectedIdx {
 			style = activeTabStyle
 		}
-		t = style.Render(tabContent)
+		content := style.Render(" " + tab.Name + " ")
 
-		content := " " + t + " "
+		if lipgloss.Width(strings.Join(append(s, tabSeperatorIcon+" "+content), " ")) >= availableWidth {
+			if i <= selectedIdx {
+				s = append(s, tabSeperatorIcon+" "+content)
+				s = s[1:]
+				continue
+			}
 
-		if lipgloss.Width(prefix+strings.Join(s, "")+content+moreTabsIcon+suffix) >= m.size.Width-borderMargin {
-			s = append(s, moreTabsIcon)
+			s = append(s, tabSeperatorIcon+" "+moreTabsIcon)
 			break
 		}
-		s = append(s, content)
-		s = append(s, "|")
-	}
-	content := strings.Join(s, "")
 
-	dividerWidth := m.size.Width - borderMargin - lipgloss.Width(prefix+content+moreTabsIcon+suffix)
+		s = append(s, tabSeperatorIcon+" "+content)
+
+	}
+
+	content := strings.Join(s, " ")
+
+	dividerWidth := availableWidth - lipgloss.Width(content)
 	if dividerWidth < 0 {
 		dividerWidth = 0
 	}
