@@ -8,13 +8,10 @@ type (
 )
 
 func SpaceChangedCmd(id string) tea.Cmd {
-	return func() tea.Msg {
-		return SpaceChangedMsg(id)
-	}
+	return func() tea.Msg { return SpaceChangedMsg(id) }
 }
 
 func SpacePreviewCmd(id string) tea.Cmd {
-	return func() tea.Msg {
-		return SpacePreviewMsg(id)
-	}
+	return func() tea.Msg { return SpacePreviewMsg(id) }
 }
+

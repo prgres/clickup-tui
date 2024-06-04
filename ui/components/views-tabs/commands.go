@@ -9,7 +9,5 @@ type (
 )
 
 func TabChangedCmd(id string) tea.Cmd {
-	return func() tea.Msg {
-		return TabChangedMsg(id)
-	}
+	return func() tea.Msg { return TabChangedMsg(id) }
 }

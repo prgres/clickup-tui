@@ -8,13 +8,9 @@ type (
 )
 
 func InitCompactCmd() tea.Cmd {
-	return func() tea.Msg {
-		return InitCompactMsg("")
-	}
+	return func() tea.Msg { return InitCompactMsg("") }
 }
 
 func LoadingTasksFromViewCmd(id string) tea.Cmd {
-	return func() tea.Msg {
-		return LoadingTasksFromViewMsg(id)
-	}
+	return func() tea.Msg { return LoadingTasksFromViewMsg(id) }
 }

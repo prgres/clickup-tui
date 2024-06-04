@@ -11,15 +11,11 @@ type (
 )
 
 func TaskSelectedCmd(task string) tea.Cmd {
-	return func() tea.Msg {
-		return TaskSelectedMsg(task)
-	}
+	return func() tea.Msg { return TaskSelectedMsg(task) }
 }
 
 func TasksListReadyCmd() tea.Cmd {
-	return func() tea.Msg {
-		return TasksListReadyMsg(true)
-	}
+	return func() tea.Msg { return TasksListReadyMsg(true) }
 }
 
 func HideTableCmd() tea.Cmd {

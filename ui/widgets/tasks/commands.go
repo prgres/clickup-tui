@@ -11,13 +11,9 @@ type (
 )
 
 func LostFocusCmd() tea.Cmd {
-	return func() tea.Msg {
-		return LostFocusMsg("")
-	}
+	return func() tea.Msg { return LostFocusMsg("") }
 }
 
 func UpdateTaskCmd(task clickup.Task) tea.Cmd {
-	return func() tea.Msg {
-		return UpdateTaskMsg(task)
-	}
+	return func() tea.Msg { return UpdateTaskMsg(task) }
 }
