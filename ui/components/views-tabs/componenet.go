@@ -124,29 +124,29 @@ func (m Model) View() string {
 		suffix = " " + "|" + " " + path + " "
 	}
 
-	var s []string
+	availableWidth := m.size.Width - borderMargin
+
 	for _, tab := range m.tabs {
-		t := ""
 		tabContent := " " + tab.Name + " "
 
 		style := inactiveTabStyle
 		if m.Selected == tab.Id {
 			style = activeTabStyle
 		}
-		t = style.Render(tabContent)
 
-		content := " " + t + " "
+		content := " " + style.Render(tabContent) + " "
 
-		if lipgloss.Width(prefix+strings.Join(s, "")+content+moreTabsIcon+suffix) >= m.size.Width-borderMargin {
+		if lipgloss.Width(tabPrefix+strings.Join(s, "")+content+moreTabsIcon+suffix) >= availableWidth {
 			s = append(s, moreTabsIcon)
 			break
 		}
-		s = append(s, content)
-		s = append(s, "|")
+		s = append(s, content, "|")
+
 	}
+
 	content := strings.Join(s, "")
 
-	dividerWidth := m.size.Width - borderMargin - lipgloss.Width(prefix+content+moreTabsIcon+suffix)
+	dividerWidth := availableWidth - lipgloss.Width(tabPrefix+content+moreTabsIcon+suffix)
 	if dividerWidth < 0 {
 		dividerWidth = 0
 	}
