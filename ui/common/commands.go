@@ -78,14 +78,6 @@ func WorkspacePreviewCmd(workspace string) tea.Cmd {
 	}
 }
 
-type BackToPreviousViewMsg Id
-
-func BackToPreviousViewCmd(currentView Id) tea.Cmd {
-	return func() tea.Msg {
-		return BackToPreviousViewMsg(currentView)
-	}
-}
-
 type ErrMsg error
 
 func ErrCmd(err ErrMsg) tea.Cmd {
