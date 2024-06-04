@@ -109,7 +109,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		m.log.Infof("Received: WorkspacePreviewMsg: %s", id)
 		return m.handleWorkspaceChangePreview(id)
 
-	case common.WorkspaceChangeMsg:
+	case common.WorkspaceChangedMsg:
 		id := string(msg)
 		m.log.Infof("Received: WorkspaceChangeMsg: %s", id)
 		cmds = append(cmds, m.handleWorkspaceChangePreview(id))
@@ -119,7 +119,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		m.log.Infof("Received: received SpacePreviewMsg: %s", id)
 		return m.handleSpaceChangePreview(id)
 
-	case common.SpaceChangeMsg:
+	case common.SpaceChangedMsg:
 		id := string(msg)
 		m.log.Infof("Received: received SpaceChangeMsg: %s", id)
 		cmds = append(cmds, m.handleSpaceChangePreview(id))
@@ -129,7 +129,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		m.log.Infof("Received: FolderPreviewMsg: %s", id)
 		return m.handleFolderChangePreview(id)
 
-	case common.FolderChangeMsg:
+	case common.FolderChangedMsg:
 		id := string(msg)
 		m.log.Infof("Received: FolderChangeMsg: %s", id)
 		cmds = append(cmds, m.handleFolderChangePreview(id))
@@ -139,7 +139,7 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 		m.log.Infof("Received: ListPreviewMsg: %s", id)
 		cmds = append(cmds, m.handleListChangePreview(id))
 
-	case common.ListChangeMsg:
+	case common.ListChangedMsg:
 		id := string(msg)
 		m.log.Info("Received: ListChangeMsg", "id", id)
 		// TODO: make state change as func

@@ -14,11 +14,11 @@ func FocusCmd() tea.Cmd {
 	}
 }
 
-type SpaceChangeMsg string
+type SpaceChangedMsg string
 
-func SpaceChangeCmd(id string) tea.Cmd {
+func SpaceChangedCmd(id string) tea.Cmd {
 	return func() tea.Msg {
-		return SpaceChangeMsg(id)
+		return SpaceChangedMsg(id)
 	}
 }
 
@@ -30,11 +30,11 @@ func SpacePreviewCmd(id string) tea.Cmd {
 	}
 }
 
-type FolderChangeMsg string
+type FolderChangedMsg string
 
-func FolderChangeCmd(id string) tea.Cmd {
+func FolderChangedCmd(id string) tea.Cmd {
 	return func() tea.Msg {
-		return FolderChangeMsg(id)
+		return FolderChangedMsg(id)
 	}
 }
 
@@ -46,11 +46,11 @@ func FolderPreviewCmd(id string) tea.Cmd {
 	}
 }
 
-type ListChangeMsg string
+type ListChangedMsg string
 
-func ListChangeCmd(id string) tea.Cmd {
+func ListChangedCmd(id string) tea.Cmd {
 	return func() tea.Msg {
-		return ListChangeMsg(id)
+		return ListChangedMsg(id)
 	}
 }
 
@@ -62,11 +62,11 @@ func ListPreviewCmd(id string) tea.Cmd {
 	}
 }
 
-type WorkspaceChangeMsg string
+type WorkspaceChangedMsg string
 
-func WorkspaceChangeCmd(workspace string) tea.Cmd {
+func WorkspaceChangedCmd(workspace string) tea.Cmd {
 	return func() tea.Msg {
-		return WorkspaceChangeMsg(workspace)
+		return WorkspaceChangedMsg(workspace)
 	}
 }
 

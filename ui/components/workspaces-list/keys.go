@@ -51,7 +51,7 @@ func (m *Model) handleKeys(msg tea.KeyMsg) tea.Cmd {
 		selected := m.list.SelectedItem().(listitem.Item).Data().(clickup.Workspace)
 		m.log.Info("Selected workspace", "id", selected.Id, "name", selected.Name)
 		m.Selected = selected
-		return common.WorkspaceChangeCmd(selected.Id)
+		return WorkspaceChangedCmd(selected.Id)
 
 	case key.Matches(msg, m.keyMap.CursorDown):
 		m.list.CursorDown()
