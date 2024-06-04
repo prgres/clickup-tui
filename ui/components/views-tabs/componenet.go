@@ -90,63 +90,42 @@ func (m Model) View() string {
 		Width(m.size.Width - borderMargin).
 		MaxWidth(m.size.Width + borderMargin)
 
-	moreTabsIcon := " + "
-	prefix := " Views |"
+	moreTabsIcon := "+"
+	tabSeperatorIcon := "|"
+	prefix := " Views " + tabSeperatorIcon + " "
 	suffix := ""
 
 	if m.Path != "" {
-		suffixMaxWidth := int(float32(m.size.Width-borderMargin) * 0.4)
-		pathMaxWidth := suffixMaxWidth - lipgloss.Width(" "+"|"+" "+""+" ")
-		path := m.Path
-
-		if lipgloss.Width(m.Path) > pathMaxWidth {
-			pathParts := strings.Split(m.Path, "/")
-			for i := range pathParts {
-				if i == 0 {
-					pathParts[i] = ""
-					// the first elem is / so it has to be skipped
-					continue
-				}
-				if i == len(pathParts)-1 {
-					// the last elem has to be always visible
-					continue
-				}
-
-				pathParts[i] = "..."
-
-				if lipgloss.Width(strings.Join(pathParts, "/")) <= pathMaxWidth {
-					break
-				}
-			}
-			path = strings.Join(pathParts, "/")
-		}
-
-		suffix = " " + "|" + " " + path + " "
+		suffix = " " + tabSeperatorIcon + " " + m.Path + " "
 	}
 
-	availableWidth := m.size.Width - borderMargin
+	availableWidth := m.size.Width - borderMargin - lipgloss.Width(prefix+suffix)
 
-	for _, tab := range m.tabs {
-		tabContent := " " + tab.Name + " "
+	var s []string
+
+	for i, tab := range m.tabs {
+		if i != 0 {
+			s = append(s, tabSeperatorIcon)
+		}
 
 		style := inactiveTabStyle
 		if m.Selected == tab.Id {
 			style = activeTabStyle
 		}
+		content := style.Render(" " + tab.Name + " ")
 
-		content := " " + style.Render(tabContent) + " "
+		if lipgloss.Width(strings.Join(append(s, content), " ")) >= availableWidth {
 
-		if lipgloss.Width(tabPrefix+strings.Join(s, "")+content+moreTabsIcon+suffix) >= availableWidth {
 			s = append(s, moreTabsIcon)
 			break
 		}
-		s = append(s, content, "|")
 
+		s = append(s, content)
 	}
 
-	content := strings.Join(s, "")
+	content := strings.Join(s, " ")
 
-	dividerWidth := availableWidth - lipgloss.Width(tabPrefix+content+moreTabsIcon+suffix)
+	dividerWidth := availableWidth - lipgloss.Width(content)
 	if dividerWidth < 0 {
 		dividerWidth = 0
 	}
