@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  artifacts:
+    name: ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: linux-arm64
+            goos: linux
+            goarch: arm64
+          - target: linux-arm
+            goos: linux
+            goarch: arm
+          - target: linux-amd64
+            goos: linux
+            goarch: amd64
+          - target: linux-arm64
+            goos: linux
+            goarch: arm64
+          - target: apple-darwnin-silicone
+            goos: darwin
+            goarch: arm64
+          - target: apple-darwnin-intel
+            goos: darwin
+            goarch: amd64
+    env:
+      BIN_NAME: clickup-tui-${{ matrix.target }}-${{ github.event.release.tag_name }}
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1
+
+      - name: Build the binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: go build -o bin/"${BIN_NAME}"
+
+      - name: "Tar files"
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: tar -czvf artifacts/"${BIN_NAME}".tar.gz /bin/"${BIN_NAME}"
+
+      - name: Upload Release Artifact
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
+        run: gh release upload ${{ steps.release.outputs.tag_name }} artifacts/"${BIN_NAME}".tar.gz
