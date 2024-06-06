@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.16](https://github.com/prgres/clickup-tui/compare/v0.1.15...v0.1.16) (2024-06-06)
+
+
+### 🪲 Bug Fixes
+
+* enabled cgo ([#168](https://github.com/prgres/clickup-tui/issues/168)) ([c302876](https://github.com/prgres/clickup-tui/commit/c302876db5f2352bb541dc4fe96594b191e61def))
+* remove duplicated linux-arm64 from release ([525359d](https://github.com/prgres/clickup-tui/commit/525359d5becff5fdf748ae53535f93705a726c0d))
+
 ## [0.1.15](https://github.com/prgres/clickup-tui/compare/v0.1.14...v0.1.15) (2024-06-06)
 
 
