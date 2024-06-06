@@ -15,6 +15,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
+          check-latest: true # tmp
 
       - name: Checkout code
         uses: actions/checkout@v4

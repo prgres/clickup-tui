@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/prgres/clickup-tui/compare/v0.2.0...v0.2.1) (2024-06-06)
+
+
+### Bug Fixes
+
+* add missing checkout before building pkg ([#149](https://github.com/prgres/clickup-tui/issues/149)) ([6efb652](https://github.com/prgres/clickup-tui/commit/6efb652c488cc5bbc6279bf92ea9bea1bb9d6694))
+* add missing OSV Scanner workflow name ([#147](https://github.com/prgres/clickup-tui/issues/147)) ([428bcc8](https://github.com/prgres/clickup-tui/commit/428bcc839d4ef04f18b904a318c30d038e412c57))
+
 ## [0.2.0](https://github.com/prgres/clickup-tui/compare/0.1.13...v0.2.0) (2024-06-06)
 
 
