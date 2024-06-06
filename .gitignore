@@ -2,4 +2,4 @@ debug.log
 cache/**
 !cache/.gitkeep
 config.yaml
-
+bin/**
