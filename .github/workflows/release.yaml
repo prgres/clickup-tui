@@ -52,7 +52,7 @@ jobs:
 
       - name: "Tar files"
         if: startsWith(github.ref, 'refs/tags/v')
-        run: tar -czvf artifacts/"${BIN_NAME}".tar.gz /bin/"${BIN_NAME}"
+        run: tar -czvf artifacts/"${BIN_NAME}".tar.gz artifacts/"${BIN_NAME}"
 
       - name: Upload Release Artifact
         if: ${{ steps.release.outputs.release_created }}
