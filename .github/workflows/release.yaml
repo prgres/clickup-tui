@@ -33,7 +33,7 @@ jobs:
             goos: darwin
             goarch: amd64
     env:
-      BIN_NAME: clickup-tui-${{ matrix.target }}-${{ github.event.release.tag_name }}
+      ARTIFACT_NAME: clickup-tui-${{ matrix.target }}-${{ github.event.release.tag_name }}.tar.gz
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -48,14 +48,13 @@ jobs:
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-        run: go build -o bin/"${BIN_NAME}"
+        run: go build -o bin/clickup-tui
 
       - name: "Tar files"
-        run: |
-          mkdir artifacts
-          tar -czvf artifacts/"${BIN_NAME}".tar.gz bin/"${BIN_NAME}"
+        working-directory: bin
+        run: tar -czvf "${ARTIFACT_NAME}" clickup-tui
 
       - name: Upload Release Artifact
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
-        run: gh release upload ${{ github.event.release.tag_name }} artifacts/"${BIN_NAME}".tar.gz
+        run: gh release upload ${{ github.event.release.tag_name }} bin/"${ARTIFACT_NAME}"
