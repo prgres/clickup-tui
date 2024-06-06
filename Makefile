@@ -29,4 +29,4 @@ fmt:
 
 .PHONY: build
 build:
-	@go build -v .
+	@CGO_ENABLED=1 go build -v -o bin/clickup-tui
