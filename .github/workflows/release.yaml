@@ -48,7 +48,7 @@ jobs:
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-        run: go build -o bin/clickup-tui
+        run: CGO_ENABLED=1 go build -o bin/clickup-tui
 
       - name: "Tar files"
         working-directory: bin
