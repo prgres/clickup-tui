@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.17](https://github.com/prgres/clickup-tui/compare/v0.1.16...v0.1.17) (2024-06-06)
+
+
+### 🪲 Bug Fixes
+
+* build arm on macos-latest ([cf7b7df](https://github.com/prgres/clickup-tui/commit/cf7b7dfef84ce5334cbf36dcb28f004c6005e3cc))
+
 ## [0.1.16](https://github.com/prgres/clickup-tui/compare/v0.1.15...v0.1.16) (2024-06-06)
 
 
