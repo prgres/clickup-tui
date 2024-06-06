@@ -1,6 +1,7 @@
 name: Release
 
 on:
+  pull_request:
   release:
     types: [published]
 
@@ -8,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  artifacts:
+  release:
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -52,3 +53,30 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
         run: gh release upload ${{ github.event.release.tag_name }} bin/"${ARTIFACT_NAME}"
+
+  homebrew:
+    needs: release
+    name: Bump Homebrew formula
+    # Skip this job in case of git pushes to prerelease tags
+    if: ${{ github.event_name != 'push' || !contains(github.ref, '-') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: clickup-tui
+          formula-path: Formula/clickup-tui.rb
+          homebrew-tap: prgres/homebrew-formulae
+          base-branch: main
+          tag-name: ${{ env.VERSION }}
+          download-url: https://github.com/prgres/clickup-tui/releases/download/${{ env.VERSION }}/clickup-tui-apple-darwnin-silicone-${{ env.VERSION }}.tar.gz
+          create-pullrequest: false
+          commit-message: |
+            chore(release): {{formulaName}} {{version}}
+
+            Created by https://github.com/mislav/bump-homebrew-formula-action
+        env:
+          COMMITTER_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
