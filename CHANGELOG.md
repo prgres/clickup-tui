@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.15](https://github.com/prgres/clickup-tui/compare/v0.1.14...v0.1.15) (2024-06-06)
+
+
+### 🪲 Bug Fixes
+
+* build arm on macos-latest ([40e8b84](https://github.com/prgres/clickup-tui/commit/40e8b84b697644af29ba76820614a63ace88f9b3))
+* enabled cgo ([#168](https://github.com/prgres/clickup-tui/issues/168)) ([0bbc037](https://github.com/prgres/clickup-tui/commit/0bbc037c982a98a5caf5ae5b48c7520e4e3def40))
+* remove duplicated linux-arm64 from release ([647abb2](https://github.com/prgres/clickup-tui/commit/647abb2ce29dff9df591feb4459cca631a036e65))
+
+
+### ♾️ Continuous Integration
+
+* fix artifacts ([a88fc9d](https://github.com/prgres/clickup-tui/commit/a88fc9dd0ca74f95877d0f2d6559073be86a4f5b))
+
 ## [0.1.14](https://github.com/prgres/clickup-tui/compare/0.1.13...v0.1.14) (2024-06-06)
 
 
