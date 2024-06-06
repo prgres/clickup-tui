@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.15](https://github.com/prgres/clickup-tui/compare/v0.1.14...v0.1.15) (2024-06-06)
+
+
+### ♾️ Continuous Integration
+
+* fix artifacts ([a88fc9d](https://github.com/prgres/clickup-tui/commit/a88fc9dd0ca74f95877d0f2d6559073be86a4f5b))
+
 ## [0.1.14](https://github.com/prgres/clickup-tui/compare/0.1.13...v0.1.14) (2024-06-06)
 
 
