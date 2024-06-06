@@ -11,14 +11,14 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Install Go
         uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
           check-latest: true # tmp
-
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: fmt
         run: make fmt
