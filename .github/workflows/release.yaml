@@ -35,6 +35,9 @@ jobs:
     env:
       BIN_NAME: clickup-tui-${{ matrix.target }}-${{ github.event.release.tag_name }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Install Go
         uses: actions/setup-go@v2
         with:
