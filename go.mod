@@ -1,6 +1,6 @@
 module github.com/prgrs/clickup
 
-go 1.22.3
+go 1.22.4
 
 require (
 	github.com/charmbracelet/bubbletea v0.25.0
