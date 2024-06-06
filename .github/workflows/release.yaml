@@ -10,25 +10,22 @@ permissions:
 jobs:
   artifacts:
     name: ${{ matrix.target }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
-          - target: linux-arm64
-            goos: linux
-            goarch: arm64
-          - target: linux-arm
-            goos: linux
-            goarch: arm
           - target: linux-amd64
             goos: linux
             goarch: amd64
+            os: ubuntu-latest
           - target: apple-darwnin-silicone
             goos: darwin
             goarch: arm64
+            os: macos-latest
           - target: apple-darwnin-intel
             goos: darwin
             goarch: amd64
+            os: macos-latest
     env:
       ARTIFACT_NAME: clickup-tui-${{ matrix.target }}-${{ github.event.release.tag_name }}.tar.gz
     steps:
