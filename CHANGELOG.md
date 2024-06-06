@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.16](https://github.com/prgres/clickup-tui/compare/v0.1.15...v0.1.16) (2024-06-06)
+
+
+### ♾️ Continuous Integration
+
+* add brew push auto ([#167](https://github.com/prgres/clickup-tui/issues/167)) ([187f0a4](https://github.com/prgres/clickup-tui/commit/187f0a4a76bb94926bbf760987fc7dcb237d8c6b))
+
 ## [0.1.15](https://github.com/prgres/clickup-tui/compare/v0.1.14...v0.1.15) (2024-06-06)
 
 
