@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.15](https://github.com/prgres/clickup-tui/compare/v0.1.14...v0.1.15) (2024-06-06)
+
+
+### ♾️ Continuous Integration
+
+* add missing actions: read permission to osv scanner ([48132e9](https://github.com/prgres/clickup-tui/commit/48132e9d46cd918e387df206a3ddf1ad76576c27))
+* fix trailing / in output bin ([61fd37b](https://github.com/prgres/clickup-tui/commit/61fd37bd709e4f9f7c449b2d275411630ffb0455))
+
 ## [0.1.14](https://github.com/prgres/clickup-tui/compare/0.1.13...v0.1.14) (2024-06-06)
 
 
