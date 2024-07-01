@@ -1,0 +1,14 @@
+pre-push:
+  commands:
+    backend-lint:
+      root: backend/
+      tags: backend
+      glob: "*.go"
+      run: golangci-lint run
+
+    commitlint:
+      tags: commandlint
+      run: |
+        _HEAD=$(git rev-parse HEAD)
+        _COMMITS=$(git rev-list --count HEAD ^main)
+        npx commitlint --from "${_HEAD}"~"${_COMMITS}" --to "${_HEAD}"
