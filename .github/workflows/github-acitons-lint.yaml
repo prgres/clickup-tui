@@ -17,7 +17,6 @@ concurrency:
 defaults:
   run:
     shell: bash
-    working-directory: ./backend
 
 permissions:
   contents: read
