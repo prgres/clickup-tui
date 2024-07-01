@@ -2,9 +2,13 @@ name: build
 
 on:
   pull_request:
+    paths-ignore:
+      - ".github"
   push:
     branches:
       - main
+    paths-ignore:
+      - ".github"
 
 jobs:
   build:

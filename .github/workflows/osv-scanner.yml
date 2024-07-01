@@ -1,8 +1,8 @@
 name: OSV Scanner
 
 on:
-  push:
-    branches: ["main"]
+  schedule:
+    - cron: "17 22 * * 6"
 
 permissions:
   security-events: write
