@@ -1,8 +1,7 @@
 pre-push:
   commands:
     backend-lint:
-      root: backend/
-      tags: backend
+      root: /
       glob: "*.go"
       run: golangci-lint run
 
