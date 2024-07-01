@@ -3,3 +3,4 @@ cache/**
 !cache/.gitkeep
 config.yaml
 bin/**
+node_modules
