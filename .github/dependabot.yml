@@ -2,13 +2,70 @@ version: 2
 updates:
   - package-ecosystem: "gomod"
     directory: "/"
-    schedule:
-      interval: "daily"
     commit-message:
       prefix: "deps"
+    assignees:
+      - prgres
+    reviewers:
+      - prgres
+    schedule:
+      interval: "monthly"
+    labels:
+      - "backend"
+      - "go"
+      - "dependencies"
+      - "dependabot"
+    groups:
+      version-update-breaking:
+        applies-to: version-updates
+        update-types:
+          - major
+      version-update:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+      security-update-breaking:
+        applies-to: security-updates
+        update-types:
+          - major
+      security-update:
+        applies-to: security-updates
+        update-types:
+          - minor
+          - patch
+
   - package-ecosystem: "github-actions"
     directory: "/"
-    schedule:
-      interval: "daily"
     commit-message:
       prefix: "deps"
+    assignees:
+      - prgres
+    reviewers:
+      - prgres
+    schedule:
+      interval: "monthly"
+    labels:
+      - "ci"
+      - "github-actions"
+      - "dependencies"
+      - "dependabot"
+    groups:
+      version-update-breaking:
+        applies-to: version-updates
+        update-types:
+          - major
+      version-update:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+      security-update-breaking:
+        applies-to: security-updates
+        update-types:
+          - major
+      security-update:
+        applies-to: security-updates
+        update-types:
+          - minor
+          - patch
