@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.1.17](https://github.com/prgres/clickup-tui/compare/v0.1.16...v0.1.17) (2024-09-05)
+
+
+### ⚓ Miscellaneous Chores
+
+* add lefthook and commitlint config ([#185](https://github.com/prgres/clickup-tui/issues/185)) ([0252fbd](https://github.com/prgres/clickup-tui/commit/0252fbdcd4ddb1a80e647380c90b7dc3fcc8bff1))
+
+
+### ♾️ Continuous Integration
+
+* optimize minutes ([#184](https://github.com/prgres/clickup-tui/issues/184)) ([b86c91d](https://github.com/prgres/clickup-tui/commit/b86c91ddfdf1c4e3673f85c387a35a3dbb771279))
+* update dependabot config ([#183](https://github.com/prgres/clickup-tui/issues/183)) ([4638664](https://github.com/prgres/clickup-tui/commit/4638664031578be2c57d7c9e887c918a153f755e))
+
+
+### 🛠️Dependencies
+
+* bump aquasecurity/trivy-action from 0.21.0 to 0.22.0 ([#174](https://github.com/prgres/clickup-tui/issues/174)) ([609c944](https://github.com/prgres/clickup-tui/commit/609c9445f73be56dddc879604bd2fac3caa760d4))
+* bump aquasecurity/trivy-action from 0.22.0 to 0.23.0 ([#178](https://github.com/prgres/clickup-tui/issues/178)) ([ca301c8](https://github.com/prgres/clickup-tui/commit/ca301c8399c1cc14fad1151929391fa9829e59fe))
+* bump github.com/evertras/bubble-table from 0.16.0 to 0.16.1 ([#176](https://github.com/prgres/clickup-tui/issues/176)) ([a0b1c51](https://github.com/prgres/clickup-tui/commit/a0b1c514f035080500e9c0a34e8adec2c3627fc1))
+* bump golang.org/x/image from 0.14.0 to 0.18.0 in the go_modules group ([#181](https://github.com/prgres/clickup-tui/issues/181)) ([faea147](https://github.com/prgres/clickup-tui/commit/faea147d346c02dd07a3d05fc11795986ae3fbd9))
+* bump google/osv-scanner-action from 1.7.4 to 1.8.1 ([#182](https://github.com/prgres/clickup-tui/issues/182)) ([3d2af3d](https://github.com/prgres/clickup-tui/commit/3d2af3d35e6e19777a9dfd805b0268f188238422))
+* bump the version-update group across 1 directory with 6 updates ([#189](https://github.com/prgres/clickup-tui/issues/189)) ([6615707](https://github.com/prgres/clickup-tui/commit/66157079b2a20da5473cfd0d0ab33afe3cd53df2))
+
 ## [0.1.16](https://github.com/prgres/clickup-tui/compare/v0.1.15...v0.1.16) (2024-06-06)
 
 
